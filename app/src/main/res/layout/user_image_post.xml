@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/heart_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:background="@color/secondary">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cardview_image"
+            android:layout_width="match_parent"
+            android:layout_height="380dp"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentStart="true"
+            android:layout_marginTop="40dp"
+            android:backgroundTint="@color/secondary"
+            app:cardCornerRadius="50dp"
+            android:elevation="24dp"
+            android:translationZ="5dp">
+
+            <ImageView
+                android:id="@+id/img_post"
+                android:layout_width="match_parent"
+                android:layout_height="380dp"
+                android:scaleType="centerCrop"
+                android:visibility="gone"
+                android:contentDescription="@string/user_post" />
+
+            <androidx.media3.ui.PlayerView
+                android:id="@+id/player_view_video_post"
+                android:layout_width="match_parent"
+                android:layout_height="380dp"
+                app:resize_mode="zoom"
+                app:use_controller="false"
+                app:surface_type="texture_view"
+                android:visibility="gone"
+                app:shutter_background_color="@android:color/transparent" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_gravity="bottom|center_horizontal"
+                android:layout_marginBottom="10dp">
+
+                <TextView
+                    android:id="@+id/tv_status"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/white"
+                    android:textStyle="bold"
+                    android:background="@drawable/border_view"
+                    android:backgroundTint="#767575"
+                    android:padding="6dp"
+                    android:layout_gravity="center_horizontal"/>
+
+                <TextView
+                    android:id="@+id/tv_music_post"
+                    android:layout_width="150dp"
+                    android:layout_height="wrap_content"
+                    android:textStyle="bold"
+                    android:visibility="gone"
+                    android:layout_gravity="center_horizontal"
+                    android:textColor="@color/white"
+                    android:layout_marginTop="5dp"
+                    android:ellipsize="marquee"
+                    android:marqueeRepeatLimit="marquee_forever"
+                    android:singleLine="true"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:scrollHorizontally="true"/>
+
+                <TextView
+                    android:id="@+id/tv_singer_post"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:visibility="gone"
+                    android:layout_gravity="center_horizontal"
+                    android:textColor="@color/white"/>
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+        <RelativeLayout
+            android:id="@+id/relative_user"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/cardview_image"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="20dp">
+
+            <de.hdodenhof.circleimageview.CircleImageView
+                android:id="@+id/img_user_post"
+                android:layout_width="35dp"
+                android:layout_height="35dp"
+                android:scaleType="centerCrop"/>
+
+            <TextView
+                android:id="@+id/tv_username_post"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_toEndOf="@+id/img_user_post"
+                android:layout_centerVertical="true"
+                android:layout_marginStart="6dp"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:textColor="@color/black"/>
+
+            <TextView
+                android:id="@+id/tv_time_post"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_toEndOf="@+id/tv_username_post"
+                android:layout_centerVertical="true"
+                android:layout_marginStart="6dp"
+                android:textSize="16sp"
+                android:textColor="@color/black"/>
+
+        </RelativeLayout>
+
+        <FrameLayout
+            android:id="@+id/frame_layout1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_below="@+id/relative_user"
+            android:layout_marginTop="20dp">
+
+            <EditText
+                android:id="@+id/edt_send_message"
+                android:layout_width="350dp"
+                android:layout_height="wrap_content"
+                android:hint="@string/send_message"
+                android:background="@drawable/border_view"
+                android:padding="10dp"
+                android:backgroundTint="#EFEFEF"
+                android:inputType="text"
+                tools:ignore="Autofill"
+                android:textColorHint="@color/black"
+                android:layout_gravity="center"
+                android:maxLength="30"
+                android:textColor="@color/black"/>
+
+            <ImageButton
+                android:id="@+id/btn_send"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:src="@drawable/icon_send"
+                android:layout_gravity="end|center_vertical"
+                android:layout_marginEnd="10dp"
+                android:scaleType="centerCrop"
+                android:background="@null"
+                android:contentDescription="@string/app_name"/>
+
+        </FrameLayout>
+
+        <ImageView
+            android:id="@+id/img_general_image"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:src="@drawable/icon_general"
+            android:layout_below="@+id/frame_layout1"
+            android:layout_alignStart="@+id/frame_layout1"
+            android:layout_marginTop="10dp"
+            android:layout_marginStart="20dp"
+            android:contentDescription="@string/general"/>
+
+    </RelativeLayout>
+
+</FrameLayout>

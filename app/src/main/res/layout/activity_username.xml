@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".view.activity.authentication.UsernameActivity">
+
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="285dp"
+        android:contentDescription="@string/app_name"
+        android:src="@drawable/background_1"
+        android:scaleType="centerCrop"/>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="240dp"
+        android:background="@drawable/custom_layout_otp">
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guideline_3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintGuide_percent=".20"/>
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guideline_4"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintGuide_percent=".80"/>
+
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/txt_layout3"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="80dp"
+            app:layout_constraintEnd_toStartOf="@+id/guideline_4"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="@+id/guideline_3"
+            app:layout_constraintTop_toTopOf="parent"
+            app:boxCornerRadiusTopStart="10dp"
+            app:boxCornerRadiusBottomEnd="10dp"
+            app:boxCornerRadiusBottomStart="10dp"
+            app:boxCornerRadiusTopEnd="10dp"
+            app:boxStrokeWidth="3dp">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/edt_login_username"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/username_or"
+                android:textStyle="bold"
+                android:textColorHint="@color/black"
+                android:textColor="@color/black"/>
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <Button
+            android:id="@+id/btn_commit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:background="@drawable/button_click_animate"
+            android:text="@string/tieptuc"
+            android:textColor="@color/black"
+            android:textSize="18sp"
+            app:backgroundTint="@null"
+            app:layout_constraintEnd_toStartOf="@+id/guideline_4"
+            app:layout_constraintStart_toStartOf="@+id/guideline_3"
+            app:layout_constraintTop_toBottomOf="@+id/txt_layout3" />
+
+        <ProgressBar
+            android:id="@+id/progress_bar8"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_marginStart="84dp"
+            android:layout_marginTop="16dp"
+            android:visibility="gone"
+            app:layout_constraintEnd_toStartOf="@+id/guideline_4"
+            app:layout_constraintHorizontal_bias="0.123"
+            app:layout_constraintStart_toStartOf="@+id/guideline_3"
+            app:layout_constraintTop_toBottomOf="@+id/btn_commit" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</FrameLayout>

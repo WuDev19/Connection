@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ripple xmlns:android="http://schemas.android.com/apk/res/android" android:color="@color/secondary">
+
+    <item android:id="@android:id/background">
+
+        <shape android:shape="rectangle">
+
+            <corners android:radius="20dp"/>
+
+            <solid android:color="@color/background"/>
+
+        </shape>
+
+    </item>
+
+    <item>
+
+        <layer-list>
+            <!-- lớp shadow -->
+            <item>
+                <shape android:shape="rectangle">
+                    <solid android:color="#0C000000"/> <!-- màu đen mờ -->
+                    <corners android:radius="12dp"/>
+                </shape>
+            </item>
+
+            <!-- lớp chính (nội dung view) -->
+            <item android:bottom="4dp" android:right="4dp">
+                <shape android:shape="rectangle">
+                    <solid android:color="@color/background"/>
+                    <corners android:radius="12dp"/>
+                </shape>
+            </item>
+
+        </layer-list>
+
+    </item>
+
+</ripple>

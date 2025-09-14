@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "502339078681",
+    "project_id": "connectionapp-bedd1",
+    "storage_bucket": "connectionapp-bedd1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:502339078681:android:d118ea39b4131662c0b888",
+        "android_client_info": {
+          "package_name": "com.example.connection"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBcEdxlhFNnvzguQjwcwHNjppriIEFG94Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

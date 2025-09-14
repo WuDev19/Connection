@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/corner_bottom_sheet">
+
+    <View
+        android:layout_width="40dp"
+        android:layout_height="3dp"
+        android:background="#8C8C8C"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="10dp"/>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler_view_guide_widget"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:nestedScrollingEnabled="false" />
+
+    <LinearLayout
+        android:id="@+id/linear1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="25dp"
+        android:layout_gravity="center_horizontal|bottom"
+        android:layout_marginBottom="25dp">
+
+        <View
+            android:id="@+id/view_vuot1"
+            android:layout_width="10dp"
+            android:layout_height="10dp"
+            android:background="@drawable/button_corner"
+            android:layout_marginEnd="5dp"/>
+
+        <View
+            android:id="@+id/view_vuot2"
+            android:layout_width="10dp"
+            android:layout_height="10dp"
+            android:background="@drawable/button_corner"
+            android:layout_marginEnd="5dp"/>
+
+        <View
+            android:id="@+id/view_vuot3"
+            android:layout_width="10dp"
+            android:layout_height="10dp"
+            android:background="@drawable/button_corner" />
+
+    </LinearLayout>
+
+</FrameLayout>

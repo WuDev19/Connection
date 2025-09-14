@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="6dp"
+    android:background="@color/secondary">
+
+    <de.hdodenhof.circleimageview.CircleImageView
+        android:id="@+id/img_avatar_friend"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:layout_centerVertical="true"/>
+
+    <TextView
+        android:id="@+id/tv_username_friend"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textStyle="bold"
+        android:textSize="20sp"
+        android:layout_marginStart="10dp"
+        android:layout_toEndOf="@+id/img_avatar_friend"
+        android:layout_centerVertical="true"
+        android:layout_toStartOf="@+id/btn_chat_friend"
+        android:textColor="@color/black"/>
+
+    <ImageButton
+        android:id="@+id/btn_chat_friend"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:layout_centerVertical="true"
+        android:layout_marginEnd="15dp"
+        android:src="@drawable/icon_chat"
+        android:contentDescription="@string/chat"
+        android:background="@null"
+        android:layout_toStartOf="@+id/btn_delete_friend"
+        android:scaleType="centerCrop"/>
+
+    <ImageButton
+        android:id="@+id/btn_delete_friend"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:layout_alignParentEnd="true"
+        android:layout_centerVertical="true"
+        android:layout_marginEnd="10dp"
+        android:src="@drawable/icon_clear"
+        android:scaleType="centerCrop"
+        android:contentDescription="@string/delete_account"
+        android:background="@drawable/button_corner"/>
+
+</RelativeLayout>
