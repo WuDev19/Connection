@@ -103,7 +103,7 @@ public class PersonalActivity extends AppCompatActivity {
             personalViewModel.signOut();
             Intent intent = new Intent(this, LoginActivity.class);
             startActivity(intent);
-            finish();
+            finishAffinity();
         });
 
         bt_change_info.setOnClickListener(view -> {
