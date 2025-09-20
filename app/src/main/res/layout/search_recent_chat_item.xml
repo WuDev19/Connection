@@ -5,20 +5,19 @@
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:background="@drawable/border_view"
-    android:backgroundTint="@color/white">
+    android:backgroundTint="@color/white"
+    android:layout_margin="5dp">
 
     <de.hdodenhof.circleimageview.CircleImageView
         android:id="@+id/recent_chat_avt"
         android:layout_width="40dp"
         android:layout_height="40dp"
-        android:src="@drawable/icon_avatar"
         android:layout_margin="10dp"/>
 
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/tv_recent_chat_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="hihihihihih"
         android:textColor="@color/black"
         android:layout_gravity="center_vertical"
         android:padding="10dp"/>

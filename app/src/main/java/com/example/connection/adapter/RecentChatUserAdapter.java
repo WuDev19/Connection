@@ -3,20 +3,16 @@ package com.example.connection.adapter;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Typeface;
-import android.os.Build;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.PopupMenu;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-
 import androidx.annotation.NonNull;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.recyclerview.widget.RecyclerView;
-
 import com.bumptech.glide.Glide;
 import com.example.connection.R;
 import com.example.connection.model.ChatRoom;
@@ -25,7 +21,6 @@ import com.firebase.ui.firestore.FirestoreRecyclerAdapter;
 import com.firebase.ui.firestore.FirestoreRecyclerOptions;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
-
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -50,8 +45,6 @@ public class RecentChatUserAdapter extends FirestoreRecyclerAdapter<ChatRoom, Re
         void clickItem(ChatRoom chatRoom, TextView tv_message);
     }
 
-    //them phan chinh sua nhom
-    //update user thi update nhung cai lien quan
     @SuppressLint("SetTextI18n")
     @Override
     protected void onBindViewHolder(@NonNull RecentChatUserViewHolder holder, int position, @NonNull ChatRoom model) {
@@ -66,7 +59,13 @@ public class RecentChatUserAdapter extends FirestoreRecyclerAdapter<ChatRoom, Re
                     Log.e(TAG, "Hide");
                     holder.img_active.setVisibility(View.GONE);
                 }
-                holder.tv_username.setText(otherUser.getUserName());
+                String alias = model.getAlias().get(otherUser.getId());
+                if(alias != null){
+                    if (alias.contains("_")) {
+                        holder.tv_username.setText(alias.split("_")[1]);
+                    }
+                    else holder.tv_username.setText(alias);
+                }
                 Glide.with(holder.itemView.getContext()).load(otherUser.getAvatarUser()).error(R.drawable.icon_avatar).into(holder.img_avatar);
                 if (model.getLastMessage() != null) {
                     if (!model.getLastMessageSenderId().equals(otherUser.getId())) {
@@ -101,7 +100,7 @@ public class RecentChatUserAdapter extends FirestoreRecyclerAdapter<ChatRoom, Re
             holder.tv_username.setText(model.getChatName());
             if(model.getLastMessageSenderId() != null){
                 if(model.getLastMessageSenderId().equals(FirebaseAuth.getInstance().getUid())){
-                    holder.tv_message.setText(model.getLastMessage().split(": ")[1]);
+                    holder.tv_message.setText("Bạn: " + model.getLastMessage().split(": ")[1]);
                 }
                 else {
                     holder.tv_message.setText(model.getLastMessage());
@@ -120,22 +119,6 @@ public class RecentChatUserAdapter extends FirestoreRecyclerAdapter<ChatRoom, Re
             } else holder.tv_message.setTypeface(null, Typeface.NORMAL);
         });
         holder.relativeLayout.setOnClickListener(view -> set.clickItem(model, holder.tv_message));
-        holder.relativeLayout.setOnLongClickListener(view -> {
-            Log.e(TAG, "onChanged: ");
-            PopupMenu popupMenu = new PopupMenu(context, holder.relativeLayout);
-            popupMenu.inflate(R.menu.menu_chat_options);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                popupMenu.setForceShowIcon(true);
-            }
-            popupMenu.setOnMenuItemClickListener(menuItem -> {
-                if (menuItem.getItemId() == R.id.menu_delete) {
-                    recentChatViewModel.getDelete(model);
-                }
-                return false;
-            });
-            popupMenu.show();
-            return true;
-        });
     }
 
     @NonNull

@@ -29,13 +29,14 @@ public class ChatMessageAdapter extends FirestoreRecyclerAdapter<ChatMessage, Ch
     private final String TAG = this.getClass().getName();
     private final OnImageClick onImageClick;
     private final Map<String, String> avtSender;
+    private final Map<String, String> aliasSender;
 
-    public ChatMessageAdapter(@NonNull FirestoreRecyclerOptions<ChatMessage> options, Context context, OnImageClick onImageClick, Map<String, String> avtSender) {
+    public ChatMessageAdapter(@NonNull FirestoreRecyclerOptions<ChatMessage> options, Context context, OnImageClick onImageClick, Map<String, String> avtSender, Map<String, String> aliasSender) {
         super(options);
         this.context = context;
         this.onImageClick = onImageClick;
         this.avtSender = avtSender;
-        Log.e(TAG, "ChatMessageAdapter: " + avtSender);
+        this.aliasSender = aliasSender;
     }
 
     public interface OnImageClick {
@@ -46,6 +47,7 @@ public class ChatMessageAdapter extends FirestoreRecyclerAdapter<ChatMessage, Ch
     protected void onBindViewHolder(@NonNull ChatMessageViewHolder holder, int position, @NonNull ChatMessage model) {
         if (model.getSenderId().equals(FirebaseAuth.getInstance().getUid())) {
             holder.avt_in_chat.setVisibility(View.GONE);
+            holder.tv_alias.setVisibility(View.GONE);
             if (model.getMessage().contains("_")) {
                 String[] mess = model.getMessage().split("_");
                 holder.tv_message_left.setVisibility(View.GONE);
@@ -108,6 +110,15 @@ public class ChatMessageAdapter extends FirestoreRecyclerAdapter<ChatMessage, Ch
                     .load(avtSender.get(model.getSenderId()))
                     .error(R.drawable.icon_avatar)
                     .into(holder.avt_in_chat);
+            holder.tv_alias.setVisibility(View.VISIBLE);
+            String alias = aliasSender.get(model.getSenderId());
+            if (alias != null) {
+                if (alias.contains("_")) {
+                    holder.tv_alias.setText(alias.split("_")[1]);
+                } else {
+                    holder.tv_alias.setText(alias);
+                }
+            }
             if (model.getMessage().contains("_")) {
                 String[] mess = model.getMessage().split("_");
                 holder.tv_message_left.setVisibility(View.VISIBLE);
@@ -170,7 +181,7 @@ public class ChatMessageAdapter extends FirestoreRecyclerAdapter<ChatMessage, Ch
 
     public static class ChatMessageViewHolder extends RecyclerView.ViewHolder {
 
-        private final TextView tv_message_left, tv_message_right;
+        private final TextView tv_message_left, tv_message_right, tv_alias;
         private final ImageView img_picture_left, img_picture_right;
         private final CardView cardview_left, cardview_right;
         private final CircleImageView avt_in_chat;
@@ -184,6 +195,7 @@ public class ChatMessageAdapter extends FirestoreRecyclerAdapter<ChatMessage, Ch
             cardview_left = itemView.findViewById(R.id.cardview_left);
             cardview_right = itemView.findViewById(R.id.cardview_right);
             avt_in_chat = itemView.findViewById(R.id.avt_user_in_chat);
+            tv_alias = itemView.findViewById(R.id.tv_alias);
         }
     }
 

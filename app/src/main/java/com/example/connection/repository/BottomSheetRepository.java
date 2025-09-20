@@ -1,7 +1,6 @@
 package com.example.connection.repository;
 
 import android.util.Log;
-
 import com.example.connection.listener.OnStateListener;
 import com.example.connection.model.User;
 import com.google.android.gms.tasks.Task;
@@ -54,14 +53,14 @@ public class BottomSheetRepository {
         });
     }
 
-    public void sendFriendRequest(String otherUserId){
+    public void sendFriendRequest(String otherUserId) {
         collectionUser.document(otherUserId).get().addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
                 User otherUser = task.getResult().toObject(User.class);
                 if (otherUser != null) {
                     List<String> friendConfirmOtherUser = otherUser.getFriendConfirm();
                     List<String> friendOtherUser = otherUser.getFriend();
-                    if(friendOtherUser == null || friendConfirmOtherUser == null) {
+                    if (friendOtherUser == null || friendConfirmOtherUser == null) {
                         Log.e(TAG, "sendFriendRequest: ko tim thay danh sach ban be cua otheruser");
                         return;
                     }
@@ -80,7 +79,7 @@ public class BottomSheetRepository {
                                     onStateListener.onSuccess("Đã gửi lời mời kết bạn thành công");
                                 } else {
                                     Exception exception = task1.getException();
-                                    if(exception != null){
+                                    if (exception != null) {
                                         onStateListener.onFailure(exception.getMessage());
                                     }
                                 }
@@ -88,7 +87,7 @@ public class BottomSheetRepository {
                 }
             } else {
                 Exception exception = task.getException();
-                if(exception != null){
+                if (exception != null) {
                     onStateListener.onFailure(exception.getMessage());
                 }
             }
@@ -109,12 +108,11 @@ public class BottomSheetRepository {
                 listFriendOtherUser.remove(currentUserId);
                 writeBatch.update(collectionUser.document(friendId), "friend", listFriendOtherUser);
                 writeBatch.commit().addOnCompleteListener(task1 -> {
-                    if(task1.isSuccessful()){
+                    if (task1.isSuccessful()) {
                         onStateListener.onSuccess("Xóa thành công");
-                    }
-                    else {
+                    } else {
                         Exception exception = task1.getException();
-                        if(exception != null){
+                        if (exception != null) {
                             onStateListener.onFailure(exception.getMessage());
                         }
                     }
@@ -134,7 +132,10 @@ public class BottomSheetRepository {
 
     public Query getQuerySearch(String username) {
         if (currentUserId != null) {
-            return collectionUser.whereEqualTo("userName", username);
+            return collectionUser
+                    .whereGreaterThanOrEqualTo("userNameLowerCase", username.toLowerCase())
+                    .whereLessThanOrEqualTo("userNameLowerCase", username.toLowerCase() + "\uf8ff")
+                    .orderBy("userNameLowerCase");
         }
         return null;
     }

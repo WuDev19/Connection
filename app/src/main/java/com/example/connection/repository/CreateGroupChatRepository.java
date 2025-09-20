@@ -1,19 +1,15 @@
 package com.example.connection.repository;
 
-import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
-
 import com.example.connection.listener.OnStateListener;
 import com.example.connection.model.ChatRoom;
 import com.example.connection.model.User;
-import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,9 +38,9 @@ public class CreateGroupChatRepository {
     public LiveData<List<User>> searchUser(String username) {
         MutableLiveData<List<User>> userSearchLiveData = new MutableLiveData<>();
         db.collection("users")
-                .whereGreaterThanOrEqualTo("userName", username)
-                .whereLessThanOrEqualTo("userName", username + "\uf8ff")
-                .orderBy("userName")
+                .whereGreaterThanOrEqualTo("userNameLowerCase", username.toLowerCase())
+                .whereLessThanOrEqualTo("userNameLowerCase", username.toLowerCase() + "\uf8ff")
+                .orderBy("userNameLowerCase")
                 .get()
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {

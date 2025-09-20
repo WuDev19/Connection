@@ -2,13 +2,13 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/main"
+    android:id="@+id/frame_recent_chat"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     tools:context=".view.activity.chat.RecentChatActivity"
     android:fitsSystemWindows="true"
-    android:background="@color/background">
+    android:background="@color/secondary">
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_view_recent_chat"
@@ -19,6 +19,7 @@
         android:background="@color/secondary"/>
 
     <RelativeLayout
+        android:id="@+id/relative_recent_chat"
         android:layout_width="match_parent"
         android:layout_height="145dp"
         android:background="@drawable/custom_chat_title_layout">

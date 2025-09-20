@@ -8,9 +8,13 @@ import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.bumptech.glide.Glide;
 import com.example.connection.R;
 import com.example.connection.model.ChatRoom;
 import com.google.android.material.textview.MaterialTextView;
+import com.google.firebase.auth.FirebaseAuth;
+
 import java.util.List;
 
 import de.hdodenhof.circleimageview.CircleImageView;
@@ -48,9 +52,28 @@ public class SearchRecentChatAdapter extends RecyclerView.Adapter<SearchRecentCh
     public void onBindViewHolder(@NonNull SearchRecentChatViewHolder holder, int position) {
         ChatRoom chatRoom = chatRoomList.get(position);
         if(chatRoom != null){
-//            Glide.with(context)
-//                    .load(chatRoom.get);
-            holder.materialTextView.setText(chatRoom.getChatName());
+            if(chatRoom.getUserId().size() >= 3){
+                Glide.with(context)
+                        .load(chatRoom.getChatRoomAvt())
+                        .error(R.drawable.icon_avatar)
+                        .into(holder.circleImageView);
+                holder.materialTextView.setText(chatRoom.getChatName());
+            }
+            else {
+                String otherId = getOtherUserId(chatRoom.getUserId());
+                Glide.with(context)
+                        .load(chatRoom.getAvtSender().get(otherId))
+                        .error(R.drawable.icon_avatar)
+                        .into(holder.circleImageView);
+                String alias = chatRoom.getAlias().get(otherId);
+                if(alias != null){
+                    if (alias.contains("_")) {
+                        holder.materialTextView.setText(alias.split("_")[1]);
+                    }
+                    else holder.materialTextView.setText(alias);
+                }
+
+            }
             holder.linearLayoutSearch.setOnClickListener(view -> click.onItemClick(chatRoom));
         }
     }
@@ -74,4 +97,15 @@ public class SearchRecentChatAdapter extends RecyclerView.Adapter<SearchRecentCh
             materialTextView = itemView.findViewById(R.id.tv_recent_chat_name);
         }
     }
+
+    private String getOtherUserId(List<String> list) {
+        String myId = FirebaseAuth.getInstance().getUid();
+        if (myId == null) return null;
+        if (myId.equals(list.get(0))) {
+            return list.get(1);
+        } else {
+            return list.get(0);
+        }
+    }
+
 }

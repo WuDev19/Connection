@@ -9,6 +9,7 @@ public class User {
     private String id;
     private String avatarUser;
     private String userName;
+    private String userNameLowerCase;
     private String email;
     private String sdt;
     private List<String> friend;
@@ -18,15 +19,24 @@ public class User {
     public User() {
     }
 
-    public User(String id, String avatarUser, String userName, String email, String sdt, List<String> friend, List<String> friendConfirm, boolean active) {
+    public User(String id, String avatarUser, String userName, String userNameLowerCase, String email, String sdt, List<String> friend, List<String> friendConfirm, boolean active) {
         this.id = id;
         this.avatarUser = avatarUser;
         this.userName = userName;
+        this.userNameLowerCase = userNameLowerCase;
         this.email = email;
         this.sdt = sdt;
         this.friend = friend;
         this.friendConfirm = friendConfirm;
         this.active = active;
+    }
+
+    public String getUserNameLowerCase() {
+        return userNameLowerCase;
+    }
+
+    public void setUserNameLowerCase(String userNameLowerCase) {
+        this.userNameLowerCase = userNameLowerCase;
     }
 
     public String getId() {

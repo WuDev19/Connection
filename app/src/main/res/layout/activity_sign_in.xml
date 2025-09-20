@@ -8,12 +8,15 @@
     tools:context=".view.activity.authentication.SignInActivity"
     android:background="@color/background">
 
-    <ImageView
-        android:layout_width="match_parent"
-        android:layout_height="280dp"
-        android:contentDescription="@string/app_name"
-        android:src="@drawable/background_2"
-        android:scaleType="centerCrop"/>
+    <com.airbnb.lottie.LottieAnimationView
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="15dp"
+        app:lottie_rawRes="@raw/sign_in"
+        app:lottie_autoPlay="true"
+        app:lottie_loop="true"
+        android:scaleType="centerCrop" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -40,7 +43,11 @@
             app:boxCornerRadiusTopEnd="10dp"
             android:layout_marginTop="10dp"
             android:layout_marginStart="50dp"
-            android:layout_marginEnd="50dp">
+            android:layout_marginEnd="50dp"
+            app:hintTextColor="@color/black"
+            app:boxStrokeColor="@color/background"
+            app:boxStrokeWidth="3dp"
+            app:boxStrokeWidthFocused="3dp">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/edt_email1"
@@ -50,8 +57,8 @@
                 android:drawablePadding="10dp"
                 android:textStyle="bold"
                 android:drawableStart="@drawable/icon_email"
-                android:textColorHint="@color/black"
-                android:textColor="@color/black"/>
+                android:textColor="@color/black"
+                android:inputType="textEmailAddress"/>
 
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -69,7 +76,11 @@
                 app:boxCornerRadiusBottomEnd="10dp"
                 app:boxCornerRadiusBottomStart="10dp"
                 app:boxCornerRadiusTopEnd="10dp"
-                app:endIconMode="password_toggle">
+                app:endIconMode="password_toggle"
+                app:hintTextColor="@color/black"
+                app:boxStrokeColor="@color/background"
+                app:boxStrokeWidth="3dp"
+                app:boxStrokeWidthFocused="3dp">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/edt_password1"
@@ -80,19 +91,9 @@
                     android:textStyle="bold"
                     android:drawableStart="@drawable/icon_password"
                     android:drawablePadding="10dp"
-                    android:textColorHint="@color/black"
                     android:textColor="@color/black"/>
 
             </com.google.android.material.textfield.TextInputLayout>
-
-<!--            <ImageView-->
-<!--                android:id="@+id/img_show_password"-->
-<!--                android:layout_width="20dp"-->
-<!--                android:layout_height="20dp"-->
-<!--                tools:ignore="contentDescription"-->
-<!--                android:src="@drawable/icon_eye"-->
-<!--                android:layout_gravity="end|center_vertical"-->
-<!--                android:layout_marginEnd="8dp"/>-->
 
         </FrameLayout>
 

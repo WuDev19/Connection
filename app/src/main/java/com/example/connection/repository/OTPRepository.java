@@ -56,7 +56,7 @@ public class OTPRepository {
                                 if (user == null) {
                                     List<String> mList = new ArrayList<>();
                                     mList.add(uID);
-                                    user = new User(uID, null, null, null, mSdt, mList, mList, true);
+                                    user = new User(uID, null, null, null, null, mSdt, mList, mList, true);
                                     FirebaseFirestore db = FirebaseFirestore.getInstance();
                                     db.collection("users").document(Objects.requireNonNull(uID)).set(user).addOnCompleteListener(task1 -> {
                                         if (task1.isSuccessful()) {

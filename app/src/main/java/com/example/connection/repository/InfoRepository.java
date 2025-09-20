@@ -43,44 +43,7 @@ public class InfoRepository {
                 .set(user)
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
-                        WriteBatch writeBatch = db.batch();
-
-                        Task<QuerySnapshot> taskChat = db.collection("chatroom")
-                                .whereArrayContains("userId", id)
-                                .get();
-
-                        Task<QuerySnapshot> taskPost = db.collection("post_photo")
-                                .whereEqualTo("posterId", id)
-                                .get();
-
-                        Tasks.whenAllSuccess(taskChat, taskPost)
-                                .addOnSuccessListener(results -> {
-                                    QuerySnapshot chatResult = (QuerySnapshot) results.get(0);
-                                    QuerySnapshot postResult = (QuerySnapshot) results.get(1);
-
-                                    for (DocumentSnapshot documentSnapshot : chatResult) {
-                                        ChatRoom chatRoom = documentSnapshot.toObject(ChatRoom.class);
-                                        if (chatRoom != null) {
-                                            Map<String, String> map = chatRoom.getAvtSender();
-                                            map.put(user.getId(), user.getAvatarUser());
-                                            writeBatch.update(documentSnapshot.getReference(), "avtSender", map);
-                                        }
-                                    }
-                                    for (DocumentSnapshot documentSnapshot : postResult) {
-                                        Image image = documentSnapshot.toObject(Image.class);
-                                        if (image != null) {
-                                            writeBatch.update(documentSnapshot.getReference(), "avatarPoster", user.getAvatarUser());
-                                            writeBatch.update(documentSnapshot.getReference(), "userNamePoster", user.getUserName());
-                                        }
-                                    }
-
-                                    writeBatch.commit().addOnCompleteListener(task1 -> {
-                                        if (task1.isSuccessful()) {
-                                            Log.e(TAG, "Update avatar thành công cho cả chatroom và post_photo");
-                                        }
-                                    });
-                                });
-
+                        updateRelativeInfo(id, user);
                         onStateListener.onSuccess("Cập nhật thông tin thành công");
                         onStateListener.onLoading(false);
                     } else {
@@ -89,6 +52,46 @@ public class InfoRepository {
                             onStateListener.onFailure(exception.getMessage());
                         }
                     }
+                });
+    }
+
+    private void updateRelativeInfo(String id, User user) {
+        WriteBatch writeBatch = db.batch();
+
+        Task<QuerySnapshot> taskChat = db.collection("chatroom")
+                .whereArrayContains("userId", id)
+                .get();
+
+        Task<QuerySnapshot> taskPost = db.collection("post_photo")
+                .whereEqualTo("posterId", id)
+                .get();
+
+        Tasks.whenAllSuccess(taskChat, taskPost)
+                .addOnSuccessListener(results -> {
+                    QuerySnapshot chatResult = (QuerySnapshot) results.get(0);
+                    QuerySnapshot postResult = (QuerySnapshot) results.get(1);
+
+                    for (DocumentSnapshot documentSnapshot : chatResult) {
+                        ChatRoom chatRoom = documentSnapshot.toObject(ChatRoom.class);
+                        if (chatRoom != null) {
+                            Map<String, String> map = chatRoom.getAvtSender();
+                            map.put(user.getId(), user.getAvatarUser());
+                            writeBatch.update(documentSnapshot.getReference(), "avtSender", map);
+                        }
+                    }
+                    for (DocumentSnapshot documentSnapshot : postResult) {
+                        Image image = documentSnapshot.toObject(Image.class);
+                        if (image != null) {
+                            writeBatch.update(documentSnapshot.getReference(), "avatarPoster", user.getAvatarUser());
+                            writeBatch.update(documentSnapshot.getReference(), "userNamePoster", user.getUserName());
+                        }
+                    }
+
+                    writeBatch.commit().addOnCompleteListener(task1 -> {
+                        if (task1.isSuccessful()) {
+                            Log.e(TAG, "Update avatar thành công cho cả chatroom và post_photo");
+                        }
+                    });
                 });
     }
 

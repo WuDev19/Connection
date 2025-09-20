@@ -1,21 +1,21 @@
 package com.example.connection.view.activity.authentication;
 
 import android.content.Intent;
-import android.graphics.Typeface;
 import android.os.Bundle;
-import android.text.InputType;
 import android.view.View;
 import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.Toast;
+
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
+
 import com.example.connection.R;
 import com.example.connection.utils.SharePreUtil;
 import com.example.connection.viewmodel.SignUpViewModel;
 import com.google.android.material.textfield.TextInputEditText;
+
 import java.util.Objects;
 
 public class SignUpActivity extends AppCompatActivity {
@@ -23,9 +23,6 @@ public class SignUpActivity extends AppCompatActivity {
     private TextInputEditText edt_email, edt_password, edt_password_confirm, edt_create_username;
     private Button bt_sign_up;
     private ProgressBar progressBar;
-    private ImageView img_show_password1, img_show_password2;
-    private boolean hideShowPassword1 = true;
-    private boolean hideShowPassword2 = true;
     private SignUpViewModel signUpViewModel;
 
     @Override
@@ -75,7 +72,7 @@ public class SignUpActivity extends AppCompatActivity {
         });
 
         bt_sign_up.setOnClickListener(view -> {
-            if(SharePreUtil.getInstance(getApplicationContext()).getNumberCurrentUser() > 20){
+            if (SharePreUtil.getInstance(getApplicationContext()).getNumberCurrentUser() > 20) {
                 Toast.makeText(SignUpActivity.this,
                                 "Thật đáng tiếc, số lượng user đã đạt giới hạn",
                                 Toast.LENGTH_LONG)
@@ -83,16 +80,6 @@ public class SignUpActivity extends AppCompatActivity {
                 return;
             }
             registerUser();
-        });
-
-        img_show_password1.setOnClickListener(view -> {
-            showHidePassword(hideShowPassword1, edt_password);
-            hideShowPassword1 = !hideShowPassword1;
-        });
-
-        img_show_password2.setOnClickListener(view -> {
-            showHidePassword(hideShowPassword2, edt_password_confirm);
-            hideShowPassword2 = !hideShowPassword2;
         });
 
     }
@@ -103,8 +90,6 @@ public class SignUpActivity extends AppCompatActivity {
         edt_password_confirm = findViewById(R.id.edt_password_confirm);
         bt_sign_up = findViewById(R.id.bt_sign_up);
         progressBar = findViewById(R.id.progress_bar3);
-        img_show_password1 = findViewById(R.id.img_show_password1);
-        img_show_password2 = findViewById(R.id.img_show_password2);
         edt_create_username = findViewById(R.id.edt_create_username);
     }
 
@@ -114,17 +99,6 @@ public class SignUpActivity extends AppCompatActivity {
         String passwordConfirm = Objects.requireNonNull(edt_password_confirm.getText()).toString().trim();
         String username = Objects.requireNonNull(edt_create_username.getText()).toString().trim();
         signUpViewModel.signUp(email, password, passwordConfirm, username);
-    }
-
-    public void showHidePassword(boolean hideShowPassword, TextInputEditText tv_password) {
-        if (hideShowPassword) {
-            tv_password.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
-            tv_password.setTypeface(Typeface.defaultFromStyle(Typeface.BOLD));
-        } else {
-            tv_password.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
-            tv_password.setTypeface(Typeface.defaultFromStyle(Typeface.BOLD));
-        }
-        tv_password.setSelection(Objects.requireNonNull(tv_password.getText()).length());
     }
 
 }

@@ -37,7 +37,11 @@ public class BottomSheetViewModel extends ViewModel implements OnStateListener {
 
     public void addFriend(String otherUserId){
         String currentUserId = FirebaseAuth.getInstance().getUid();
-        if (otherUserId == null || friendCurrentUser == null || friendConfirmCurrentUser == null || currentUserId == null)
+        if (otherUserId == null ||
+                friendCurrentUser == null ||
+                friendConfirmCurrentUser == null ||
+                currentUserId == null ||
+                currentUserId.equals(otherUserId))
             return;
         if (friendConfirmCurrentUser.contains(otherUserId)) {
             friendCurrentUser.add(otherUserId);

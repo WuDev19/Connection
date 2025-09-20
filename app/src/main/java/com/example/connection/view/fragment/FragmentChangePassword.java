@@ -1,41 +1,39 @@
 package com.example.connection.view.fragment;
 
 import android.app.Dialog;
-import android.graphics.Typeface;
 import android.os.Bundle;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.lifecycle.ViewModelProvider;
-import android.text.InputType;
+
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.FrameLayout;
-import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.Toast;
+
 import com.example.connection.R;
 import com.example.connection.viewmodel.ChangePasswordViewModel;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.android.material.textfield.TextInputEditText;
+
 import java.util.Objects;
 
 public class FragmentChangePassword extends BottomSheetDialogFragment {
 
     private TextInputEditText tv_old_password, tv_new_password, tv_new_password_confirm;
     private Button bt_confirm;
-    private ImageView img_show_password1, img_show_password2, img_show_password3;
     private ProgressBar progressBar;
-    private boolean hideShowPassword1 = true;
-    private boolean hideShowPassword2 = true;
-    private boolean hideShowPassword3 = true;
     private ChangePasswordViewModel changePasswordViewModel;
 
-    public FragmentChangePassword(){}
+    public FragmentChangePassword() {
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -58,23 +56,8 @@ public class FragmentChangePassword extends BottomSheetDialogFragment {
 
         bt_confirm.setOnClickListener(view1 -> confirmToChange());
 
-        img_show_password1.setOnClickListener(view12 -> {
-            showHidePassword(hideShowPassword1, tv_old_password);
-            hideShowPassword1 = !hideShowPassword1;
-        });
-
-        img_show_password2.setOnClickListener(view13 -> {
-            showHidePassword(hideShowPassword2, tv_new_password);
-            hideShowPassword2 = !hideShowPassword2;
-        });
-
-        img_show_password3.setOnClickListener(view14 -> {
-            showHidePassword(hideShowPassword3, tv_new_password_confirm);
-            hideShowPassword3 = !hideShowPassword3;
-        });
-
         changePasswordViewModel.getPasswordConfirmLiveData().observe(getViewLifecycleOwner(), newPasswordConfirm -> {
-            if(newPasswordConfirm != null && !newPasswordConfirm.isEmpty()){
+            if (newPasswordConfirm != null && !newPasswordConfirm.isEmpty()) {
                 changePasswordViewModel.updatePassword(newPasswordConfirm);
             }
         });
@@ -92,7 +75,7 @@ public class FragmentChangePassword extends BottomSheetDialogFragment {
             tv_new_password.setText("");
             tv_new_password_confirm.setText("");
             progressBar.setVisibility(View.GONE);
-            if(newPassword != null && !newPassword.isEmpty()){
+            if (newPassword != null && !newPassword.isEmpty()) {
                 changePasswordViewModel.setPassword(getContext(), newPassword);
             }
         });
@@ -104,30 +87,16 @@ public class FragmentChangePassword extends BottomSheetDialogFragment {
         tv_new_password = view.findViewById(R.id.edt_password_new);
         tv_new_password_confirm = view.findViewById(R.id.edt_password_new_confirm);
         bt_confirm = view.findViewById(R.id.bt_confirm_change_password);
-        img_show_password1 = view.findViewById(R.id.img_show_password4);
-        img_show_password2 = view.findViewById(R.id.img_show_password5);
-        img_show_password3 = view.findViewById(R.id.img_show_password6);
         progressBar = view.findViewById(R.id.progress_bar5);
     }
 
     private void confirmToChange() {
         bt_confirm.setEnabled(false);
         String oldPassword = Objects.requireNonNull(tv_old_password.getText()).toString().trim();
-        String newPassword= Objects.requireNonNull(tv_new_password.getText()).toString().trim();
+        String newPassword = Objects.requireNonNull(tv_new_password.getText()).toString().trim();
         String newPasswordConfirm = Objects.requireNonNull(tv_new_password_confirm.getText()).toString().trim();
         progressBar.setVisibility(View.VISIBLE);
         changePasswordViewModel.checkPasswordConfirm(getContext(), oldPassword, newPassword, newPasswordConfirm);
-    }
-
-    public void showHidePassword(boolean hideShowPassword, TextInputEditText tv_password){
-        if (hideShowPassword) {
-            tv_password.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
-            tv_password.setTypeface(Typeface.defaultFromStyle(Typeface.BOLD));
-        } else {
-            tv_password.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
-            tv_password.setTypeface(Typeface.defaultFromStyle(Typeface.BOLD));
-        }
-        tv_password.setSelection(Objects.requireNonNull(tv_password.getText()).length());
     }
 
     @NonNull
@@ -137,7 +106,7 @@ public class FragmentChangePassword extends BottomSheetDialogFragment {
         bottomSheetDialog.setOnShowListener(dialogInterface -> {
             BottomSheetDialog dialog = (BottomSheetDialog) dialogInterface;
             FrameLayout frameLayout = dialog.findViewById(com.google.android.material.R.id.design_bottom_sheet);
-            if(frameLayout != null){
+            if (frameLayout != null) {
                 frameLayout.getLayoutParams().height = ViewGroup.LayoutParams.MATCH_PARENT;
                 frameLayout.requestLayout();
                 BottomSheetBehavior<View> behavior = BottomSheetBehavior.from(frameLayout);

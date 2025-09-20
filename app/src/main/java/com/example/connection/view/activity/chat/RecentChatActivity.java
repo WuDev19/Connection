@@ -10,11 +10,14 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -44,6 +47,7 @@ public class RecentChatActivity extends AppCompatActivity {
     private RecentChatViewModel recentChatViewModel;
     private LiveData<List<ChatRoom>> currentSearchLiveData = null;
     private SearchRecentChatAdapter searchRecentChatAdapter;
+    private FrameLayout frameLayout;
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -135,6 +139,15 @@ public class RecentChatActivity extends AppCompatActivity {
         edt_chat_search = findViewById(R.id.edt_search_chatroom);
         recycler_view_search_chat = findViewById(R.id.recycler_view_search_chat);
         tv_create_group = findViewById(R.id.tv_create_group);
+        RelativeLayout relativeLayout = findViewById(R.id.relative_recent_chat);
+        frameLayout = findViewById(R.id.frame_recent_chat);
+        int screenHeight = getResources().getDisplayMetrics().heightPixels;
+        relativeLayout.setTranslationY(-screenHeight);
+        relativeLayout.animate()
+                .translationY(0f)
+                .setDuration(800)
+                .withEndAction(() -> frameLayout.setBackgroundColor(ContextCompat.getColor(RecentChatActivity.this, R.color.background)))
+                .start();
     }
 
     private void setUpRecyclerView() {

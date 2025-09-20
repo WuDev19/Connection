@@ -5,14 +5,18 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".view.activity.authentication.OTPActivity">
+    tools:context=".view.activity.authentication.OTPActivity"
+    android:background="@color/background">
 
-    <ImageView
-        android:layout_width="match_parent"
-        android:layout_height="285dp"
-        android:contentDescription="@string/app_name"
-        android:src="@drawable/background_1"
-        android:scaleType="centerCrop"/>
+    <com.airbnb.lottie.LottieAnimationView
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:scaleType="centerCrop"
+        app:lottie_rawRes="@raw/otp"
+        app:lottie_autoPlay="true"
+        app:lottie_loop="true"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="20dp"/>
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
@@ -47,17 +51,20 @@
             app:boxCornerRadiusBottomEnd="10dp"
             app:boxCornerRadiusBottomStart="10dp"
             app:boxCornerRadiusTopEnd="10dp"
-            app:boxStrokeWidth="3dp">
+            app:boxStrokeWidth="3dp"
+            app:hintTextColor="@color/black"
+            app:boxStrokeColor="@color/background"
+            app:boxStrokeWidthFocused="3dp">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/edt_otp"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="@string/otp"
-                android:textColorHint="@color/black"
                 android:maxLength="6"
                 android:textStyle="bold"
-                android:textColor="@color/black"/>
+                android:textColor="@color/black"
+                android:inputType="number"/>
 
         </com.google.android.material.textfield.TextInputLayout>
 

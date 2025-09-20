@@ -2,22 +2,19 @@ package com.example.connection.repository;
 
 import android.content.Context;
 import android.util.Log;
-
-import androidx.annotation.NonNull;
-
 import com.example.connection.model.ChatMessage;
 import com.example.connection.model.ChatRoom;
 import com.example.connection.model.Image;
 import com.example.connection.model.User;
 import com.example.connection.utils.SharePreUtil;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
+
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -115,12 +112,23 @@ public class ShowPhotoRepository {
                             Map<String, String> avtMap = new HashMap<>();
                             avtMap.put(otherId, avtPoster);
                             avtMap.put(currentUser.getId(), currentUser.getAvatarUser());
-                            chatRoom = new ChatRoom(chatRoomId, otherUserName, null, Arrays.asList(myId, otherId),
+                            Map<String, String> aliasMap = new HashMap<>();
+                            aliasMap.put(otherId, otherUserName);
+                            aliasMap.put(currentUser.getId(), currentUser.getUserName());
+                            List<String> searchChat = new ArrayList<>();
+                            searchChat.add(otherUserName.toLowerCase());
+                            searchChat.add(currentUser.getUserName().toLowerCase());
+                            chatRoom = new ChatRoom(chatRoomId,
+                                    null,
+                                    null,
+                                    Arrays.asList(myId, otherId),
                                     null,
                                     null,
                                     null,
                                     mapDelete,
-                                    avtMap);
+                                    avtMap,
+                                    aliasMap,
+                                    searchChat);
                         }
                         sendMessage1(mess, chatRoomId, myId, otherId);
                     }
@@ -162,4 +170,5 @@ public class ShowPhotoRepository {
     private CollectionReference getChatroomMessageReference(String chatRoomId) {
         return db.collection("chatroom").document(chatRoomId).collection("chats");
     }
+
 }

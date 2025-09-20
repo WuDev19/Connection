@@ -57,4 +57,5 @@ public class UsernameActivity extends AppCompatActivity {
         usernameViewModel.getErrorLiveData().observe(this, error ->
                 Toast.makeText(UsernameActivity.this, error, Toast.LENGTH_SHORT).show());
     }
+
 }

@@ -28,7 +28,7 @@ public class SignUpRepository {
                         }
                         List<String> mList = new ArrayList<>();
                         mList.add(uID);
-                        User user = new User(uID, null, username, email, null, mList, mList, false);
+                        User user = new User(uID, null, username, username.toLowerCase(), email, null, mList, mList, false);
                         FirebaseFirestore.getInstance().collection("users").document(Objects.requireNonNull(uID)).set(user).addOnCompleteListener(task1 -> {
                             if (task1.isSuccessful()) {
                                 Log.e("SignUp", "Save successful");

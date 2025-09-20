@@ -1,12 +1,16 @@
 package com.example.connection.view.activity.chat;
 
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
+import android.view.Window;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -27,8 +31,10 @@ import com.example.connection.R;
 import com.example.connection.adapter.ChatMessageAdapter;
 import com.example.connection.model.ChatMessage;
 import com.example.connection.model.ChatRoom;
+import com.example.connection.view.fragment.FragmentChangeInfoChat;
 import com.example.connection.viewmodel.ChatViewModel;
 import com.firebase.ui.firestore.FirestoreRecyclerOptions;
+import com.google.android.material.card.MaterialCardView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.Query;
 
@@ -40,7 +46,7 @@ public class ChatActivity extends AppCompatActivity {
 
     private CircleImageView img_avatar;
     private TextView tv_username, tv_active;
-    private ImageView img_back;
+    private ImageView img_back, img_info;
     private EditText edt_send_message;
     private ImageView img_send_message, img_show_image_click, img_disable_image;
     private PlayerView playerViewChat;
@@ -53,8 +59,12 @@ public class ChatActivity extends AppCompatActivity {
     private LinearLayoutManager manager;
     private ExoPlayer exoPlayer;
     private String urlVideo;
+    private ChatRoom chatRoom;
+    private String otherId;
+    private AlertDialog dialog;
+    private boolean needRefresh = false;
 
-    @SuppressLint("ClickableViewAccessibility")
+    @SuppressLint({"ClickableViewAccessibility", "NotifyDataSetChanged"})
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -99,6 +109,77 @@ public class ChatActivity extends AppCompatActivity {
             }
         });
 
+        img_info.setOnClickListener(view -> {
+            if (chatRoom.getUserId().size() >= 3) {
+                FragmentChangeInfoChat fragmentChangeInfoChat = new FragmentChangeInfoChat(() -> setUpRecyclerViewMessage(chatRoom));
+                Bundle bundle = new Bundle();
+                bundle.putParcelable("chat_room1", chatRoom);
+                fragmentChangeInfoChat.setArguments(bundle);
+                fragmentChangeInfoChat.show(getSupportFragmentManager(), fragmentChangeInfoChat.getTag());
+            } else {
+                PopupMenu popupMenu = new PopupMenu(ChatActivity.this, img_info);
+                popupMenu.inflate(R.menu.menu_chat_options);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    popupMenu.setForceShowIcon(true);
+                }
+                popupMenu.setOnMenuItemClickListener(menuItem -> {
+                    if (menuItem.getItemId() == R.id.menu_delete) {
+                        chatViewModel.getDelete();
+                        return true;
+                    } else if (menuItem.getItemId() == R.id.alias_chat) {
+                        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                        @SuppressLint("InflateParams") View view1 = getLayoutInflater().inflate(R.layout.custom_dialog_change_alias, null);
+                        Button btn_cancel = view1.findViewById(R.id.btn_cancel_change_alias);
+                        Button btn_remove = view1.findViewById(R.id.btn_remove_alias);
+                        Button btn_confirm = view1.findViewById(R.id.btn_confirm_alias);
+                        EditText edt_alias = view1.findViewById(R.id.edt_set_alias);
+                        String alias = chatRoom.getAlias().get(otherId);
+                        if (alias != null) {
+                            if (alias.contains("_")) {
+                                edt_alias.setText(alias.split("_")[1]);
+                            } else {
+                                edt_alias.setText(alias);
+                            }
+                        }
+                        builder.setTitle("Chỉnh sửa biệt danh");
+                        builder.setMessage("Biệt danh này chỉ được nhìn thấy trong đoạn chat");
+                        builder.setView(view1);
+                        dialog = builder.create();
+                        Window window = dialog.getWindow();
+                        if (window != null) {
+                            window.setBackgroundDrawableResource(R.drawable.custom_dialog);
+                            dialog.show();
+                        } else {
+                            Toast.makeText(this, "Có lỗi gì đó xảy ra, hãy thử lại", Toast.LENGTH_LONG).show();
+                        }
+                        btn_cancel.setOnClickListener(view2 -> dialog.dismiss());
+                        btn_remove.setOnClickListener(view22 -> {
+                            if (alias != null) {
+                                if (!alias.contains("_")) return;
+                                edt_alias.setText("");
+                            }
+                            chatViewModel.updateChatNameTwoPeople(null, otherId);
+                            needRefresh = true;
+                            dialog.dismiss();
+                        });
+                        btn_confirm.setOnClickListener(view22 -> {
+                            String aliasNew = edt_alias.getText().toString().trim();
+                            if (alias != null && !alias.contains("_") && alias.equals(aliasNew))
+                                return;
+                            if (!aliasNew.isEmpty()) {
+                                chatViewModel.updateChatNameTwoPeople(aliasNew, otherId);
+                                needRefresh = true;
+                                dialog.dismiss();
+                            }
+                        });
+                        return true;
+                    }
+                    return false;
+                });
+                popupMenu.show();
+            }
+        });
+
         chatViewModel.getSend().observe(this, send -> {
             if (send) {
                 edt_send_message.setText("");
@@ -107,17 +188,56 @@ public class ChatActivity extends AppCompatActivity {
 
         chatViewModel.getChatRoomLiveData().observe(this, chatRoom -> {
             if (chatRoom == null) {
-                Log.e(TAG, "onCreate: check ");
                 chatViewModel.createNewChatRoom();
-            } else setUpRecyclerViewMessage(chatRoom);
+            } else {
+                setUpRecyclerViewMessage(chatRoom);
+                chatViewModel.listeningChatRoom();
+            }
         });
 
         chatViewModel.getCreateNewChat().observe(this, chatRoom -> {
             if (chatRoom != null) {
                 setUpRecyclerViewMessage(chatRoom);
+                chatViewModel.listeningChatRoom();
             }
         });
 
+        chatViewModel.getChatRoomListeningLiveData().observe(this, chatRoom1 -> {
+            if (chatRoom1 == null) return;
+            ChatActivity.this.updateChatRoomUi(chatRoom1);
+            chatRoom = chatRoom1;
+            if (needRefresh) {
+                setUpRecyclerViewMessage(chatRoom1);
+                needRefresh = false;
+            }
+        });
+
+    }
+
+    private void updateChatRoomUi(ChatRoom chatRoom1) {
+        if (chatRoom == null || chatRoom1 == null) return;
+        if (chatRoom1.getUserId().size() >= 3) {
+            String oldName = chatRoom.getChatName();
+            String newName = chatRoom1.getChatName();
+            if (oldName != null && newName != null && !oldName.equals(newName)) {
+                tv_username.setText(newName);
+            }
+            String oldAvt = chatRoom.getChatRoomAvt();
+            String newAvt = chatRoom1.getChatRoomAvt();
+            if (oldAvt != null && newAvt != null && !oldAvt.equals(newAvt)) {
+                Glide.with(this)
+                        .load(newAvt)
+                        .error(R.drawable.icon_avatar)
+                        .into(img_avatar);
+            }
+        } else {
+            String alias = chatRoom1.getAlias().get(otherId);
+            if (alias != null) {
+                if (alias.contains("_")) {
+                    tv_username.setText(alias.split("_")[1]);
+                } else tv_username.setText(alias);
+            }
+        }
     }
 
     private void initView() {
@@ -133,13 +253,21 @@ public class ChatActivity extends AppCompatActivity {
         cardView = findViewById(R.id.card_image_chat);
         playerViewChat = findViewById(R.id.player_view_video_click_chat);
         scrimOverlay = findViewById(R.id.scrim_overlay);
+        img_info = findViewById(R.id.img_info);
+        MaterialCardView materialCardView = findViewById(R.id.card_view_chat);
         manager = new LinearLayoutManager(ChatActivity.this);
         exoPlayer = new ExoPlayer.Builder(this).build();
+        int screenHeight = getResources().getDisplayMetrics().heightPixels;
+        materialCardView.setTranslationY(screenHeight);
+        materialCardView.animate()
+                .translationY(0f)
+                .setDuration(800)
+                .start();
     }
 
     private void getDataIntent() {
         Intent intent = getIntent();
-        ChatRoom chatRoom = intent.getParcelableExtra("chat_room");
+        chatRoom = intent.getParcelableExtra("chat_room");
         if (chatRoom == null) {
             createChatRoom(intent);
         } else {
@@ -150,14 +278,19 @@ public class ChatActivity extends AppCompatActivity {
     private void showChatRoomExist(ChatRoom chatRoom) {
         chatViewModel.setChatRoomId(chatRoom.getChatRoomId());
         if (chatRoom.getUserId().size() <= 2) {
-            String otherId = getOtherUserId(chatRoom.getUserId());
-            if(otherId == null) return;
-            if(otherId.contains("_delete")){
+            otherId = getOtherUserId(chatRoom.getUserId());
+            if (otherId == null) return;
+            if (otherId.contains("_delete")) {
                 otherId = otherId.split("_")[0];
             }
             chatViewModel.getOtherUser(otherId).observe(this, otherUser -> {
                 if (otherUser != null) {
-                    tv_username.setText(otherUser.getUserName());
+                    String alias = chatRoom.getAlias().get(otherId);
+                    if (alias != null) {
+                        if (alias.contains("_")) {
+                            tv_username.setText(alias.split("_")[1]);
+                        } else tv_username.setText(alias);
+                    }
                     Glide.with(ChatActivity.this)
                             .load(otherUser.getAvatarUser())
                             .error(R.drawable.icon_avatar)
@@ -210,6 +343,7 @@ public class ChatActivity extends AppCompatActivity {
 
     private void setUpRecyclerViewMessage(ChatRoom chatRoom1) {
         chatViewModel.createOptions(chatRoom1);
+        chatViewModel.getCreateOptions().removeObservers(this);
         chatViewModel.getCreateOptions().observe(this, new Observer<Query>() {
             @SuppressLint("ClickableViewAccessibility")
             @Override
@@ -242,7 +376,7 @@ public class ChatActivity extends AppCompatActivity {
                             exoPlayer.prepare();
                             exoPlayer.play();
                         }
-                    }, chatRoom1.getAvtSender());
+                    }, chatRoom1.getAvtSender(), chatRoom1.getAlias());
                     manager.setReverseLayout(true);
                     recyclerView.setLayoutManager(manager);
                     recyclerView.setAdapter(adapter);
@@ -262,12 +396,16 @@ public class ChatActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
         chatViewModel.setSeenMessage();
+        if (chatViewModel.getChatRoom() != null) {
+            chatViewModel.listeningChatRoom();
+        }
     }
 
     @Override
     protected void onStop() {
         super.onStop();
         chatViewModel.unregisterSeenMessageListening();
+        chatViewModel.unregisterListeningChatRoom();
     }
 
 }

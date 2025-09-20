@@ -8,6 +8,8 @@ import com.example.connection.model.User;
 import com.example.connection.repository.RecentChatRepository;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.Query;
+
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -48,23 +50,6 @@ public class RecentChatViewModel extends ViewModel {
         return isNotSeen;
     }
 
-    public void getDelete(ChatRoom model){
-        List<String> userIds = model.getUserId();
-        if(userIds == null) return;
-        int count = 0;
-        for(String id : userIds){
-            if(id.contains("_delete")){
-                count++;
-            }
-        }
-        if ((count == (userIds.size() - 1)) || userIds.get(0).equals(userIds.get(1))) {
-            recentChatRepository.deleteTwoSides(model);
-        }
-        else {
-            recentChatRepository.deleteOneSide(model, userIds);
-        }
-    }
-
     private String getOtherUserId(List<String> list) {
         String myId = FirebaseAuth.getInstance().getUid();
         if (myId == null) return null;
@@ -76,7 +61,24 @@ public class RecentChatViewModel extends ViewModel {
     }
 
     public LiveData<List<ChatRoom>> searchChatRoom(String chatName){
-        return recentChatRepository.searchChatRoom(chatName);
+        MutableLiveData<List<ChatRoom>> listMutableLiveData = new MutableLiveData<>();
+        List<ChatRoom> listChat = new ArrayList<>();
+        recentChatRepository.searchChatRoom(roomList -> {
+            if(roomList != null){
+                for(ChatRoom chatRoom : roomList){
+                    List<String> searchChat = chatRoom.getSearchChat();
+                    StringBuilder search = new StringBuilder();
+                    for(String s : searchChat){
+                        search.append(s);
+                    }
+                    if(search.toString().contains(chatName.toLowerCase())){
+                        listChat.add(chatRoom);
+                    }
+                }
+                listMutableLiveData.setValue(listChat);
+            }
+        });
+        return listMutableLiveData;
     }
 
 }

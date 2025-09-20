@@ -37,7 +37,7 @@ public class UserSearchAdapter extends FirestoreRecyclerAdapter<User, UserSearch
     @SuppressLint("SetTextI18n")
     @Override
     protected void onBindViewHolder(@NonNull UserSearchViewHolder holder, int position, @NonNull User model) {
-        Log.e("BottomSheetSearch", model.toString());
+        Log.e("search", "onBindViewHolder: ");
         holder.tv_username.setText(model.getUserName());
         Glide.with(context).load(model.getAvatarUser()).error(R.drawable.icon_avatar).into(holder.img_avatar);
         holder.tv_chat.setOnClickListener(view -> itemClick.onChatListener(model));
@@ -69,6 +69,7 @@ public class UserSearchAdapter extends FirestoreRecyclerAdapter<User, UserSearch
     @Override
     public void onDataChanged() {
         super.onDataChanged();
+        Log.e("search", "onDataChanged: ");
         if(getItemCount() < 1){
             tv_exist.setVisibility(View.VISIBLE);
             tv_exist.setText("Người dùng không tồn tại");

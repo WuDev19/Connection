@@ -10,6 +10,7 @@ import com.example.connection.repository.UsernameRepository;
 public class UsernameViewModel extends ViewModel {
 
     private final UsernameRepository usernameRepository;
+    private User user;
     private final MutableLiveData<String> username = new MutableLiveData<>();
     private final MutableLiveData<String> successLiveData = new MutableLiveData<>();
     private final MutableLiveData<String> errorLiveData = new MutableLiveData<>();
@@ -33,7 +34,7 @@ public class UsernameViewModel extends ViewModel {
     public void getCurrentUsername() {
         usernameRepository.getCurrentUserName().addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
-                User user = task.getResult().toObject(User.class);
+                user = task.getResult().toObject(User.class);
                 if (user == null) return;
                 username.setValue(user.getUserName());
             }
@@ -45,7 +46,9 @@ public class UsernameViewModel extends ViewModel {
         if (name.equals(currentName)) {
             successLiveData.setValue("setUserName");
         } else {
-            usernameRepository.setUsername(name, new OnStateListener() {
+            user.setUserName(name);
+            user.setUserNameLowerCase(name.toLowerCase());
+            usernameRepository.setUsername(user, new OnStateListener() {
                 @Override
                 public void onSuccess(String success) {
                     successLiveData.setValue(success);

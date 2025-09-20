@@ -134,12 +134,17 @@ public class FragmentCreateGroupChat extends BottomSheetDialogFragment {
             userInGroup = new ArrayList<>(adapter.getUserInGroup());
             Map<String, Long> mapDelete = new HashMap<>();
             Map<String, String> avtMap = new HashMap<>();
+            Map<String, String> aliasMap = new HashMap<>();
+            List<String> searchChat = new ArrayList<>();
             for (String id : adapter.getUserInGroup()) {
                 mapDelete.put(id, Timestamp.now().toDate().getTime());
             }
             for (User user : adapter.getAvtUserInGroup()) {
                 avtMap.put(user.getId(), user.getAvatarUser());
+                aliasMap.put(user.getId(), user.getUserName());
+                searchChat.add(user.getUserName().toLowerCase());
             }
+            searchChat.add(groupName.toLowerCase());
             ChatRoom chatRoom = new ChatRoom(null,
                     groupName,
                     null,
@@ -148,7 +153,9 @@ public class FragmentCreateGroupChat extends BottomSheetDialogFragment {
                     null,
                     null,
                     mapDelete,
-                    avtMap);
+                    avtMap,
+                    aliasMap,
+                    searchChat);
             createGroupChatViewModel.setChatRoomToFireStore(chatRoom);
         });
 

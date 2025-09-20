@@ -40,8 +40,7 @@
                     android:layout_width="40dp"
                     android:layout_height="40dp"
                     android:layout_margin="10dp"
-                    android:layout_toEndOf="@+id/img_back_chat_room"
-                    android:src="@drawable/icon_avatar" />
+                    android:layout_toEndOf="@+id/img_back_chat_room" />
 
                 <LinearLayout
                     android:layout_width="wrap_content"
@@ -67,9 +66,19 @@
 
                 </LinearLayout>
 
+                <ImageView
+                    android:id="@+id/img_info"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:src="@drawable/icon_info"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:layout_marginEnd="10dp"/>
+
             </RelativeLayout>
 
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_view_chat"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_marginTop="60dp"

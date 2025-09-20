@@ -77,4 +77,13 @@
     <string name="create">Tạo</string>
     <string name="new_group">Nhóm chat mới</string>
     <string name="suggest">Gợi ý</string>
+    <string name="alias">Đặt biệt danh</string>
+    <string name="save">Lưu</string>
+    <string name="name">Nhập tên</string>
+    <string name="choose_pic">Chọn ảnh</string>
+    <string name="add">Thêm</string>
+    <string name="chat_info">Thông tin đoạn chat</string>
+    <string name="bdanh">Biệt danh</string>
+    <string name="enter_alias">Nhập biệt danh</string>
+    <string name="delete_alias">Xóa</string>
 </resources>

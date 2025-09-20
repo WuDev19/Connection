@@ -62,6 +62,7 @@ dependencies {
     implementation (libs.androidx.media3.exoplayer.dash)
     implementation (libs.androidx.media3.ui)
     implementation(libs.imageslideshow)
+    implementation (libs.lottie)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)

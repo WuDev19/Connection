@@ -4,7 +4,10 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 import androidx.annotation.NonNull;
+
 import com.google.firebase.Timestamp;
+
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -19,6 +22,8 @@ public class ChatRoom implements Parcelable {
     private String lastMessage;
     private Map<String, Long> deleteChat;
     private Map<String, String> avtSender;
+    private Map<String, String> alias;
+    private List<String> searchChat;
 
     public ChatRoom() {
     }
@@ -31,7 +36,9 @@ public class ChatRoom implements Parcelable {
                     String lastMessageSenderId,
                     String lastMessage,
                     Map<String, Long> deleteChat,
-                    Map<String, String> avtSender) {
+                    Map<String, String> avtSender,
+                    Map<String, String> alias,
+                    List<String> searchChat) {
         this.chatRoomId = chatRoomId;
         this.chatName = chatName;
         this.chatRoomAvt = chatRoomAvt;
@@ -41,6 +48,8 @@ public class ChatRoom implements Parcelable {
         this.lastMessage = lastMessage;
         this.deleteChat = deleteChat;
         this.avtSender = avtSender;
+        this.alias = alias;
+        this.searchChat = searchChat;
     }
 
     protected ChatRoom(Parcel in) {
@@ -51,6 +60,33 @@ public class ChatRoom implements Parcelable {
         lastMessageTimestamp = in.readParcelable(Timestamp.class.getClassLoader());
         lastMessageSenderId = in.readString();
         lastMessage = in.readString();
+
+        deleteChat = new HashMap<>();
+        int deleteChatSize = in.readInt();
+        for (int i = 0; i < deleteChatSize; i++) {
+            String key = in.readString();
+            long value = in.readLong();
+            deleteChat.put(key, value);
+        }
+
+        avtSender = new HashMap<>();
+        int avtSenderSize = in.readInt();
+        for (int i = 0; i < avtSenderSize; i++) {
+            String key = in.readString();
+            String value = in.readString();
+            avtSender.put(key, value);
+        }
+
+        alias = new HashMap<>();
+        int aliasSize = in.readInt();
+        for (int i = 0; i < aliasSize; i++) {
+            String key = in.readString();
+            String value = in.readString();
+            alias.put(key, value);
+        }
+
+        searchChat = in.createStringArrayList();
+
     }
 
     public static final Creator<ChatRoom> CREATOR = new Creator<ChatRoom>() {
@@ -65,8 +101,24 @@ public class ChatRoom implements Parcelable {
         }
     };
 
+    public List<String> getSearchChat() {
+        return searchChat;
+    }
+
+    public void setSearchChat(List<String> searchChat) {
+        this.searchChat = searchChat;
+    }
+
     public Map<String, String> getAvtSender() {
         return avtSender;
+    }
+
+    public Map<String, String> getAlias() {
+        return alias;
+    }
+
+    public void setAlias(Map<String, String> alias) {
+        this.alias = alias;
     }
 
     public void setAvtSender(Map<String, String> avtSender) {
@@ -133,12 +185,6 @@ public class ChatRoom implements Parcelable {
         return lastMessage;
     }
 
-    @NonNull
-    @Override
-    public String toString() {
-        return "chatRoomId = " + chatRoomId + "\n";
-    }
-
     public void setLastMessage(String lastMessage) {
         this.lastMessage = lastMessage;
     }
@@ -149,13 +195,46 @@ public class ChatRoom implements Parcelable {
     }
 
     @Override
-    public void writeToParcel(@NonNull Parcel parcel, int i) {
+    public void writeToParcel(@NonNull Parcel parcel, int flags) {
         parcel.writeString(chatRoomId);
         parcel.writeString(chatName);
         parcel.writeString(chatRoomAvt);
         parcel.writeStringList(userId);
-        parcel.writeParcelable(lastMessageTimestamp, i);
+        parcel.writeParcelable(lastMessageTimestamp, flags);
         parcel.writeString(lastMessageSenderId);
         parcel.writeString(lastMessage);
+
+        if (deleteChat != null) {
+            parcel.writeInt(deleteChat.size());
+            for (Map.Entry<String, Long> entry : deleteChat.entrySet()) {
+                parcel.writeString(entry.getKey());
+                parcel.writeLong(entry.getValue());
+            }
+        } else {
+            parcel.writeInt(0);
+        }
+
+        if (avtSender != null) {
+            parcel.writeInt(avtSender.size());
+            for (Map.Entry<String, String> entry : avtSender.entrySet()) {
+                parcel.writeString(entry.getKey());
+                parcel.writeString(entry.getValue());
+            }
+        } else {
+            parcel.writeInt(0);
+        }
+
+        if (alias != null) {
+            parcel.writeInt(alias.size());
+            for (Map.Entry<String, String> entry : alias.entrySet()) {
+                parcel.writeString(entry.getKey());
+                parcel.writeString(entry.getValue());
+            }
+        } else {
+            parcel.writeInt(0);
+        }
+
+        parcel.writeStringList(searchChat);
     }
+
 }

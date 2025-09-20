@@ -1,6 +1,7 @@
 package com.example.connection.repository;
 
 import com.example.connection.listener.OnStateListener;
+import com.example.connection.model.User;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -27,8 +28,8 @@ public class UsernameRepository {
         return null;
     }
 
-    public void setUsername(String name, OnStateListener onStateListener) {
-        firestore.collection("users").document(currentUserId).update("userName", name).addOnCompleteListener(task -> {
+    public void setUsername(User user, OnStateListener onStateListener) {
+        firestore.collection("users").document(currentUserId).set(user).addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
                 onStateListener.onSuccess("setUserName");
             } else {

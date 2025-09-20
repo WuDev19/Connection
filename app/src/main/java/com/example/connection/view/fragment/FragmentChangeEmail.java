@@ -3,22 +3,16 @@ package com.example.connection.view.fragment;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Intent;
-import android.graphics.Typeface;
 import android.os.Bundle;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.lifecycle.ViewModelProvider;
-
-import android.text.InputType;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.FrameLayout;
-import android.widget.ImageView;
 import android.widget.Toast;
-
 import com.example.connection.R;
 import com.example.connection.view.activity.authentication.LoginActivity;
 import com.example.connection.viewmodel.ChangeEmailViewModel;
@@ -26,15 +20,12 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.android.material.textfield.TextInputEditText;
-
 import java.util.Objects;
 
 public class FragmentChangeEmail extends BottomSheetDialogFragment {
 
     private TextInputEditText edt_email_change, edt_password_confirm;
     private Button btn_confirm;
-    private ImageView img_show_password3;
-    private boolean hideShowPassword3 = true;
     private ChangeEmailViewModel changeEmailViewModel;
 
     public FragmentChangeEmail() {
@@ -59,19 +50,6 @@ public class FragmentChangeEmail extends BottomSheetDialogFragment {
         super.onViewCreated(view, savedInstanceState);
 
         btn_confirm.setOnClickListener(view1 -> onClickChange());
-
-        img_show_password3.setOnClickListener(view12 -> {
-            if (hideShowPassword3) {
-                edt_password_confirm.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
-                edt_password_confirm.setTypeface(Typeface.defaultFromStyle(Typeface.BOLD));
-                hideShowPassword3 = false;
-            } else {
-                edt_password_confirm.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
-                edt_password_confirm.setTypeface(Typeface.defaultFromStyle(Typeface.BOLD));
-                hideShowPassword3 = true;
-            }
-            edt_password_confirm.setSelection(Objects.requireNonNull(edt_password_confirm.getText()).length());
-        });
 
         changeEmailViewModel.getCheckPassWordLiveData().observe(getViewLifecycleOwner(), newEmail -> {
             if (newEmail != null && !newEmail.isEmpty()) {
@@ -99,7 +77,6 @@ public class FragmentChangeEmail extends BottomSheetDialogFragment {
         edt_email_change = view.findViewById(R.id.edt_email_change);
         edt_password_confirm = view.findViewById(R.id.edt_password_confirm1);
         btn_confirm = view.findViewById(R.id.btn_confirm_update_email);
-        img_show_password3 = view.findViewById(R.id.img_show_password3);
     }
 
     private void onClickChange() {

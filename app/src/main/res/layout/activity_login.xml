@@ -5,20 +5,24 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".view.activity.authentication.LoginActivity">
+    tools:context=".view.activity.authentication.LoginActivity"
+    android:background="@color/background">
 
-    <ImageView
-        android:layout_width="match_parent"
-        android:layout_height="400dp"
-        android:src="@drawable/background_login"
+    <com.airbnb.lottie.LottieAnimationView
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:layout_gravity="center_horizontal"
+        app:lottie_autoPlay="true"
+        app:lottie_loop="true"
         android:scaleType="centerCrop"
-        tools:ignore="contentDescription"/>
+        app:lottie_rawRes="@raw/heart"
+        android:layout_marginTop="30dp"/>
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginTop="250dp"
-        android:background="@drawable/corner_layout_login">
+        android:background="@drawable/custom_layer_list">
 
         <androidx.constraintlayout.widget.Guideline
             android:id="@+id/guideline_1"
@@ -60,10 +64,13 @@
             app:boxCornerRadiusBottomStart="20dp"
             app:boxCornerRadiusTopEnd="20dp"
             app:boxStrokeWidth="3dp"
+            app:boxStrokeWidthFocused="3dp"
             app:prefixText="+84"
             app:prefixTextColor="@color/black"
             app:helperText="Nhập số sau số 0"
-            app:helperTextTextColor="@color/black">
+            app:helperTextTextColor="@color/black"
+            app:boxStrokeColor="@color/background"
+            app:hintTextColor="@color/black">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/edt_phone"
@@ -71,10 +78,10 @@
                 android:layout_height="wrap_content"
                 android:textStyle="bold"
                 android:hint="@string/phone"
-                app:hintTextColor="@color/black"
                 android:drawableStart="@drawable/icon_phone"
                 android:drawablePadding="3dp"
-                android:textColor="@color/black" />
+                android:textColor="@color/black"
+                android:inputType="phone"/>
 
         </com.google.android.material.textfield.TextInputLayout>
 

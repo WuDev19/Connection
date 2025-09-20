@@ -243,6 +243,7 @@ public class TakePhotoRepository {
             postListenerRealTime.remove(); //chi de mot listener lang nghe
         }
 
+        //toi uu listening
         postListenerRealTime = db.collection("post_photo")
                 .whereArrayContains("friendId", currentUserId)
                 .addSnapshotListener((queryDocumentSnapshots, e) -> {
