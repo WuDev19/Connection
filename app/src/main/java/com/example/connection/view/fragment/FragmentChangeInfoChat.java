@@ -166,8 +166,8 @@ public class FragmentChangeInfoChat extends BottomSheetDialogFragment {
 
     private void deleteChat() {
         AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
-        builder.setTitle("Rời nhóm");
-        builder.setMessage("Bạn có chác chắn muốn xóa đoạn chat ?");
+        builder.setTitle("Xóa đoạn chat");
+        builder.setMessage("Bạn có chắc chắn muốn xóa đoạn chat ?");
         builder.setNegativeButton("Không", null);
         builder.setPositiveButton("Chắc chắn", (dialogInterface, i) -> fragmentChangeInfoChatViewModel.getDelete());
         dialog5 = builder.create();
@@ -183,7 +183,7 @@ public class FragmentChangeInfoChat extends BottomSheetDialogFragment {
     private void leaveChat() {
         AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
         builder.setTitle("Rời nhóm");
-        builder.setMessage("Bạn có chác chắn muôn rời khỏi nhóm ?");
+        builder.setMessage("Bạn có chắc chắn muốn rời khỏi nhóm ?");
         builder.setNegativeButton("Không", null);
         builder.setPositiveButton("Chắc chắn", (dialogInterface, i) -> fragmentChangeInfoChatViewModel.leaveChat());
         dialog5 = builder.create();

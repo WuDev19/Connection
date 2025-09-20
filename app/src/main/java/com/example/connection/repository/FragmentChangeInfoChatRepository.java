@@ -94,9 +94,9 @@ public class FragmentChangeInfoChatRepository {
     public LiveData<List<User>> searchUser(String username) {
         MutableLiveData<List<User>> userSearchLiveData = new MutableLiveData<>();
         db.collection("users")
-                .whereGreaterThanOrEqualTo("userName", username)
-                .whereLessThanOrEqualTo("userName", username + "\uf8ff")
-                .orderBy("userName")
+                .whereGreaterThanOrEqualTo("userNameLowerCase", username.toLowerCase())
+                .whereLessThanOrEqualTo("userNameLowerCase", username.toLowerCase() + "\uf8ff")
+                .orderBy("userNameLowerCase")
                 .get()
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
