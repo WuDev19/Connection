@@ -123,7 +123,7 @@ public class MainActivity extends AppCompatActivity {
                 getWindowManager().getDefaultDisplay().getRealMetrics(metrics);
                 density = metrics.density;
                 screenWidth = metrics.widthPixels;
-                screenHeight = metrics.heightPixels - 160;
+                screenHeight = metrics.heightPixels;
                 Log.e(TAG, "instance initializer: " + screenWidth + " " + screenHeight);
             }
 

@@ -228,6 +228,7 @@ public class ShowImageAdapter extends FirestoreRecyclerAdapter<Image, ShowImageA
             Image image = getItem(positionClick);
             playVideo(image);
             if (image.getUrlMusic() == null) return;
+            MediaPlayerUtil.getInstance().setPosition(1);
             MediaPlayerUtil.getInstance().playMusic(context, image.getUrlMusic());
             MediaPlayerUtil.getInstance().setFirstTimeScrollToShow(false);
         }
