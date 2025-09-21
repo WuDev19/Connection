@@ -65,6 +65,7 @@ import com.denzcoskun.imageslider.constants.ScaleTypes;
 import com.denzcoskun.imageslider.models.SlideModel;
 import com.example.connection.R;
 import com.example.connection.model.Image;
+import com.example.connection.utils.MediaPlayerUtil;
 import com.example.connection.viewmodel.TakePhotoViewModel;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -124,7 +125,7 @@ public class FragmentTakePhoto extends Fragment {
                 }
             }
             if ("back_press_when_playing".equals(intent.getAction())) {
-                if (mediaPlayer != null && !mediaPlayer.isPlaying()) {
+                if (mediaPlayer != null && !mediaPlayer.isPlaying() && MediaPlayerUtil.getInstance().getPosition() == 0) {
                     mediaPlayer.start();
                 }
             }

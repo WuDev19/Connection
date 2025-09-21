@@ -152,4 +152,9 @@ public class MediaPlayerUtil {
     public void setCLickToPause(boolean CLickToPause) {
         isCLickToPause = CLickToPause;
     }
+
+    public int getPosition() {
+        return position;
+    }
+
 }
