@@ -19,7 +19,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
-        android:layout_marginTop="130dp">
+        android:layout_marginTop="100dp">
 
         <de.hdodenhof.circleimageview.CircleImageView
             android:id="@+id/img_avatar_update"
@@ -48,7 +48,10 @@
         app:boxCornerRadiusTopEnd="10dp"
         android:layout_marginTop="20dp"
         android:layout_marginStart="50dp"
-        android:layout_marginEnd="50dp">
+        android:layout_marginEnd="50dp"
+        app:boxStrokeColor="@color/background"
+        app:boxStrokeWidth="3dp"
+        app:boxStrokeWidthFocused="3dp">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/edt_username"
@@ -67,7 +70,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         app:backgroundTint="@null"
-        android:background="@drawable/border_view"
+        android:background="@drawable/button_click_animate"
         android:text="@string/confirm"
         android:textColor="@color/black"
         android:textSize="18sp"

@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.Window;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -57,7 +58,14 @@ public class SignInActivity extends AppCompatActivity {
                     signInViewModel.sendPasswordReset(email);
                 }
             });
-            builder.create().show();
+            AlertDialog dialog = builder.create();
+            Window window = dialog.getWindow();
+            if (window != null) {
+                window.setBackgroundDrawableResource(R.drawable.custom_dialog);
+                dialog.show();
+            } else {
+                Toast.makeText(this, "Có lỗi gì đó xảy ra, hãy thử lại", Toast.LENGTH_LONG).show();
+            }
         });
 
         signInViewModel.getSuccessLiveData().observe(this, success -> {
