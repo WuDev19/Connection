@@ -3,6 +3,8 @@ package com.example.connection.viewmodel;
 import android.app.Application;
 import android.content.Context;
 import android.media.MediaPlayer;
+import android.net.Uri;
+
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
@@ -10,6 +12,8 @@ import androidx.lifecycle.MutableLiveData;
 import com.example.connection.model.MyMusic;
 import com.example.connection.repository.ChooseMusicRepository;
 import com.example.connection.utils.MediaPlayerUtil;
+
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -26,6 +30,7 @@ public class ChooseMusicViewModel extends AndroidViewModel {
     private final MutableLiveData<List<MyMusic>> listInitListMusic = new MutableLiveData<>();
     private final MutableLiveData<List<MyMusic>> myMusicListLiveData = new MutableLiveData<>();
     private final ChooseMusicRepository chooseMusicRepository;
+    private MediaPlayer mediaPlayer = new MediaPlayer();
 
     public ChooseMusicViewModel(@NonNull Application application) {
         super(application);
@@ -33,27 +38,26 @@ public class ChooseMusicViewModel extends AndroidViewModel {
     }
 
     public void handleMusic(String url, int position, boolean isPlaying, Context context) {
-        MediaPlayer mediaPlayer = MediaPlayerUtil.getInstance().getMediaPlayer();
         if (mediaPlayer != null) {
             mediaPlayer.setOnCompletionListener(mediaPlayer1 -> playComplete.postValue(true));
         }
         if (!isPlaying) {
             if (!positionCheck.contains(position)) {
-                MediaPlayerUtil.getInstance().playMusic(context, url);
+                playMusic(context, url);
                 positionCheck.clear();
                 positionCheck.add(position);
             } else {
-                MediaPlayerUtil.getInstance().resumeMusic();
+                resumeMusic();
             }
             setPlaying.postValue(true);
             changeIconPlayMusic.postValue(true);
         } else {
             if (positionCheck.contains(position)) {
-                MediaPlayerUtil.getInstance().pauseMusic();
+                pauseMusic();
                 setPlaying.postValue(false);
                 changeIconPlayMusic.postValue(false);
             } else {
-                MediaPlayerUtil.getInstance().playMusic(context, url);
+                playMusic(context, url);
                 list = positionCheck.toArray();
                 changeIconOldMusic.postValue(list);
                 positionCheck.clear();
@@ -66,7 +70,9 @@ public class ChooseMusicViewModel extends AndroidViewModel {
     }
 
     public void handleMusicAfterTextChange(String title) {
-        MediaPlayerUtil.getInstance().resetMediaPlayer();
+        if(mediaPlayer != null){
+            mediaPlayer.stop();
+        }
         if (!positionCheck.isEmpty()) {
             list = positionCheck.toArray();
             positionCheck.clear();
@@ -74,6 +80,30 @@ public class ChooseMusicViewModel extends AndroidViewModel {
         }
         if (title.isEmpty()) {
             hideTvCancel.setValue(true);
+        }
+    }
+
+    public void playMusic(Context context, String url){
+        if(mediaPlayer == null || url == null) return;
+        try {
+            mediaPlayer.reset();
+            mediaPlayer.setDataSource(context, Uri.parse(url));
+            mediaPlayer.setOnPreparedListener(MediaPlayer::start);
+            mediaPlayer.prepareAsync();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void resumeMusic(){
+        if(mediaPlayer != null && !mediaPlayer.isPlaying()){
+            mediaPlayer.start();
+        }
+    }
+
+    public void pauseMusic(){
+        if(mediaPlayer != null && mediaPlayer.isPlaying()){
+            mediaPlayer.pause();
         }
     }
 
@@ -86,8 +116,11 @@ public class ChooseMusicViewModel extends AndroidViewModel {
     }
 
     public void setMediaOnDestroy() {
-        MediaPlayerUtil.getInstance().resetMediaPlayer();    //reset media và đánh dấu đã out fragment choose music
-        MediaPlayerUtil.getInstance().setInChooseFrag(false);
+        if(mediaPlayer != null){
+            mediaPlayer.release();
+            mediaPlayer = null;
+        }
+        MediaPlayerUtil.getInstance().setInChooseFrag(false); //đánh dấu đã vào fragment choose music
     }
 
     public void setMediaPlayerInChooseFrag() {

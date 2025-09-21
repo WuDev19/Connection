@@ -4,7 +4,6 @@ import android.content.Context;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.util.Log;
-
 import java.io.IOException;
 
 public class MediaPlayerUtil {
@@ -23,14 +22,12 @@ public class MediaPlayerUtil {
 
     private MediaPlayerUtil() {
         mediaPlayer = new MediaPlayer();
-        Log.e(TAG, "getInstance: lan DAU");
     }
 
     public static synchronized MediaPlayerUtil getInstance() {
         if (instance == null) {
             instance = new MediaPlayerUtil();
         }
-        Log.e(TAG, "getInstance: lan sau");
         return instance;
     }
 
@@ -75,7 +72,6 @@ public class MediaPlayerUtil {
         if (mediaPlayer != null && !mediaPlayer.isPlaying() && !isInGeneral && urlMusicCurrent != null) {
             if (position == 1 || isInChooseFrag) {
                 mediaPlayer.start();
-                Log.e("FragmentShowPhoto", "resumeMusic: ");
             }
         }
     }
@@ -89,12 +85,6 @@ public class MediaPlayerUtil {
 
     public MediaPlayer getMediaPlayer() {
         return mediaPlayer;
-    }
-
-    public void resetMediaPlayer() {
-        if (mediaPlayer != null) {
-            mediaPlayer.reset();
-        }
     }
 
     public void setIsInGeneral(boolean isInGeneral) {

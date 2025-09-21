@@ -210,7 +210,6 @@ public class ShowImageAdapter extends FirestoreRecyclerAdapter<Image, ShowImageA
     @Override
     public void onDataChanged() {
         super.onDataChanged();
-        Log.e("kiemtra", "onDataChanged: ");
         int itemCount = getItemCount();
         if(itemCount == 0) return;
 

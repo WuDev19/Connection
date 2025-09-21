@@ -86,13 +86,13 @@ public class MainActivity extends AppCompatActivity {
         });
 
         img_personal.setOnClickListener(view -> {
-            SendBroadToFragTakeUtil.sendBroadToFragmentTakePhoto(MainActivity.this);
             MediaPlayerUtil.getInstance().pauseMusic();
             Intent intent = new Intent(this, PersonalActivity.class);
             startActivity(intent);
         });
 
         tv_search.setOnClickListener(view -> {
+            SendBroadToFragTakeUtil.sendBroadToFragmentTakePhoto(this);
             MediaPlayerUtil.getInstance().pauseMusic();
             BottomSheetSearch bottomSheetSearch = new BottomSheetSearch();
             Log.e(TAG, "search");

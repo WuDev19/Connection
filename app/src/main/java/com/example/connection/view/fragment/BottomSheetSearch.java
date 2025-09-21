@@ -21,6 +21,7 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.connection.R;
+import com.example.connection.utils.SendBroadToFragTakeUtil;
 import com.example.connection.view.activity.chat.ChatActivity;
 import com.example.connection.adapter.ShowFriendAdapter;
 import com.example.connection.adapter.UserSearchAdapter;
@@ -198,6 +199,12 @@ public class BottomSheetSearch extends BottomSheetDialogFragment {
         }
         requireActivity().startActivity(intent);
         requireDialog().dismiss();
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        SendBroadToFragTakeUtil.broadcastWhenBackNotification(requireContext());
     }
 
     @NonNull
