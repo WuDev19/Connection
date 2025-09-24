@@ -17,6 +17,7 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.WriteBatch;
 
 import java.util.ArrayList;
@@ -28,10 +29,15 @@ public class FragmentChangeInfoChatRepository {
     private final FirebaseFirestore db;
     private final OnStateListener onStateListener;
     private final String TAG = getClass().getName();
+    private ListenerRegistration chatRoomListening;
 
     public FragmentChangeInfoChatRepository(OnStateListener onStateListener){
         db = FirebaseFirestore.getInstance();
         this.onStateListener = onStateListener;
+    }
+
+    public interface OnUpdateChatRoom{
+        void onUpdate(ChatRoom chatRoom);
     }
 
     public Task<Void> updateChatGroupName(String chatroomId, String name){
@@ -122,6 +128,28 @@ public class FragmentChangeInfoChatRepository {
         return db.collection("chatroom")
                 .document(chatRoom.getChatRoomId())
                 .set(chatRoom);
+    }
+
+    public void listeningChatRoom(ChatRoom chatRoom, OnUpdateChatRoom updateChatRoom){
+        if(chatRoomListening != null) {
+            chatRoomListening.remove();
+            Log.e("ChatActivity", "listeningChatRoom: remove");
+        }
+        chatRoomListening = db.collection("chatroom")
+                .document(chatRoom.getChatRoomId())
+                .addSnapshotListener((value, error) -> {
+                    if(value == null || error != null) return;
+                    ChatRoom chatRoom1 = value.toObject(ChatRoom.class);
+                    if(chatRoom1 != null){
+                        updateChatRoom.onUpdate(chatRoom1);
+                    }
+                });
+    }
+
+    public void unregisterListeningChatRoom(){
+        if(chatRoomListening != null) {
+            chatRoomListening.remove();
+        }
     }
 
     public void deleteOneSide(ChatRoom model, List<String> userIds){

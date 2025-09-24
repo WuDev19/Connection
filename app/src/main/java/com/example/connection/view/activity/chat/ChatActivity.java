@@ -5,6 +5,7 @@ import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.widget.Button;
@@ -37,9 +38,7 @@ import com.firebase.ui.firestore.FirestoreRecyclerOptions;
 import com.google.android.material.card.MaterialCardView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.Query;
-
 import java.util.List;
-
 import de.hdodenhof.circleimageview.CircleImageView;
 
 public class ChatActivity extends AppCompatActivity {
@@ -206,6 +205,7 @@ public class ChatActivity extends AppCompatActivity {
             if (chatRoom1 == null) return;
             ChatActivity.this.updateChatRoomUi(chatRoom1);
             chatRoom = chatRoom1;
+            Log.e("kiemtrachatroom", "onCreate: " + chatRoom1);
             if (needRefresh) {
                 setUpRecyclerViewMessage(chatRoom1);
                 needRefresh = false;
@@ -351,8 +351,11 @@ public class ChatActivity extends AppCompatActivity {
                 if (query != null) {
                     FirestoreRecyclerOptions<ChatMessage> options = new FirestoreRecyclerOptions.Builder<ChatMessage>()
                             .setQuery(query, ChatMessage.class)
-                            .setLifecycleOwner(ChatActivity.this)
                             .build();
+                    if (adapter != null) {
+                        adapter.stopListening();
+                        recyclerView.setAdapter(null);
+                    }
                     adapter = new ChatMessageAdapter(options, ChatActivity.this, urlPost -> {
                         recyclerView.setOnTouchListener((view, motionEvent) -> true);
                         scrimOverlay.setVisibility(View.VISIBLE);
@@ -380,6 +383,7 @@ public class ChatActivity extends AppCompatActivity {
                     manager.setReverseLayout(true);
                     recyclerView.setLayoutManager(manager);
                     recyclerView.setAdapter(adapter);
+                    adapter.startListening();
                     adapter.registerAdapterDataObserver(new RecyclerView.AdapterDataObserver() {
                         @Override
                         public void onItemRangeInserted(int positionStart, int itemCount) {
@@ -406,6 +410,14 @@ public class ChatActivity extends AppCompatActivity {
         super.onStop();
         chatViewModel.unregisterSeenMessageListening();
         chatViewModel.unregisterListeningChatRoom();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if(adapter != null){
+            adapter.stopListening();
+        }
     }
 
 }

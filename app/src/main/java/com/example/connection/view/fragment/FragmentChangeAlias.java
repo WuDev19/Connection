@@ -35,7 +35,7 @@ public class FragmentChangeAlias extends BottomSheetDialogFragment {
     private ImageView img_back;
     private RecyclerView recyclerView;
     private FragmentChangeAliasViewModel fragmentChangeAliasViewModel;
-    private final OnShowHide onShowHide;
+    private OnShowHide onShowHide;
 
     public interface OnShowHide {
         void onHide();
@@ -45,12 +45,15 @@ public class FragmentChangeAlias extends BottomSheetDialogFragment {
         this.onShowHide = onShowHide;
     }
 
+    public FragmentChangeAlias(){}
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         fragmentChangeAliasViewModel = new ViewModelProvider(this).get(FragmentChangeAliasViewModel.class);
         if (getArguments() != null) {
             ChatRoom chatRoomTmp = getArguments().getParcelable("chat_room_to_change_alias");
+            Log.e("kiemtrachatroom", "onCreate: alias" + chatRoomTmp);
             if (chatRoomTmp != null) chatRoom = chatRoomTmp;
         }
     }

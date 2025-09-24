@@ -16,7 +16,7 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 import com.example.connection.R;
-import com.example.connection.adapter.MusicYoutubeAdapter;
+import com.example.connection.adapter.MusicAdapter;
 import com.example.connection.model.MyMusic;
 import com.example.connection.viewmodel.ChooseMusicViewModel;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
@@ -30,11 +30,11 @@ public class FragmentChooseMusic extends BottomSheetDialogFragment {
     private ImageView img_play;
     private onSelectedMusic selectedMusic;
     private final String TAG = getClass().getName();
-    private MusicYoutubeAdapter adapter;
+    private MusicAdapter adapter;
     private TextInputEditText txt_music;
     private TextView tv_cancel;
     private List<MyMusic> initMusic = new ArrayList<>();
-    private MusicYoutubeAdapter.MusicYoutubeViewHolder viewHolder;
+    private MusicAdapter.MusicYoutubeViewHolder viewHolder;
     private ChooseMusicViewModel chooseMusicViewModel;
 
     public FragmentChooseMusic() {}
@@ -66,6 +66,8 @@ public class FragmentChooseMusic extends BottomSheetDialogFragment {
         return view;
     }
 
+    //fix bug nút play nhạc
+    // TODO: 9/23/2025  
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -129,7 +131,7 @@ public class FragmentChooseMusic extends BottomSheetDialogFragment {
 
         chooseMusicViewModel.getMyMusicListLiveData().observe(getViewLifecycleOwner(), myMusicList -> adapter.setData(myMusicList));
 
-        adapter = new MusicYoutubeAdapter(requireContext(), initMusic, new MusicYoutubeAdapter.OnItemClick() {
+        adapter = new MusicAdapter(requireContext(), initMusic, new MusicAdapter.OnItemClick() {
             @Override
             public void onNameItemClick(String musicName, String singerName, String url, int position) {
                 selectedMusic.onSelected(musicName, singerName, url, position);
@@ -147,6 +149,14 @@ public class FragmentChooseMusic extends BottomSheetDialogFragment {
         recyclerView.setAdapter(adapter);
         recyclerView.setNestedScrollingEnabled(true);
 
+        recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
+                super.onScrollStateChanged(recyclerView, newState);
+
+            }
+        });
+
         chooseMusicViewModel.getHideTvCancel().observe(getViewLifecycleOwner(), isHideTv -> {
             if(isHideTv){
                 tv_cancel.setVisibility(View.INVISIBLE);
@@ -156,11 +166,14 @@ public class FragmentChooseMusic extends BottomSheetDialogFragment {
         chooseMusicViewModel.getChangeIconOldMusic().observe(getViewLifecycleOwner(), list -> {
             if(list != null){
                 recyclerView.post(() -> {
-                    viewHolder = (MusicYoutubeAdapter.MusicYoutubeViewHolder)
+                    viewHolder = (MusicAdapter.MusicYoutubeViewHolder)
                             recyclerView.findViewHolderForAdapterPosition((Integer) list[0]);
                     if (viewHolder != null) {
                         ImageView oldPositionImageView = viewHolder.itemView.findViewById(R.id.img_play);
                         oldPositionImageView.setImageResource(R.drawable.icon_play);
+                    }
+                    else {
+                        adapter.notifyItemChanged((Integer) list[0]);
                     }
                 });
             }

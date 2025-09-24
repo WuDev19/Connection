@@ -57,7 +57,7 @@ public class FragmentChangeInfoChat extends BottomSheetDialogFragment {
     private ChatRoom chatRoom;
     private UserSearchAddToGroupAdapter userSearchAddToGroupAdapter;
     private LiveData<List<User>> currentLiveData;
-    private final OnStateFragmentAlias onStateFragmentAlias;
+    private OnStateFragmentAlias onStateFragmentAlias;
 
     public interface OnStateFragmentAlias{
         void onHideFrag();
@@ -67,13 +67,15 @@ public class FragmentChangeInfoChat extends BottomSheetDialogFragment {
         this.onStateFragmentAlias = onStateFragmentAlias;
     }
 
+    public FragmentChangeInfoChat(){}
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         fragmentChangeInfoChatViewModel = new ViewModelProvider(this).get(FragmentChangeInfoChatViewModel.class);
         if (getArguments() != null) {
             chatRoom = (ChatRoom) getArguments().get("chat_room1");
-            Log.e("Chatroom", "onCreate: " + chatRoom);
+            Log.e("kiemtrachatroom", "onCreate: info" + chatRoom);
             if (chatRoom != null) {
                 fragmentChangeInfoChatViewModel.setChatRoom(chatRoom);
             }
@@ -119,6 +121,15 @@ public class FragmentChangeInfoChat extends BottomSheetDialogFragment {
 
         fragmentChangeInfoChatViewModel.getNotifyAlreadyExistInGroup().observe(getViewLifecycleOwner(),
                 notify -> Toast.makeText(requireContext(), notify, Toast.LENGTH_LONG).show());
+
+        fragmentChangeInfoChatViewModel.getChatRoomListeningLiveData().observe(getViewLifecycleOwner(),
+                chatRoom1 -> {
+            if(chatRoom1 != null){
+                chatRoom = chatRoom1;
+                fragmentChangeInfoChatViewModel.setChatRoom(chatRoom);
+                Log.e("kiemtrachatroom", "onViewCreated: info" + chatRoom1);
+            }
+        });
 
         List<ChoiceEditGroupModel> choiceEditGroupModelList = new ArrayList<>();
         choiceEditGroupModelList.add(new ChoiceEditGroupModel(R.drawable.icon_change_name_chat, "Thay đổi tên nhóm", "changeName"));
@@ -340,4 +351,15 @@ public class FragmentChangeInfoChat extends BottomSheetDialogFragment {
         return bottomSheetDialog;
     }
 
+    @Override
+    public void onStart() {
+        super.onStart();
+        fragmentChangeInfoChatViewModel.listeningChatRoom();
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        fragmentChangeInfoChatViewModel.unregisterListeningChatRoom();
+    }
 }

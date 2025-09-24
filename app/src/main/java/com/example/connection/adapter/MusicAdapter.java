@@ -15,7 +15,7 @@ import com.example.connection.R;
 import com.example.connection.model.MyMusic;
 import java.util.List;
 
-public class MusicYoutubeAdapter extends RecyclerView.Adapter<MusicYoutubeAdapter.MusicYoutubeViewHolder> {
+public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.MusicYoutubeViewHolder> {
 
     private final Context context;
     private List<MyMusic> list;
@@ -27,7 +27,7 @@ public class MusicYoutubeAdapter extends RecyclerView.Adapter<MusicYoutubeAdapte
         void onPlayMusic(String url, int position, boolean isPlaying, ImageView imgPlay);
     }
 
-    public MusicYoutubeAdapter(Context context, List<MyMusic> list, OnItemClick onClick) {
+    public MusicAdapter(Context context, List<MyMusic> list, OnItemClick onClick) {
         this.context = context;
         this.list = list;
         this.onClick = onClick;

@@ -26,6 +26,7 @@ public class FragmentChangeAliasViewModel extends ViewModel {
                 if (alias != null) {
                     newAlias = oldAlias.split("_")[0] + "_" + alias;
                     searchChat.add(alias.toLowerCase());
+                    searchChat.remove(oldAlias.split("_")[1].toLowerCase());
                 } else {
                     newAlias = oldAlias.split("_")[0];
                     searchChat.remove(oldAlias.split("_")[1].toLowerCase());

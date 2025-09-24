@@ -19,6 +19,7 @@ public class FragmentChangeInfoChatViewModel extends ViewModel implements OnStat
     private final MutableLiveData<String> successLiveData = new MutableLiveData<>();
     private final MutableLiveData<String> errorLiveData = new MutableLiveData<>();
     private final MutableLiveData<String> notifyAlreadyExistInGroup = new MutableLiveData<>();
+    private final MutableLiveData<ChatRoom> chatRoomListeningLiveData = new MutableLiveData<>();
 
     public FragmentChangeInfoChatViewModel(){
         fragmentChangeInfoChatRepository = new FragmentChangeInfoChatRepository(this);
@@ -152,6 +153,17 @@ public class FragmentChangeInfoChatViewModel extends ViewModel implements OnStat
         }
     }
 
+    public void listeningChatRoom(){
+        fragmentChangeInfoChatRepository.listeningChatRoom(chatRoom, value -> {
+            if(value != null) chatRoom = value;
+            chatRoomListeningLiveData.setValue(value);
+        });
+    }
+
+    public void unregisterListeningChatRoom(){
+        fragmentChangeInfoChatRepository.unregisterListeningChatRoom();
+    }
+
     public LiveData<String> getSuccessLiveData() {
         return successLiveData;
     }
@@ -166,6 +178,10 @@ public class FragmentChangeInfoChatViewModel extends ViewModel implements OnStat
 
     public LiveData<String> getNotifyAlreadyExistInGroup() {
         return notifyAlreadyExistInGroup;
+    }
+
+    public LiveData<ChatRoom> getChatRoomListeningLiveData() {
+        return chatRoomListeningLiveData;
     }
 
     @Override
