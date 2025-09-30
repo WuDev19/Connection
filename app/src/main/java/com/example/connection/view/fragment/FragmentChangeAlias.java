@@ -6,6 +6,7 @@ import android.app.Dialog;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -36,6 +37,7 @@ public class FragmentChangeAlias extends BottomSheetDialogFragment {
     private RecyclerView recyclerView;
     private FragmentChangeAliasViewModel fragmentChangeAliasViewModel;
     private OnShowHide onShowHide;
+    private ChangeAliasAdapter adapter;
 
     public interface OnShowHide {
         void onHide();
@@ -66,13 +68,19 @@ public class FragmentChangeAlias extends BottomSheetDialogFragment {
         return view;
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
         img_back.setOnClickListener(view12 -> requireDialog().dismiss());
 
-        ChangeAliasAdapter adapter = new ChangeAliasAdapter(requireContext(), chatRoom.getUserId(), chatRoom.getAvtSender(), chatRoom.getAlias(), (text_alias, id) -> {
+        fragmentChangeAliasViewModel.getChatRoomListeningLiveData().observe(getViewLifecycleOwner(), tmp -> {
+            chatRoom = tmp;
+            adapter.setData(chatRoom.getAvtSender(), chatRoom.getAlias());
+        });
+
+        adapter = new ChangeAliasAdapter(requireContext(), chatRoom.getUserId(), chatRoom.getAvtSender(), chatRoom.getAlias(), (text_alias, id) -> {
             AlertDialog.Builder builder = new AlertDialog.Builder(FragmentChangeAlias.this.requireContext());
             @SuppressLint("InflateParams") View view1 = FragmentChangeAlias.this.requireActivity().getLayoutInflater().inflate(R.layout.custom_dialog_change_alias, null);
             Button btn_cancel = view1.findViewById(R.id.btn_cancel_change_alias);
@@ -114,7 +122,9 @@ public class FragmentChangeAlias extends BottomSheetDialogFragment {
                 if (alias != null && !alias.contains("_") && alias.equals(aliasNew)) return;
                 if (!aliasNew.isEmpty()) {
                     text_alias.setText(aliasNew);
+                    Log.e("aliascheck", "onViewCreated: truoc" + chatRoom.getAlias());
                     fragmentChangeAliasViewModel.updateAlias(chatRoom, id, aliasNew, chatRoom.getAlias());
+                    Log.e("aliascheck", "onViewCreated: sau" + chatRoom.getAlias());
                     dialog.dismiss();
                 }
             });
@@ -149,6 +159,18 @@ public class FragmentChangeAlias extends BottomSheetDialogFragment {
     public void onDestroy() {
         super.onDestroy();
         onShowHide.onHide();
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        fragmentChangeAliasViewModel.listeningChatRoom(chatRoom);
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        fragmentChangeAliasViewModel.unregisterListeningChatRoom();
     }
 
 }

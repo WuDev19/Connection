@@ -72,8 +72,8 @@ public class ChatViewModel extends ViewModel {
         List<String> userIds = chatRoom.getUserId();
         Map<String, Long> map = chatRoom.getDeleteChat();
         boolean check = false;
-        for(String id : userIds){
-            if(id.contains("delete")){
+        for (String id : userIds) {
+            if (id.contains("delete")) {
                 check = true;
                 userIds.remove(id);
                 id = id.split("_")[0];
@@ -81,22 +81,22 @@ public class ChatViewModel extends ViewModel {
                 map.put(id, Timestamp.now().toDate().getTime());
             }
         }
-        if(check){
+        if (check) {
             chatRoom.setUserId(userIds);
             chatRoom.setDeleteChat(map);
         }
         send.setValue(true);
         chatRoom.setLastMessageSenderId(currentUserId);
         chatRoom.setLastMessageTimestamp(Timestamp.now());
-        if(userIds.size() >= 3){
+        if (userIds.size() >= 3) {
             String alias = chatRoom.getAlias().get(chatRepository.getCurrentUser().getId());
-            if(alias != null){
-                if(alias.contains("_")){
+            if (alias != null) {
+                if (alias.contains("_")) {
                     alias = alias.split("_")[1];
                 }
             }
             chatRoom.setLastMessage(alias + ": " + message);
-        }else {
+        } else {
             chatRoom.setLastMessage(message);
         }
         chatRepository.sendMessage(message, chatRoomId, chatRoom);
@@ -135,7 +135,7 @@ public class ChatViewModel extends ViewModel {
         chatRepository.getOtherUser(otherUserId).addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
                 User other = task.getResult().toObject(User.class);
-                if(other != null) otherUser = other;
+                if (other != null) otherUser = other;
                 otherUserExistLiveData.setValue(other);
             }
         });
@@ -155,47 +155,74 @@ public class ChatViewModel extends ViewModel {
         }
     }
 
-    public void listeningChatRoom(){
+    public void listeningChatRoom() {
         chatRepository.listeningChatRoom(chatRoom, value -> {
-            if(value != null) chatRoom = value;
+            if (value != null) chatRoom = value;
             chatRoomListeningLiveData.setValue(value);
         });
     }
 
-    public void unregisterListeningChatRoom(){
+    public void unregisterListeningChatRoom() {
         chatRepository.unregisterListeningChatRoom();
+    }
+
+    public void expressEmote(String idMessage, Map<String, String> emoteMap) {
+        chatRepository.modifyEmote(chatRoom, emoteMap, idMessage).addOnCompleteListener(task -> {
+            if (!task.isSuccessful()) {
+                Log.e(TAG, "onComplete: " + Objects.requireNonNull(task.getException()).getMessage());
+            }
+        });
+    }
+
+    public void removeEmote(String idMessage, String idUser, Map<String, String> emoteMap) {
+        if (idUser != null && idUser.equals(currentUserId)) {
+            if (emoteMap.remove(idUser) != null) {
+                chatRepository.modifyEmote(chatRoom, emoteMap, idMessage).addOnCompleteListener(task -> {
+                    if (!task.isSuccessful()) {
+                        Log.e(TAG, "onComplete: " + Objects.requireNonNull(task.getException()).getMessage());
+                    }
+                });
+            }
+        }
+    }
+
+    public LiveData<Map<String, String>> registerListeningReaction(String idMess){
+        return chatRepository.listeningReaction(chatRoom, idMess);
+    }
+
+    public void unregisterListeningReaction() {
+        chatRepository.unregisterListeningReaction();
     }
 
     public ChatRoom getChatRoom() {
         return chatRoom;
     }
 
-    public void getDelete(){
+    public void getDelete() {
         List<String> userIds = chatRoom.getUserId();
-        if(userIds == null) return;
+        if (userIds == null) return;
         int count = 0;
-        for(String id : userIds){
-            if(id.contains("_delete")){
+        for (String id : userIds) {
+            if (id.contains("_delete")) {
                 count++;
             }
         }
         if ((count == (userIds.size() - 1)) || userIds.get(0).equals(userIds.get(1))) {
             chatRepository.deleteTwoSides(chatRoom);
-        }
-        else {
+        } else {
             chatRepository.deleteOneSide(chatRoom, userIds);
         }
 
     }
 
-    public void updateChatNameTwoPeople(String alias, String otherId){
+    public void updateChatNameTwoPeople(String alias, String otherId) {
         Map<String, String> aliasMap = chatRoom.getAlias();
         List<String> searchChat = chatRoom.getSearchChat();
         String oldAlias = aliasMap.get(otherId);
         String newAlias = null;
-        if(oldAlias != null){
-            if(oldAlias.contains("_")){
-                if(alias != null){
+        if (oldAlias != null) {
+            if (oldAlias.contains("_")) {
+                if (alias != null) {
                     newAlias = oldAlias.split("_")[0] + "_" + alias;
                     searchChat.add(alias.toLowerCase());
                     searchChat.remove(oldAlias.split("_")[1].toLowerCase());
@@ -203,8 +230,7 @@ public class ChatViewModel extends ViewModel {
                     newAlias = oldAlias.split("_")[0];
                     searchChat.remove(oldAlias.split("_")[1].toLowerCase());
                 }
-            }
-            else {
+            } else {
                 if (alias != null) {
                     newAlias = oldAlias + "_" + alias;
                     searchChat.add(alias.toLowerCase());
@@ -215,7 +241,7 @@ public class ChatViewModel extends ViewModel {
         chatRoom.setAlias(aliasMap);
         chatRoom.setSearchChat(searchChat);
         chatRepository.updateChatNameTwoPeople(chatRoom).addOnCompleteListener(task -> {
-            if(!task.isSuccessful()){
+            if (!task.isSuccessful()) {
                 Log.e(TAG, "onComplete: " + Objects.requireNonNull(task.getException()).getMessage());
             }
         });

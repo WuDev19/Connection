@@ -2,7 +2,8 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/relative_chat_2_user">
 
     <RelativeLayout
         android:layout_width="300dp"
@@ -19,7 +20,7 @@
             android:layout_height="wrap_content"
             android:layout_alignParentTop="true"
             android:layout_alignStart="@+id/tv_message_left"
-            android:layout_marginBottom="6dp" />
+            android:layout_marginBottom="6dp"/>
 
         <de.hdodenhof.circleimageview.CircleImageView
             android:id="@+id/avt_user_in_chat"
@@ -40,6 +41,24 @@
             android:textColor="@color/black"
             android:layout_marginStart="35dp"
             android:layout_alignBottom="@+id/avt_user_in_chat" />
+
+        <TextView
+            android:id="@+id/tv_emote_in_chat_left"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/tv_message_left"
+            android:layout_alignEnd="@+id/tv_message_left"
+            android:layout_marginEnd="5dp"
+            android:visibility="gone"
+            android:textSize="14sp"/>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycler_view_emote_left"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignStart="@+id/tv_message_left"
+            android:layout_below="@id/tv_message_left"
+            android:visibility="gone" />
 
     </RelativeLayout>
 
@@ -80,6 +99,25 @@
             android:backgroundTint="#F1EEEE"
             android:layout_alignParentEnd="true"
             android:textColor="@color/black"/>
+
+        <TextView
+            android:id="@+id/tv_emote_in_chat_right"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/tv_message_right"
+            android:layout_alignEnd="@+id/tv_message_right"
+            android:layout_marginEnd="5dp"
+            android:visibility="gone"
+            android:textSize="14sp"
+            android:textDirection="rtl"/>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycler_view_emote_right"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignEnd="@+id/tv_message_right"
+            android:visibility="gone"
+            android:layout_below="@+id/tv_message_right"/>
 
     </RelativeLayout>
 

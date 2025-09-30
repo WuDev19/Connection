@@ -6,18 +6,20 @@ import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
 import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
+import androidx.lifecycle.LiveData;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.media3.common.MediaItem;
@@ -26,19 +28,25 @@ import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.ui.PlayerView;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
 import com.bumptech.glide.Glide;
 import com.example.connection.R;
 import com.example.connection.adapter.ChatMessageAdapter;
+import com.example.connection.adapter.EmoteShowInChatAdapter;
 import com.example.connection.model.ChatMessage;
 import com.example.connection.model.ChatRoom;
+import com.example.connection.model.EmoteModel;
 import com.example.connection.view.fragment.FragmentChangeInfoChat;
 import com.example.connection.viewmodel.ChatViewModel;
 import com.firebase.ui.firestore.FirestoreRecyclerOptions;
 import com.google.android.material.card.MaterialCardView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.Query;
+
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+
 import de.hdodenhof.circleimageview.CircleImageView;
 
 public class ChatActivity extends AppCompatActivity {
@@ -60,8 +68,14 @@ public class ChatActivity extends AppCompatActivity {
     private String urlVideo;
     private ChatRoom chatRoom;
     private String otherId;
-    private AlertDialog dialog;
     private boolean needRefresh = false;
+    private final List<String> emoteList = Arrays.asList(
+            "\uD83D\uDC4D",
+            "\uD83D\uDE02",
+            "\u2764\uFE0F",
+            "\uD83D\uDE2E",
+            "\uD83D\uDE22",
+            "\uD83D\uDE21");
 
     @SuppressLint({"ClickableViewAccessibility", "NotifyDataSetChanged"})
     @Override
@@ -90,7 +104,15 @@ public class ChatActivity extends AppCompatActivity {
         });
 
         img_disable_image.setOnClickListener(view -> {
-            recyclerView.setOnTouchListener((view1, motionEvent) -> false);
+            recyclerView.setOnTouchListener((view1, motionEvent) -> {
+                if (!adapter.getPositionIsShowingEmote().isEmpty()) {
+                    int pos = adapter.getPositionIsShowingEmote().get(0);
+                    adapter.getPositionIsShowingEmote().clear();
+                    adapter.notifyItemChanged(pos);
+                    Log.e(TAG, "onCreate:1 ");
+                }
+                return false;
+            });
             scrimOverlay.setVisibility(View.GONE);
             cardView.setVisibility(View.GONE);
             edt_send_message.setEnabled(true);
@@ -143,7 +165,7 @@ public class ChatActivity extends AppCompatActivity {
                         builder.setTitle("Chỉnh sửa biệt danh");
                         builder.setMessage("Biệt danh này chỉ được nhìn thấy trong đoạn chat");
                         builder.setView(view1);
-                        dialog = builder.create();
+                        AlertDialog dialog = builder.create();
                         Window window = dialog.getWindow();
                         if (window != null) {
                             window.setBackgroundDrawableResource(R.drawable.custom_dialog);
@@ -179,6 +201,16 @@ public class ChatActivity extends AppCompatActivity {
             }
         });
 
+        recyclerView.setOnTouchListener((v, event) -> {
+            if (!adapter.getPositionIsShowingEmote().isEmpty()) {
+                int pos = adapter.getPositionIsShowingEmote().get(0);
+                adapter.getPositionIsShowingEmote().clear();
+                adapter.notifyItemChanged(pos);
+                Log.e(TAG, "onCreate: 2" );
+            }
+            return false;
+        });
+
         chatViewModel.getSend().observe(this, send -> {
             if (send) {
                 edt_send_message.setText("");
@@ -205,9 +237,8 @@ public class ChatActivity extends AppCompatActivity {
             if (chatRoom1 == null) return;
             ChatActivity.this.updateChatRoomUi(chatRoom1);
             chatRoom = chatRoom1;
-            Log.e("kiemtrachatroom", "onCreate: " + chatRoom1);
             if (needRefresh) {
-                setUpRecyclerViewMessage(chatRoom1);
+                adapter.setData(chatRoom.getAvtSender(), chatRoom.getAlias());
                 needRefresh = false;
             }
         });
@@ -356,30 +387,94 @@ public class ChatActivity extends AppCompatActivity {
                         adapter.stopListening();
                         recyclerView.setAdapter(null);
                     }
-                    adapter = new ChatMessageAdapter(options, ChatActivity.this, urlPost -> {
-                        recyclerView.setOnTouchListener((view, motionEvent) -> true);
-                        scrimOverlay.setVisibility(View.VISIBLE);
-                        cardView.setVisibility(View.VISIBLE);
-                        edt_send_message.setEnabled(false);
-                        img_back.setEnabled(false);
-                        img_send_message.setEnabled(false);
-                        if (urlPost.contains(".jpg")) {
-                            img_show_image_click.setVisibility(View.VISIBLE);
-                            playerViewChat.setVisibility(View.GONE);
-                            Glide.with(ChatActivity.this).load(urlPost).error(R.drawable.icon_avatar).into(img_show_image_click);
-                        } else if (urlPost.contains(".mp4")) {
-                            urlVideo = urlPost;
-                            playerViewChat.setVisibility(View.VISIBLE);
-                            img_show_image_click.setVisibility(View.GONE);
-                            playerViewChat.setPlayer(null);
-                            playerViewChat.setPlayer(exoPlayer);
-                            MediaItem mediaItem = MediaItem.fromUri(urlPost);
-                            exoPlayer.setRepeatMode(Player.REPEAT_MODE_ALL);
-                            exoPlayer.setMediaItem(mediaItem);
-                            exoPlayer.prepare();
-                            exoPlayer.play();
+                    adapter = new ChatMessageAdapter(options, ChatActivity.this, new ChatMessageAdapter.OnItemClick() {
+                        @Override
+                        public void onImageClick(String urlPost) {
+                            recyclerView.setOnTouchListener((view, motionEvent) -> true);
+                            scrimOverlay.setVisibility(View.VISIBLE);
+                            cardView.setVisibility(View.VISIBLE);
+                            edt_send_message.setEnabled(false);
+                            img_back.setEnabled(false);
+                            img_send_message.setEnabled(false);
+                            if (urlPost.contains(".jpg")) {
+                                img_show_image_click.setVisibility(View.VISIBLE);
+                                playerViewChat.setVisibility(View.GONE);
+                                Glide.with(ChatActivity.this).load(urlPost).error(R.drawable.icon_avatar).into(img_show_image_click);
+                            } else if (urlPost.contains(".mp4")) {
+                                urlVideo = urlPost;
+                                playerViewChat.setVisibility(View.VISIBLE);
+                                img_show_image_click.setVisibility(View.GONE);
+                                playerViewChat.setPlayer(null);
+                                playerViewChat.setPlayer(exoPlayer);
+                                MediaItem mediaItem = MediaItem.fromUri(urlPost);
+                                exoPlayer.setRepeatMode(Player.REPEAT_MODE_ALL);
+                                exoPlayer.setMediaItem(mediaItem);
+                                exoPlayer.prepare();
+                                exoPlayer.play();
+                            }
                         }
-                    }, chatRoom1.getAvtSender(), chatRoom1.getAlias());
+
+                        @Override
+                        public void onMessageLongClick(String idMess, Map<String, String> emoteMap) {
+                            chatViewModel.expressEmote(idMess, emoteMap);
+                        }
+
+                        @Override
+                        public void onMessageClickToShowEmote(String idMess, Map<String, String> emoteMap) {
+                            List<EmoteModel> list = new ArrayList<>();
+                            for(Map.Entry<String, String> entry : emoteMap.entrySet()){
+                                EmoteModel emoteModel = new EmoteModel(entry.getKey(),
+                                        chatRoom1.getAvtSender().get(entry.getKey()),
+                                        chatRoom1.getAlias().get(entry.getKey()),
+                                        entry.getValue());
+                                list.add(emoteModel);
+                            }
+
+                            AlertDialog.Builder builder = new AlertDialog.Builder(ChatActivity.this);
+                            @SuppressLint("InflateParams") View view = getLayoutInflater().inflate(R.layout.custom_dialog_show_emote, null);
+                            RecyclerView recycler_view_show_emote = view.findViewById(R.id.recycler_view_emote_show);
+                            ImageView img_clear = view.findViewById(R.id.img_cancel_emote_show);
+                            builder.setView(view);
+
+                            AlertDialog alertDialog = builder.create();
+                            Window window = alertDialog.getWindow();
+                            if (window != null) {
+                                window.setBackgroundDrawableResource(R.drawable.custom_dialog);
+                                window.setGravity(Gravity.BOTTOM);
+                                WindowManager.LayoutParams params = window.getAttributes();
+                                params.y = (int) (50 * getResources().getDisplayMetrics().density);
+                                window.setAttributes(params);
+                                alertDialog.show();
+                            } else {
+                                Toast.makeText(ChatActivity.this, "Có lỗi gì đó xảy ra, hãy thử lại", Toast.LENGTH_LONG).show();
+                            }
+
+                            img_clear.setOnClickListener(view1 -> alertDialog.dismiss());
+                            EmoteShowInChatAdapter emoteShowInChatAdapter = new EmoteShowInChatAdapter(ChatActivity.this, list, idUser -> chatViewModel.removeEmote(idMess, idUser, emoteMap));
+                            recycler_view_show_emote.setAdapter(emoteShowInChatAdapter);
+                            recycler_view_show_emote.setLayoutManager(new LinearLayoutManager(ChatActivity.this));
+
+                            LiveData<Map<String, String>> liveData = chatViewModel.registerListeningReaction(idMess);
+                            Observer<Map<String, String>> observer = stringStringMap -> {
+                                List<EmoteModel> list1 = new ArrayList<>();
+                                for(Map.Entry<String, String> entry : stringStringMap.entrySet()){
+                                    EmoteModel emoteModel = new EmoteModel(entry.getKey(),
+                                            chatRoom1.getAvtSender().get(entry.getKey()),
+                                            chatRoom1.getAlias().get(entry.getKey()),
+                                            entry.getValue());
+                                    list1.add(emoteModel);
+                                }
+                                emoteShowInChatAdapter.setData(list1);
+                                Log.e(TAG, "onMessageClickToShowEmote: ");
+                            };
+                            liveData.observe(ChatActivity.this, observer);
+
+                            alertDialog.setOnDismissListener(dialogInterface -> {
+                                chatViewModel.unregisterListeningReaction();
+                                liveData.removeObserver(observer);
+                            });
+                        }
+                    }, chatRoom1.getAvtSender(), chatRoom1.getAlias(), emoteList);
                     manager.setReverseLayout(true);
                     recyclerView.setLayoutManager(manager);
                     recyclerView.setAdapter(adapter);

@@ -10,6 +10,7 @@ import com.example.connection.utils.SharePreUtil;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
@@ -158,8 +159,9 @@ public class ShowPhotoRepository {
         Log.e(TAG, "sendMessage1: " + message);
         db.collection("chatroom").document(chatRoomId).set(chatRoom);
 
-        ChatMessage chatMessage = new ChatMessage(message, currentUserId, Timestamp.now().toDate().getTime(), false);
-        getChatroomMessageReference(chatRoomId).add(chatMessage).addOnCompleteListener(task -> {
+        DocumentReference docRefChatMessage = getChatroomMessageReference(chatRoomId).document();
+        ChatMessage chatMessage = new ChatMessage(docRefChatMessage.getId(),message, currentUserId, Timestamp.now().toDate().getTime(), false, new HashMap<>());
+        docRefChatMessage.set(chatMessage).addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
                 onSendMessage.onSuccess(true);
                 onSendMessage.onExpressHeart(message.contains("\u2764\uFE0F"));

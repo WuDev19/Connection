@@ -86,4 +86,5 @@
     <string name="bdanh">Biệt danh</string>
     <string name="enter_alias">Nhập biệt danh</string>
     <string name="delete_alias">Xóa</string>
+    <string name="reaction">Cảm xúc</string>
 </resources>

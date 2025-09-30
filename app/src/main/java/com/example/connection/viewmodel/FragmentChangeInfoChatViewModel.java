@@ -114,14 +114,24 @@ public class FragmentChangeInfoChatViewModel extends ViewModel implements OnStat
         Map<String, Long> mapDelete = chatRoom.getDeleteChat();
         Map<String, String> avtMap = chatRoom.getAvtSender();
         Map<String, String> aliasMap = chatRoom.getAlias();
-        if(userId.remove(currentId)) check++;
-        if (mapDelete.remove(currentId) != null) check++;
-        if (avtMap.remove(currentId) != null) check++;
-        if(aliasMap.remove(currentId) != null) check++;
+        if(userId.remove(currentId)) {
+            check++;
+        }
+        if (mapDelete.remove(currentId) != null) {
+            check++;
+        }
+        if (avtMap.containsKey(currentId)) {
+            avtMap.remove(currentId);
+            check++;
+        }
+        if(aliasMap.remove(currentId) != null) {
+            check++;
+        }
         if(check == 4){
             chatRoom.setUserId(userId);
             chatRoom.setAvtSender(avtMap);
             chatRoom.setDeleteChat(mapDelete);
+            chatRoom.setAlias(aliasMap);
             fragmentChangeInfoChatRepository.leaveChat(chatRoom).addOnCompleteListener(task -> {
                 if(task.isSuccessful()){
                     successLiveData.setValue("Đã rời khỏi nhóm");
@@ -133,6 +143,9 @@ public class FragmentChangeInfoChatViewModel extends ViewModel implements OnStat
                     }
                 }
             });
+        }
+        else {
+            errorLiveData.setValue("Lỗi không thể rời đoạn chat");
         }
     }
 

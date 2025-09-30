@@ -1,5 +1,6 @@
 package com.example.connection.adapter;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -20,8 +21,8 @@ public class ChangeAliasAdapter extends RecyclerView.Adapter<ChangeAliasAdapter.
     private final Context context;
     private final List<String> listId;
     private final OnItemClick onItemClick;
-    private final Map<String, String> avtSender;
-    private final Map<String, String> aliasSender;
+    private Map<String, String> avtSender;
+    private Map<String, String> aliasSender;
 
     public ChangeAliasAdapter(Context context, List<String> listId, Map<String, String> avtSender, Map<String, String> aliasSender, OnItemClick onItemClick) {
         this.context = context;
@@ -35,6 +36,13 @@ public class ChangeAliasAdapter extends RecyclerView.Adapter<ChangeAliasAdapter.
         void onClick(TextView text_alias, String id);
     }
 
+    @SuppressLint("NotifyDataSetChanged")
+    public void setData(Map<String, String> avtSender, Map<String, String> aliasSender){
+        this.avtSender = avtSender;
+        this.aliasSender = aliasSender;
+        notifyDataSetChanged();
+    }
+
     @NonNull
     @Override
     public ChangeAliasViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -46,10 +54,13 @@ public class ChangeAliasAdapter extends RecyclerView.Adapter<ChangeAliasAdapter.
     public void onBindViewHolder(@NonNull ChangeAliasViewHolder holder, int position) {
         String id = listId.get(position);
         if(id == null) return;
-        if(Objects.requireNonNull(aliasSender.get(id)).contains("_")){
-            holder.tv_alias.setText(Objects.requireNonNull(aliasSender.get(id)).split("_")[1]);
+        String alias = aliasSender.get(id);
+        if(alias != null){
+            if(alias.contains("_")){
+                holder.tv_alias.setText(Objects.requireNonNull(aliasSender.get(id)).split("_")[1]);
+            }
+            else holder.tv_alias.setText(aliasSender.get(id));
         }
-        else holder.tv_alias.setText(aliasSender.get(id));
         Glide.with(context).load(avtSender.get(id)).error(R.drawable.icon_avatar).into(holder.img_avt);
         holder.linear_alias.setOnClickListener(view -> onItemClick.onClick(holder.tv_alias, id));
     }

@@ -66,8 +66,6 @@ public class FragmentChooseMusic extends BottomSheetDialogFragment {
         return view;
     }
 
-    //fix bug nút play nhạc
-    // TODO: 9/23/2025  
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);

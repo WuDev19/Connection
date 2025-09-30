@@ -1,6 +1,9 @@
 package com.example.connection.viewmodel;
 
 import android.util.Log;
+
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 import com.example.connection.model.ChatRoom;
 import com.example.connection.repository.FragmentChangeAliasRepository;
@@ -12,6 +15,7 @@ import java.util.Objects;
 public class FragmentChangeAliasViewModel extends ViewModel {
     private final FragmentChangeAliasRepository fragmentChangeAliasRepository;
     private final String TAG = getClass().getName();
+    private final MutableLiveData<ChatRoom> chatRoomListeningLiveData = new MutableLiveData<>();
 
     public FragmentChangeAliasViewModel() {
         fragmentChangeAliasRepository = new FragmentChangeAliasRepository();
@@ -46,6 +50,18 @@ public class FragmentChangeAliasViewModel extends ViewModel {
                 Log.e(TAG, "onComplete: " + Objects.requireNonNull(task.getException()).getMessage());
             }
         });
+    }
+
+    public void listeningChatRoom(ChatRoom chatRoom) {
+        fragmentChangeAliasRepository.listeningChatRoom(chatRoom, chatRoomListeningLiveData::setValue);
+    }
+
+    public void unregisterListeningChatRoom() {
+        fragmentChangeAliasRepository.unregisterListeningChatRoom();
+    }
+
+    public LiveData<ChatRoom> getChatRoomListeningLiveData() {
+        return chatRoomListeningLiveData;
     }
 
 }

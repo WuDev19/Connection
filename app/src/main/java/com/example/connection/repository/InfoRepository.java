@@ -98,7 +98,10 @@ public class InfoRepository {
     public void upload_avt(Uri uri, String username, User user) {
         if (uri == null) {
             onStateListener.onLoading(true);
-            if (!username.isEmpty()) user.setUserName(username);
+            if (!username.isEmpty()) {
+                user.setUserName(username);
+                user.setUserNameLowerCase(username.toLowerCase());
+            }
             updateUserToFirebase(user);
             return;
         }
@@ -118,7 +121,10 @@ public class InfoRepository {
             public void onSuccess(String requestId, Map resultData) {
                 String imageUrl = (String) resultData.get("secure_url");
                 if (imageUrl != null) user.setAvatarUser(imageUrl);
-                if (!username.isEmpty()) user.setUserName(username);
+                if (!username.isEmpty()) {
+                    user.setUserName(username);
+                    user.setUserNameLowerCase(username.toLowerCase());
+                }
                 updateUserToFirebase(user);
             }
 

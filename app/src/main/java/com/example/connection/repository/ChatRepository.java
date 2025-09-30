@@ -1,6 +1,8 @@
 package com.example.connection.repository;
 
 import android.util.Log;
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
 import com.example.connection.model.ChatMessage;
 import com.example.connection.model.ChatRoom;
 import com.example.connection.model.User;
@@ -8,12 +10,15 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentChange;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.WriteBatch;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -24,7 +29,7 @@ public class ChatRepository {
     private final String TAG = getClass().getName();
     private final String currentUserId;
     private User currentUser;
-    private ListenerRegistration seenMessageListening, chatRoomListening;
+    private ListenerRegistration seenMessageListening, chatRoomListening, reactionListening;
 
     public ChatRepository(){
         db = FirebaseFirestore.getInstance();
@@ -105,12 +110,19 @@ public class ChatRepository {
 
     public void sendMessage(String message, String chatRoomId, ChatRoom chatRoom) {
         db.collection("chatroom").document(chatRoomId).set(chatRoom);
-        ChatMessage chatMessage = new ChatMessage(message, currentUserId, Timestamp.now().toDate().getTime(), false);
-        getChatroomMessageReference(chatRoomId).add(chatMessage).addOnCompleteListener(task -> {
+        DocumentReference docRefChatMessage = getChatroomMessageReference(chatRoomId).document();
+        ChatMessage chatMessage = new ChatMessage(docRefChatMessage.getId(),message, currentUserId, Timestamp.now().toDate().getTime(), false, new HashMap<>());
+        docRefChatMessage.set(chatMessage).addOnCompleteListener(task -> {
             if (task.isSuccessful()){
                 Log.e(TAG, "Gửi thành công");
             }
         });
+    }
+
+    public Task<Void> modifyEmote(ChatRoom chatRoom, Map<String, String> emoteMap, String idMessage){
+        return getChatroomMessageReference(chatRoom.getChatRoomId())
+                .document(idMessage)
+                .update("emote", emoteMap);
     }
 
     private CollectionReference getChatroomMessageReference(String chatRoomId){
@@ -244,6 +256,35 @@ public class ChatRepository {
         return db.collection("chatroom")
                 .document(chatRoom.getChatRoomId())
                 .set(chatRoom);
+    }
+
+    public LiveData<Map<String, String>> listeningReaction(ChatRoom chatRoom, String idMess){
+        MutableLiveData<Map<String, String>> mapMutableLiveData = new MutableLiveData<>();
+
+        if(reactionListening != null){
+            reactionListening.remove();
+        }
+        
+        reactionListening = getChatroomMessageReference(chatRoom.getChatRoomId()).addSnapshotListener((value, error) -> {
+            if(value == null || error != null) return;
+            for(DocumentChange documentChange : value.getDocumentChanges()){
+                if(documentChange.getType() == DocumentChange.Type.MODIFIED){
+                    ChatMessage chatMessage = documentChange.getDocument().toObject(ChatMessage.class);
+                    if(chatMessage.getIdMessage().equals(idMess)){
+                        mapMutableLiveData.setValue(chatMessage.getEmote());
+                        Log.e(TAG, "onEvent: modify");
+                    }
+                }
+            }
+        });
+        return mapMutableLiveData;
+    }
+
+    public void unregisterListeningReaction(){
+        if(reactionListening != null){
+            Log.e("ChatActivity", "unregisterListeningReaction: ");
+            reactionListening.remove();
+        }
     }
 
 }
