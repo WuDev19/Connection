@@ -1,6 +1,7 @@
 package com.example.connection.viewmodel;
 
 import android.content.Context;
+import android.util.Log;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
@@ -13,23 +14,23 @@ public class ShowPhotoViewModel extends ViewModel implements ShowPhotoRepository
     private final ShowPhotoRepository showPhotoRepository;
     private final MutableLiveData<Boolean> updateWidget = new MutableLiveData<>();
     private final MutableLiveData<Boolean> sendMessageSuccess = new MutableLiveData<>();
-    private final MutableLiveData<Boolean> isExpressHeart = new MutableLiveData<>();
     private final MutableLiveData<Query> query = new MutableLiveData<>();
+    private final String TAG = getClass().getName();
 
-    public ShowPhotoViewModel(){
+    public ShowPhotoViewModel() {
         showPhotoRepository = new ShowPhotoRepository(this);
     }
 
-    public void updateSeenPost(Context context){
+    public void updateSeenPost(Context context) {
         showPhotoRepository.updateSeenPostPhoto(context, updateWidget::setValue);
     }
 
-    public void getQueryFireStore(){
+    public void getQueryFireStore() {
         Query query1 = showPhotoRepository.getQuery();
         query.setValue(query1);
     }
 
-    public void sendMessage(String message, String postUrl, String otherId, String otherUserName, String avtPoster){
+    public void sendMessage(String message, String postUrl, String otherId, String otherUserName, String avtPoster) {
         if (message.isEmpty()) return;
         String mess = message + "_" + postUrl;
         String myId = FirebaseAuth.getInstance().getUid();
@@ -46,16 +47,18 @@ public class ShowPhotoViewModel extends ViewModel implements ShowPhotoRepository
         }
     }
 
+    public void expressEmote(String emote, String postId) {
+        showPhotoRepository.modifyEmote(postId, emote)
+                .addOnSuccessListener(unused -> Log.e(TAG, "onSuccess: "))
+                .addOnFailureListener(e -> Log.e(TAG, "onFailure: " + e.getMessage()));
+    }
+
     public LiveData<Boolean> getUpdateWidget() {
         return updateWidget;
     }
 
     public LiveData<Boolean> getSendMessageSuccess() {
         return sendMessageSuccess;
-    }
-
-    public LiveData<Boolean> getIsExpressHeart() {
-        return isExpressHeart;
     }
 
     public LiveData<Query> getQuery() {
@@ -67,8 +70,4 @@ public class ShowPhotoViewModel extends ViewModel implements ShowPhotoRepository
         sendMessageSuccess.setValue(success);
     }
 
-    @Override
-    public void onExpressHeart(boolean isExpress) {
-        isExpressHeart.setValue(isExpress);
-    }
 }

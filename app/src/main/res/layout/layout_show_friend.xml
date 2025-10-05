@@ -29,7 +29,7 @@
         android:layout_height="30dp"
         android:layout_centerVertical="true"
         android:layout_marginEnd="15dp"
-        android:src="@drawable/icon_chat"
+        android:src="@drawable/icon_send_comment"
         android:contentDescription="@string/chat"
         android:background="@null"
         android:layout_toStartOf="@+id/btn_delete_friend"
@@ -45,6 +45,7 @@
         android:src="@drawable/icon_clear"
         android:scaleType="centerCrop"
         android:contentDescription="@string/delete_account"
-        android:background="@drawable/button_corner"/>
+        android:background="@drawable/button_corner"
+        android:backgroundTint="#E1DEDE"/>
 
 </RelativeLayout>

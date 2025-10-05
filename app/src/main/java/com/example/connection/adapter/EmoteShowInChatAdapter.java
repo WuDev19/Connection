@@ -58,7 +58,13 @@ public class EmoteShowInChatAdapter extends RecyclerView.Adapter<EmoteShowInChat
                     .load(emoteModel.getUrlAvt())
                     .error(R.drawable.icon_avatar)
                     .into(holder.avt);
-            holder.username.setText(emoteModel.getUsername());
+            String userName = emoteModel.getUsername();
+            if(userName.contains("_")){
+                holder.username.setText(userName.split("_")[1]);
+            }
+            else {
+                holder.username.setText(userName);
+            }
             holder.emote.setText(emoteModel.getEmote());
             holder.relative_emote.setOnClickListener(view -> onItemClick.onClick(emoteModel.getIdUser()));
         }

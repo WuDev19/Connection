@@ -4,9 +4,11 @@ import android.content.Context;
 import android.util.Log;
 import com.example.connection.model.ChatMessage;
 import com.example.connection.model.ChatRoom;
+import com.example.connection.model.EmoteModel;
 import com.example.connection.model.Image;
 import com.example.connection.model.User;
 import com.example.connection.utils.SharePreUtil;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.CollectionReference;
@@ -14,7 +16,6 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -31,16 +32,16 @@ public class ShowPhotoRepository {
     private final OnSendMessage onSendMessage;
     private User currentUser;
 
-    public ShowPhotoRepository(OnSendMessage onSendMessage){
+    public ShowPhotoRepository(OnSendMessage onSendMessage) {
         db = FirebaseFirestore.getInstance();
         myId = FirebaseAuth.getInstance().getUid();
-        if(myId != null){
+        if (myId != null) {
             db.collection("users").document(myId)
                     .get()
                     .addOnCompleteListener(task -> {
-                        if(task.isSuccessful()){
+                        if (task.isSuccessful()) {
                             User user = task.getResult().toObject(User.class);
-                            if(user != null) {
+                            if (user != null) {
                                 currentUser = user;
                             }
                         }
@@ -49,13 +50,16 @@ public class ShowPhotoRepository {
         this.onSendMessage = onSendMessage;
     }
 
-    public interface OnUpdateWidget{
+    public interface OnUpdateWidget {
         void onUpdate(boolean isUpdate);
     }
 
-    public interface OnSendMessage{
+    public interface OnSendMessage {
         void onSuccess(boolean success);
-        void onExpressHeart(boolean isExpress);
+    }
+
+    public User getCurrentUser() {
+        return currentUser;
     }
 
     public void updateSeenPostPhoto(Context context, OnUpdateWidget onUpdateWidget) {
@@ -67,11 +71,11 @@ public class ShowPhotoRepository {
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     for (DocumentSnapshot documentSnapshot : queryDocumentSnapshots) {
                         documentSnapshot.getReference().get().addOnCompleteListener(task -> {
-                            if(task.isSuccessful()){
+                            if (task.isSuccessful()) {
                                 Image image = documentSnapshot.toObject(Image.class);
                                 if (image == null) return;
                                 List<String> list = image.getSeen();
-                                if(list == null) {
+                                if (list == null) {
                                     return;
                                 }
                                 if (list.contains(myId)) return;
@@ -83,42 +87,47 @@ public class ShowPhotoRepository {
                                         Log.e(TAG, Objects.requireNonNull(Objects.requireNonNull(task1.getException()).getMessage()));
                                     }
                                 });
-                            }
-                            else Log.e(TAG, Objects.requireNonNull(Objects.requireNonNull(task.getException()).getMessage()));
+                            } else
+                                Log.e(TAG, Objects.requireNonNull(Objects.requireNonNull(task.getException()).getMessage()));
                         });
                     }
-                    if(SharePreUtil.getInstance(context.getApplicationContext()).enableWidget()){
+                    if (SharePreUtil.getInstance(context.getApplicationContext()).enableWidget()) {
                         onUpdateWidget.onUpdate(true);
                     }
                 })
                 .addOnFailureListener(e -> Log.e(TAG, "onFailure: " + e.getMessage()));
     }
 
-    public Query getQuery(){
-        if(myId == null) return null;
+    public Query getQuery() {
+        if (myId == null) return null;
         return db.collection("post_photo")
                 .whereArrayContains("friendId", myId)
                 .orderBy("timestamp", Query.Direction.DESCENDING);
     }
 
-    public void sendMessage(String chatRoomId, String otherId, String otherUserName, String avtPoster, String mess){
+    public void sendMessage(String chatRoomId, String otherId, String otherUserName, String avtPoster, String mess) {
         db.collection("chatroom").document(chatRoomId)
                 .get().addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         chatRoom = task.getResult().toObject(ChatRoom.class);
                         if (chatRoom == null) {
+
                             Map<String, Long> mapDelete = new HashMap<>();
                             mapDelete.put(myId, Timestamp.now().toDate().getTime());
                             mapDelete.put(otherId, Timestamp.now().toDate().getTime());
+
                             Map<String, String> avtMap = new HashMap<>();
                             avtMap.put(otherId, avtPoster);
                             avtMap.put(currentUser.getId(), currentUser.getAvatarUser());
+
                             Map<String, String> aliasMap = new HashMap<>();
                             aliasMap.put(otherId, otherUserName);
                             aliasMap.put(currentUser.getId(), currentUser.getUserName());
+
                             List<String> searchChat = new ArrayList<>();
                             searchChat.add(otherUserName.toLowerCase());
                             searchChat.add(currentUser.getUserName().toLowerCase());
+
                             chatRoom = new ChatRoom(chatRoomId,
                                     null,
                                     null,
@@ -156,21 +165,81 @@ public class ShowPhotoRepository {
         chatRoom.setLastMessageSenderId(currentUserId);
         chatRoom.setLastMessageTimestamp(Timestamp.now());
         chatRoom.setLastMessage(message);
-        Log.e(TAG, "sendMessage1: " + message);
         db.collection("chatroom").document(chatRoomId).set(chatRoom);
 
         DocumentReference docRefChatMessage = getChatroomMessageReference(chatRoomId).document();
-        ChatMessage chatMessage = new ChatMessage(docRefChatMessage.getId(),message, currentUserId, Timestamp.now().toDate().getTime(), false, new HashMap<>());
+        ChatMessage chatMessage = new ChatMessage(docRefChatMessage.getId(), message, currentUserId, Timestamp.now().toDate().getTime(), false, new HashMap<>());
         docRefChatMessage.set(chatMessage).addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
                 onSendMessage.onSuccess(true);
-                onSendMessage.onExpressHeart(message.contains("\u2764\uFE0F"));
             }
         });
     }
 
     private CollectionReference getChatroomMessageReference(String chatRoomId) {
         return db.collection("chatroom").document(chatRoomId).collection("chats");
+    }
+
+    public String getIdEmote(String postId) {
+        DocumentReference emoteRef = db.collection("post_photo").document(postId).collection("emotes").document();
+        return emoteRef.getId();
+    }
+
+    @SuppressWarnings("unchecked")
+    public Task<Void> modifyEmote(String postId, String emote) {
+        DocumentReference postRef = db.collection("post_photo").document(postId);
+        return db.runTransaction(transaction -> {
+            DocumentSnapshot postSnap = transaction.get(postRef);
+            Map<String, String> emoteMap = (Map<String, String>) postSnap.get("emoteMap");
+            Long count = postSnap.getLong("numberEmote");
+            if (emoteMap != null) {
+                if (emoteMap.containsKey(myId)) {
+                    String emoteIdAndEmote = emoteMap.get(myId);
+                    if (emoteIdAndEmote != null) {
+                        String emoteId = emoteIdAndEmote.split("_")[0];
+                        DocumentReference emoteRef = db.collection("post_photo").document(postId).collection("emotes").document(emoteId);
+                        DocumentSnapshot emoteSnap = transaction.get(emoteRef);
+                        String oldEmote = emoteIdAndEmote.split("_")[1];
+                        //xoa reaction
+                        if (oldEmote.equals(emote)) {
+                            Log.e(TAG, "modifyEmote: xoa");
+                            emoteMap.remove(myId);
+                            long newCount = (count != null ? count : 0) - 1;
+                            if (newCount < 0) newCount = 0;
+                            if (emoteSnap.exists()) {
+                                transaction.delete(emoteRef);
+                            }
+                            transaction.update(postRef, "numberEmote", newCount);
+                            transaction.update(postRef, "emoteMap", emoteMap);
+                        }
+                        //cap nhat reaction
+                        else {
+                            Log.e(TAG, "modifyEmote: cap nhat");
+                            transaction.update(emoteRef, "emote", emote);
+                            transaction.update(emoteRef, "timestamp", Timestamp.now());
+                            transaction.update(postRef, "emoteMap." + myId, emoteId + "_" + emote);
+                        }
+                    }
+                }
+                //lan dau tha reaction
+                else {
+                    Log.e(TAG, "modifyEmote: tao moi");
+                    String emoteId = getIdEmote(postId);
+                    DocumentReference emoteRef = db.collection("post_photo").document(postId).collection("emotes").document(emoteId);
+                    EmoteModel model = new EmoteModel(emoteId,
+                            myId,
+                            currentUser.getAvatarUser(),
+                            currentUser.getUserName(),
+                            emote,
+                            Timestamp.now());
+                    long newCount = (count != null ? count : 0) + 1;
+                    transaction.update(postRef, "numberEmote", newCount);
+                    transaction.update(postRef, "emoteMap." + myId, model.getIdEmote() + "_" + emote);
+                    transaction.set(emoteRef, model);
+                }
+            }
+            return null;
+        });
     }
 
 }

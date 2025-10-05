@@ -17,6 +17,7 @@ import com.example.connection.model.Image;
 import com.example.connection.model.User;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
@@ -26,6 +27,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -44,13 +46,13 @@ public class TakePhotoRepository {
     private final OnStateListener onStateListener;
     private final ExecutorService downloadExecutor = Executors.newSingleThreadExecutor();
 
-    public TakePhotoRepository(OnStateListener onStateListener){
+    public TakePhotoRepository(OnStateListener onStateListener) {
         currentUserId = FirebaseAuth.getInstance().getUid();
         db = FirebaseFirestore.getInstance();
         this.onStateListener = onStateListener;
     }
 
-    public interface NewPostCallBack{
+    public interface NewPostCallBack {
         void updateUI(List<Image> unseenImage);
     }
 
@@ -58,15 +60,15 @@ public class TakePhotoRepository {
 
         if (currentUserId == null) return;
 
-        if(listenListFriend != null){
+        if (listenListFriend != null) {
             listenListFriend.remove();
         }
 
         listenListFriend = db.collection("users").document(currentUserId)
                 .addSnapshotListener((value, error) -> {
 
-                    if(error != null) return;
-                    if(value == null) return;
+                    if (error != null) return;
+                    if (value == null) return;
 
                     user = value.toObject(User.class);
                     if (user != null) {
@@ -77,11 +79,11 @@ public class TakePhotoRepository {
                 });
     }
 
-    public void unregisterListening(){
-        if(listenListFriend != null){
+    public void unregisterListening() {
+        if (listenListFriend != null) {
             listenListFriend.remove();
         }
-        if(postListenerRealTime != null){
+        if (postListenerRealTime != null) {
             postListenerRealTime.remove();
         }
     }
@@ -111,19 +113,20 @@ public class TakePhotoRepository {
                             String urlImageCloudinary = (String) resultData.get("secure_url");
                             List<String> list = new ArrayList<>();
                             list.add(currentUserId);
-                            Image image = new Image(mList, urlImageCloudinary, null, status, currentUserId,
+                            DocumentReference postRef = db.collection("post_photo")
+                                    .document();
+                            Image image = new Image(postRef.getId(), mList, urlImageCloudinary, null, status, currentUserId,
                                     Timestamp.now(), list, urlMusic, name, singer, user.getUserName(),
-                                    user.getAvatarUser());
-                            Log.e("status", "onSuccess: " + status);
-                            db.collection("post_photo")
-                                    .add(image)
+                                    user.getAvatarUser(), 0, 0, new HashMap<>());
+                            postRef.set(image)
                                     .addOnCompleteListener(task -> {
                                         if (task.isSuccessful()) {
                                             onStateListener.onSuccess("Đăng thành công");
-                                            if(file.delete()) Log.e(TAG, "onSuccess: xoa cache thanh cong");
+                                            if (file.delete())
+                                                Log.e(TAG, "onSuccess: xoa cache thanh cong");
                                         } else {
                                             Exception exception = task.getException();
-                                            if(exception != null){
+                                            if (exception != null) {
                                                 onStateListener.onFailure(task.getException().getMessage());
                                             }
                                         }
@@ -147,7 +150,7 @@ public class TakePhotoRepository {
         }
     }
 
-    public void uploadVideo(File file, String urlMusic, String name, String singer, String status){
+    public void uploadVideo(File file, String urlMusic, String name, String singer, String status) {
         MediaManager.get().upload(file.getAbsolutePath())
                 .unsigned("post_upload")
                 .option("resource_type", "video")
@@ -169,19 +172,19 @@ public class TakePhotoRepository {
                         Log.e("fileVideo", "onSuccess: " + urlVideoCloudinary);
                         List<String> list = new ArrayList<>();
                         list.add(currentUserId);
-                        Image image = new Image(mList, null, urlVideoCloudinary, status, currentUserId,
+                        DocumentReference postRef = db.collection("post_photo").document();
+                        Image image = new Image(postRef.getId(), mList, null, urlVideoCloudinary, status, currentUserId,
                                 Timestamp.now(), list, urlMusic, name, singer, user.getUserName(),
-                                user.getAvatarUser());
-                        Log.e("status", "onSuccess: " + status);
-                        db.collection("post_photo")
-                                .add(image)
+                                user.getAvatarUser(), 0, 0, new HashMap<>());
+                        postRef.set(image)
                                 .addOnCompleteListener(task -> {
                                     if (task.isSuccessful()) {
                                         onStateListener.onSuccess("Đăng thành công");
-                                        if(file.delete()) Log.e(TAG, "onSuccess: xoa cache thanh cong");
+                                        if (file.delete())
+                                            Log.e(TAG, "onSuccess: xoa cache thanh cong");
                                     } else {
                                         Exception exception = task.getException();
-                                        if(exception != null){
+                                        if (exception != null) {
                                             onStateListener.onFailure(task.getException().getMessage());
                                         }
                                     }
@@ -266,7 +269,7 @@ public class TakePhotoRepository {
                 });
     }
 
-    public void downloadPhoto(Bitmap photo, Context context){
+    public void downloadPhoto(Bitmap photo, Context context) {
         downloadExecutor.execute(() -> {
             String fileName = UUID.randomUUID().toString();
             ContentValues contentValues = new ContentValues();
@@ -290,25 +293,23 @@ public class TakePhotoRepository {
         });
     }
 
-    public void downloadVideo(File videoFile, Context context){
+    public void downloadVideo(File videoFile, Context context) {
         downloadExecutor.execute(() -> {
-            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q){
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 ContentValues contentValues = new ContentValues();
                 contentValues.put(MediaStore.Video.Media.DISPLAY_NAME, UUID.randomUUID() + ".mp4");
                 contentValues.put(MediaStore.Video.Media.MIME_TYPE, "video/mp4");
                 contentValues.put(MediaStore.Video.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/Connection");
                 Uri uri = context.getContentResolver().insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, contentValues);
-                if(uri != null){
-                    try{
+                if (uri != null) {
+                    try {
                         OutputStream outStream = context.getContentResolver().openOutputStream(uri);
                         downloadFile(videoFile, outStream);
-                    }
-                    catch (IOException e){
+                    } catch (IOException e) {
                         onStateListener.onFailure(e.getMessage());
                     }
                 }
-            }
-            else {
+            } else {
                 File folderConnection = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "Connection");
                 if (!folderConnection.exists()) {
                     boolean init = folderConnection.mkdirs();
@@ -321,32 +322,31 @@ public class TakePhotoRepository {
                     Log.e(TAG, "Folder đã tồn tại");
                 }
                 File video = new File(folderConnection, UUID.randomUUID() + ".mp4");
-                try{
+                try {
                     FileOutputStream outputStream = new FileOutputStream(video);
                     downloadFile(videoFile, outputStream);
                     Intent scanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
                     scanIntent.setData(Uri.fromFile(video));
                     context.sendBroadcast(scanIntent);
-                }
-                catch (IOException e){
+                } catch (IOException e) {
                     onStateListener.onFailure(e.getMessage());
                 }
             }
         });
     }
 
-    public void shutdownExecutor(){
+    public void shutdownExecutor() {
         downloadExecutor.shutdown();
     }
 
-    public void downloadFile(File videoFile, OutputStream outStream){
+    public void downloadFile(File videoFile, OutputStream outStream) {
         try {
             if (outStream != null) {
                 Log.e("download", "downloadVideo: stream");
                 FileInputStream fileInputStream = new FileInputStream(videoFile);
                 byte[] buffer = new byte[1024];
                 int len;
-                while((len = fileInputStream.read(buffer)) > 0){
+                while ((len = fileInputStream.read(buffer)) > 0) {
                     outStream.write(buffer, 0, len);
                 }
                 outStream.flush();
@@ -354,8 +354,7 @@ public class TakePhotoRepository {
                 fileInputStream.close();
                 onStateListener.onSuccess("Lưu video thành công");
             }
-        }
-        catch (IOException e){
+        } catch (IOException e) {
             onStateListener.onFailure(e.getMessage());
         }
     }

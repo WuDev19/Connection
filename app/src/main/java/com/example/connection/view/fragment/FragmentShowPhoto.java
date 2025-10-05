@@ -19,19 +19,17 @@ import androidx.media3.exoplayer.ExoPlayer;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.PagerSnapHelper;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.recyclerview.widget.SimpleItemAnimator;
 import androidx.recyclerview.widget.SnapHelper;
 import androidx.viewpager2.widget.ViewPager2;
 
 import android.util.Log;
 import android.view.GestureDetector;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
-import android.widget.FrameLayout;
-import android.widget.ImageView;
 import android.widget.RemoteViews;
 import android.widget.Toast;
 
@@ -55,7 +53,6 @@ public class FragmentShowPhoto extends Fragment {
     private int lastPosition = RecyclerView.NO_POSITION;
     private boolean isGeneralClick = false;
     private Image lastImage;
-    private View view;
     private ShowPhotoViewModel showPhotoViewModel;
     private EditText edt_send_message;
     private ExoPlayer exoPlayer;
@@ -75,11 +72,12 @@ public class FragmentShowPhoto extends Fragment {
     public View onCreateView(LayoutInflater inflater,
                              ViewGroup container,
                              Bundle savedInstanceState) {
-        view = inflater.inflate(R.layout.fragment_show_photo, container, false);
+        View view = inflater.inflate(R.layout.fragment_show_photo, container, false);
         initView(view);
         return view;
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -94,15 +92,9 @@ public class FragmentShowPhoto extends Fragment {
             }
         });
 
-        showPhotoViewModel.getSendMessageSuccess().observe(getViewLifecycleOwner(), aBoolean -> edt_send_message.setText(""));
-
-        showPhotoViewModel.getIsExpressHeart().observe(getViewLifecycleOwner(), isExpressHeart -> {
-            if (isExpressHeart) {
-                showFlyingHeart();
-                Toast.makeText(getContext(), "Đã bày tỏ cảm xúc", Toast.LENGTH_LONG).show();
-            } else {
-                Toast.makeText(getContext(), "Gửi tin nhắn thành công", Toast.LENGTH_LONG).show();
-            }
+        showPhotoViewModel.getSendMessageSuccess().observe(getViewLifecycleOwner(), aBoolean -> {
+            edt_send_message.setText("");
+            Toast.makeText(getContext(), "Gửi tin nhắn thành công", Toast.LENGTH_LONG).show();
         });
 
     }
@@ -154,12 +146,50 @@ public class FragmentShowPhoto extends Fragment {
                                     showPhotoViewModel.sendMessage(message, postUrl, otherId, otherUserName, avtPoster);
                                 }
 
+                                @Override
+                                public void expressEmote(String emote, String postId) {
+                                    showPhotoViewModel.expressEmote(emote, postId);
+                                }
+
+                                @Override
+                                public void showComment(String postId) {
+                                    FragmentComment fragmentComment = new FragmentComment();
+                                    Bundle bundle = new Bundle();
+                                    bundle.putString("postIdComment", postId);
+                                    fragmentComment.setArguments(bundle);
+                                    fragmentComment.show(requireActivity().getSupportFragmentManager(), fragmentComment.getTag());
+                                }
+
+                                @Override
+                                public void showEmote(String postId) {
+                                    FragmentEmotePost fragmentEmotePost = new FragmentEmotePost();
+                                    Bundle bundle = new Bundle();
+                                    bundle.putString("postId", postId);
+                                    fragmentEmotePost.setArguments(bundle);
+                                    fragmentEmotePost.show(requireActivity().getSupportFragmentManager(), fragmentEmotePost.getTag());
+                                }
+
+                                @Override
+                                public void showOptions(String postId, String url) {
+                                    FragmentOptionsPost fragmentOptionsPost = new FragmentOptionsPost();
+                                    Bundle bundle = new Bundle();
+                                    bundle.putString("postIdOptions", postId);
+                                    bundle.putString("postUrl", url);
+                                    fragmentOptionsPost.setArguments(bundle);
+                                    fragmentOptionsPost.show(requireActivity().getSupportFragmentManager(), fragmentOptionsPost.getTag());
+                                }
+
                             }, recyclerView, position, isGeneralClick, exoPlayer);
 
                             recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
                             recyclerView.setAdapter(adapter);
                             SnapHelper snapHelper = new PagerSnapHelper();
                             snapHelper.attachToRecyclerView(recyclerView);
+
+                            RecyclerView.ItemAnimator animator = recyclerView.getItemAnimator();
+                            if (animator instanceof SimpleItemAnimator) {
+                                ((SimpleItemAnimator) animator).setSupportsChangeAnimations(false);
+                            }
 
                             recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
                                 @Override
@@ -272,33 +302,6 @@ public class FragmentShowPhoto extends Fragment {
 
     private void initView(View view) {
         recyclerView = view.findViewById(R.id.recycler_view_show_photo);
-    }
-
-    private void showFlyingHeart() {
-        // 1. Tạo ImageView trái tim
-        FrameLayout heart_layout = view.findViewById(R.id.heart_layout);
-        ImageView heart = new ImageView(requireContext());
-        heart.setImageResource(R.drawable.icon_heart_svg); // icon trái tim của bạn
-        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
-                100, 100 // kích thước trái tim
-        );
-        params.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL; // bắt đầu từ dưới giữa
-        heart.setLayoutParams(params);
-
-        heart_layout.addView(heart);
-
-        // 2. Tạo animation bay lên + mờ dần
-        heart.setScaleX(0.5f);
-        heart.setScaleY(0.5f);
-
-        heart.animate()
-                .translationYBy(-600f) // bay lên
-                .alpha(0f)             // mờ dần
-                .scaleX(10f)            // phóng to
-                .scaleY(10f)
-                .setDuration(1500)
-                .withEndAction(() -> heart_layout.removeView(heart)) // Xoá sau khi xong
-                .start();
     }
 
     private void backPress() {

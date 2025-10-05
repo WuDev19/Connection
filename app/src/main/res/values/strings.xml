@@ -87,4 +87,10 @@
     <string name="enter_alias">Nhập biệt danh</string>
     <string name="delete_alias">Xóa</string>
     <string name="reaction">Cảm xúc</string>
+    <string name="like">Thích</string>
+    <string name="comment">Bình luận</string>
+    <string name="enter_comment">Nhập bình luận</string>
+    <string name="delete_post">Xóa bài đăng</string>
+    <string name="download">Tải xuống</string>
+    <string name="share">Chia sẻ</string>
 </resources>

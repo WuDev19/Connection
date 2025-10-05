@@ -39,6 +39,7 @@ import com.example.connection.view.fragment.FragmentChangeInfoChat;
 import com.example.connection.viewmodel.ChatViewModel;
 import com.firebase.ui.firestore.FirestoreRecyclerOptions;
 import com.google.android.material.card.MaterialCardView;
+import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.Query;
 
@@ -423,10 +424,12 @@ public class ChatActivity extends AppCompatActivity {
                         public void onMessageClickToShowEmote(String idMess, Map<String, String> emoteMap) {
                             List<EmoteModel> list = new ArrayList<>();
                             for(Map.Entry<String, String> entry : emoteMap.entrySet()){
-                                EmoteModel emoteModel = new EmoteModel(entry.getKey(),
+                                EmoteModel emoteModel = new EmoteModel("",
+                                        entry.getKey(),
                                         chatRoom1.getAvtSender().get(entry.getKey()),
                                         chatRoom1.getAlias().get(entry.getKey()),
-                                        entry.getValue());
+                                        entry.getValue(),
+                                        Timestamp.now());
                                 list.add(emoteModel);
                             }
 
@@ -458,10 +461,12 @@ public class ChatActivity extends AppCompatActivity {
                             Observer<Map<String, String>> observer = stringStringMap -> {
                                 List<EmoteModel> list1 = new ArrayList<>();
                                 for(Map.Entry<String, String> entry : stringStringMap.entrySet()){
-                                    EmoteModel emoteModel = new EmoteModel(entry.getKey(),
+                                    EmoteModel emoteModel = new EmoteModel("",
+                                            entry.getKey(),
                                             chatRoom1.getAvtSender().get(entry.getKey()),
                                             chatRoom1.getAlias().get(entry.getKey()),
-                                            entry.getValue());
+                                            entry.getValue(),
+                                            Timestamp.now());
                                     list1.add(emoteModel);
                                 }
                                 emoteShowInChatAdapter.setData(list1);
