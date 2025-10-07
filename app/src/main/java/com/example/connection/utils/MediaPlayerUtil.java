@@ -41,20 +41,28 @@ public class MediaPlayerUtil {
 
     public void playMusic(Context context, String urlMusic) {
         if (urlMusic == null) {
+            Log.e(TAG, "playMusic: url = null");
             urlMusicCurrent = null;
             if(mediaPlayer != null){
+                Log.e(TAG, "playMusic: reset khi url = null");
                 mediaPlayer.reset();
             }
             return;
         }
         try {
+            Log.e(TAG, "playMusic: url khac null");
             if ((mediaPlayer != null && position == 1) || (mediaPlayer != null && isInChooseFrag)) {
+                Log.e(TAG, "playMusic: chuan bi play");
                 mediaPlayer.reset();
+                Log.e(TAG, "playMusic: sau reset");
                 mediaPlayer.setDataSource(context, Uri.parse(urlMusic));
+                Log.e(TAG, "playMusic: reset xong" + urlMusic);
                 mediaPlayer.setOnPreparedListener(mediaPlayer1 -> {
+                    Log.e(TAG, "playMusic: play o day");
                     mediaPlayer1.start();
                     urlMusicCurrent = urlMusic;
                 });
+                Log.e(TAG, "playMusic: prepareasync");
                 mediaPlayer.prepareAsync();
             }
         } catch (Exception e) {
@@ -65,6 +73,7 @@ public class MediaPlayerUtil {
     public void pauseMusic() {
         if (mediaPlayer != null && mediaPlayer.isPlaying() && urlMusicCurrent != null) {
             mediaPlayer.pause();
+            Log.e(TAG, "pauseMusic: pause");
         }
     }
 
@@ -72,6 +81,7 @@ public class MediaPlayerUtil {
         if (mediaPlayer != null && !mediaPlayer.isPlaying() && !isInGeneral && urlMusicCurrent != null) {
             if (position == 1 || isInChooseFrag) {
                 mediaPlayer.start();
+                Log.e(TAG, "resume music");
             }
         }
     }
@@ -81,6 +91,30 @@ public class MediaPlayerUtil {
             mediaPlayer.release();
             mediaPlayer = null;
         }
+    }
+
+    public void prepareMusicBeforePlaying(Context context, String urlMusic){
+        if (urlMusic == null) {
+            urlMusicCurrent = null;
+            if(mediaPlayer != null){
+                mediaPlayer.reset();
+            }
+            return;
+        }
+        try {
+            if ((mediaPlayer != null)) {
+                mediaPlayer.reset();
+                mediaPlayer.setDataSource(context, Uri.parse(urlMusic));
+                mediaPlayer.setOnPreparedListener(mediaPlayer1 -> urlMusicCurrent = urlMusic);
+                mediaPlayer.prepareAsync();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "playMusic: " + e.getMessage());
+        }
+    }
+
+    public boolean isInGeneral() {
+        return isInGeneral;
     }
 
     public MediaPlayer getMediaPlayer() {

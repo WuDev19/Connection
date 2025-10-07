@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="200dp"
+    android:layout_height="200dp"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <ImageView
+        android:id="@+id/img_preview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        tools:ignore="contentDescription"/>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/transparent">
+
+        <TextView
+            android:id="@+id/chat_preview_left"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/yourfriendmessage"
+            android:layout_gravity="start"
+            android:textColor="@color/black"
+            android:background="@drawable/custom_chat_left"
+            android:backgroundTint="#F1EEEE"
+            android:padding="10dp"
+            android:layout_marginStart="10dp"
+            android:layout_marginTop="20dp"
+            android:layout_alignParentStart="true"/>
+
+        <TextView
+            android:id="@+id/chat_preview_right"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/yourmessage"
+            android:layout_gravity="end"
+            android:textColor="@color/black"
+            android:background="@drawable/custom_chat_right"
+            android:backgroundTint="#F1EEEE"
+            android:layout_marginEnd="10dp"
+            android:layout_marginTop="20dp"
+            android:padding="10dp"
+            android:layout_alignParentEnd="true"
+            android:layout_below="@+id/chat_preview_left"/>
+
+        <Button
+            android:id="@+id/btn_cancel_preview"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/Cancel"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentStart="true"
+            android:layout_margin="20dp"
+            style="?android:attr/buttonBarButtonStyle"
+            android:backgroundTint="@color/background"
+            android:textColor="@color/black"
+            android:textStyle="bold"/>
+
+        <Button
+            android:id="@+id/btn_select_preview"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/confirm"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentEnd="true"
+            tools:ignore="RelativeOverlap"
+            android:layout_margin="20dp"
+            android:textColor="@color/black"
+            android:textStyle="bold"
+            style="?android:attr/buttonBarButtonStyle"
+            android:backgroundTint="@color/background"/>
+
+    </RelativeLayout>
+
+</FrameLayout>

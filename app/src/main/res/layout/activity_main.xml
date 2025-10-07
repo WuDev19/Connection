@@ -45,8 +45,8 @@
 
         <FrameLayout
             android:id="@+id/frame_layout_chat"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="47dp"
+            android:layout_height="47dp"
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
             android:layout_marginEnd="10dp">
@@ -58,7 +58,7 @@
                 android:layout_gravity="bottom"
                 android:contentDescription="@string/app_name"
                 android:scaleType="centerCrop"
-                android:src="@drawable/icon_send_comment" />
+                android:src="@drawable/icon_send_comment"/>
 
             <TextView
                 android:id="@+id/tv_number_message"
@@ -66,7 +66,7 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="end|top"
                 android:textColor="#F44336"
-                android:textStyle="bold" />
+                android:textStyle="bold"/>
 
         </FrameLayout>
 

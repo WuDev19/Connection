@@ -24,6 +24,7 @@ public class ChatRoom implements Parcelable {
     private Map<String, String> avtSender;
     private Map<String, String> alias;
     private List<String> searchChat;
+    private String background;
 
     public ChatRoom() {
     }
@@ -38,7 +39,8 @@ public class ChatRoom implements Parcelable {
                     Map<String, Long> deleteChat,
                     Map<String, String> avtSender,
                     Map<String, String> alias,
-                    List<String> searchChat) {
+                    List<String> searchChat,
+                    String background) {
         this.chatRoomId = chatRoomId;
         this.chatName = chatName;
         this.chatRoomAvt = chatRoomAvt;
@@ -50,6 +52,7 @@ public class ChatRoom implements Parcelable {
         this.avtSender = avtSender;
         this.alias = alias;
         this.searchChat = searchChat;
+        this.background = background;
     }
 
     protected ChatRoom(Parcel in) {
@@ -86,6 +89,8 @@ public class ChatRoom implements Parcelable {
         }
 
         searchChat = in.createStringArrayList();
+
+        background = in.readString();
 
     }
 
@@ -189,6 +194,14 @@ public class ChatRoom implements Parcelable {
         this.lastMessage = lastMessage;
     }
 
+    public String getBackground() {
+        return background;
+    }
+
+    public void setBackground(String background) {
+        this.background = background;
+    }
+
     @Override
     public int describeContents() {
         return 0;
@@ -235,6 +248,8 @@ public class ChatRoom implements Parcelable {
         }
 
         parcel.writeStringList(searchChat);
+
+        parcel.writeString(background);
     }
 
 }

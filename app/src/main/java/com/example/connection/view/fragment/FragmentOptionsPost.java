@@ -46,10 +46,7 @@ public class FragmentOptionsPost extends BottomSheetDialogFragment {
         initView(view);
 
         optionsPostViewModel.getSuccessLiveData().observe(getViewLifecycleOwner(), success -> {
-            if(success != null && success.equals("deleteSuccess")){
-                MediaPlayerUtil.getInstance().getMediaPlayer().reset();
-            }
-            else {
+            if(!success.equals("deleteSuccess")){
                 Toast.makeText(requireContext(), success, Toast.LENGTH_SHORT).show();
             }
             this.dismiss();

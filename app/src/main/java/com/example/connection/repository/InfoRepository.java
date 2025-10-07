@@ -78,13 +78,26 @@ public class InfoRepository {
 
                     List<Task<QuerySnapshot>> tasks = new ArrayList<>();
 
+                    // TODO: 10/5/2025 them update alias 
                     for (DocumentSnapshot documentSnapshot : chatResult) {
                         Log.e(TAG, "updateRelativeInfo: chat");
                         ChatRoom chatRoom = documentSnapshot.toObject(ChatRoom.class);
                         if (chatRoom != null) {
-                            Map<String, String> map = chatRoom.getAvtSender();
-                            map.put(user.getId(), user.getAvatarUser());
-                            writeBatch.update(documentSnapshot.getReference(), "avtSender", map);
+                            Map<String, String> avtMap = chatRoom.getAvtSender();
+                            avtMap.put(user.getId(), user.getAvatarUser());
+                            Map<String, String> aliasMap = chatRoom.getAlias();
+                            String alias = aliasMap.get(user.getId());
+                            if(alias != null){
+                                if(alias.contains("_")){
+                                    alias = user.getUserName() + "_" + alias.split("_")[1];
+                                }
+                                else {
+                                    alias = user.getUserName();
+                                }
+                                aliasMap.put(user.getId(), alias);
+                                writeBatch.update(documentSnapshot.getReference(), "alias", aliasMap);
+                            }
+                            writeBatch.update(documentSnapshot.getReference(), "avtSender", avtMap);
                         }
                     }
                     for (DocumentSnapshot documentSnapshot : postResult) {

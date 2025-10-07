@@ -5,7 +5,6 @@ import android.appwidget.AppWidgetManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.os.Bundle;
-
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -22,7 +21,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.SimpleItemAnimator;
 import androidx.recyclerview.widget.SnapHelper;
 import androidx.viewpager2.widget.ViewPager2;
-
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.LayoutInflater;
@@ -32,7 +30,6 @@ import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.RemoteViews;
 import android.widget.Toast;
-
 import com.example.connection.R;
 import com.example.connection.view.activity.MainActivity;
 import com.example.connection.adapter.ShowImageAdapter;
@@ -211,9 +208,7 @@ public class FragmentShowPhoto extends Fragment {
 
                             });
                             adapter.startListening();
-
                             scrollWhenClickGeneralFrag();
-
                         }
                     }
                 });

@@ -41,6 +41,7 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.media3.common.MediaItem;
+import androidx.media3.common.Player;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.ui.PlayerView;
 
@@ -279,12 +280,6 @@ public class FragmentTakePhoto extends Fragment {
             return true;
         });
 
-        playerViewVideo.setOnClickListener(view12 -> {
-            if (file != null) {
-                playVideo();
-            }
-        });
-
         takePhotoViewModel.getSuccessLiveData().observe(getViewLifecycleOwner(), success -> {
             Toast.makeText(FragmentTakePhoto.this.requireContext(), success, Toast.LENGTH_SHORT).show();
             if (isVideo) {
@@ -342,6 +337,7 @@ public class FragmentTakePhoto extends Fragment {
         });
     }
 
+    // TODO: 10/6/2025 bug khi quay video 2 lan
     private void sendPhotoToFirebaseFireStore() {
         img_music.setOnClickListener(view -> {
             FragmentChooseMusic fragmentChooseMusic = new FragmentChooseMusic(new FragmentChooseMusic.onSelectedMusic() {
@@ -699,6 +695,7 @@ public class FragmentTakePhoto extends Fragment {
     private void playVideo() {
         Uri uriFile = Uri.fromFile(file);
         MediaItem mediaItem = MediaItem.fromUri(uriFile);
+        exoPlayer.setRepeatMode(Player.REPEAT_MODE_ONE);
         exoPlayer.setMediaItem(mediaItem);
         exoPlayer.prepare();
         exoPlayer.play();

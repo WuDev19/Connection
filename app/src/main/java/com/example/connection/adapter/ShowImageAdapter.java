@@ -11,10 +11,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
-
 import androidx.annotation.NonNull;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.Player;
@@ -22,16 +22,17 @@ import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.ui.PlayerView;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
 import com.bumptech.glide.Glide;
 import com.example.connection.R;
 import com.example.connection.model.Image;
 import com.example.connection.utils.MediaPlayerUtil;
+import com.firebase.ui.common.ChangeEventType;
 import com.firebase.ui.firestore.FirestoreRecyclerAdapter;
 import com.firebase.ui.firestore.FirestoreRecyclerOptions;
+import com.firebase.ui.firestore.ObservableSnapshotArray;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
-
+import com.google.firebase.firestore.DocumentSnapshot;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
@@ -87,12 +88,14 @@ public class ShowImageAdapter extends FirestoreRecyclerAdapter<Image, ShowImageA
         void showEmote(String postId);
 
         void showOptions(String postId, String url);
+
     }
 
+    // TODO: 10/6/2025 playvideo va nhac cua bai post khac khi xoa bai viet 
     @SuppressLint("SetTextI18n")
     @Override
     protected void onBindViewHolder(@NonNull ShowImageViewHolder holder, int position, @NonNull Image model) {
-        Log.e("kiemtra", "onBindViewHolder: ");
+        Log.e("kiemtrakhixoa", "onBindViewHolder: " + position + " " + model.getUrlMusic());
         if (model.getImageUrl() != null) {
             Log.e(TAG, "onBindViewHolder: " + model.getImageUrl());
             holder.playerViewVideo.setVisibility(View.GONE);
@@ -102,7 +105,6 @@ public class ShowImageAdapter extends FirestoreRecyclerAdapter<Image, ShowImageA
             Log.e(TAG, "onBindViewHolder: " + model.getVideoUrl());
             holder.img_post.setVisibility(View.GONE);
             holder.playerViewVideo.setVisibility(View.VISIBLE);
-
             if (position == 0 || position == positionClick) {
                 Log.e(TAG, "onBindViewHolder: click position");
                 holder.playerViewVideo.setPlayer(null);
@@ -179,16 +181,29 @@ public class ShowImageAdapter extends FirestoreRecyclerAdapter<Image, ShowImageA
 
         holder.img_post.setOnClickListener(view -> checkIsPlayingMusic());
 
+        holder.frameLayout.setOnClickListener(view -> {
+            holder.recyclerEmote.setAdapter(null);
+            holder.recyclerEmote.setVisibility(View.GONE);
+        });
+
         //nhan nut like
         //van bi doan gang o day, fix them sau
         // TODO: 10/3/2025
         holder.btn_like.setOnClickListener(view -> {
+            long countCurrent = model.getNumberEmote();
+            holder.tv_like.setVisibility(View.VISIBLE);
             if (!model.getEmoteMap().containsKey(myId)) {
                 holder.btn_like.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#A8D38D")));
                 holder.btn_like.setText("\uD83D\uDC4D" + " " + "Thích");
                 click.expressEmote("\uD83D\uDC4D",
                         model.getPostId());
+                if (countCurrent > 0) {
+                    holder.tv_like.setText("Bạn và " + countCurrent + " " + "người khác");
+                } else {
+                    holder.tv_like.setText("Bạn");
+                }
             } else {
+                countCurrent--;
                 holder.btn_like.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#00000000")));
                 holder.btn_like.setText("Thích");
                 String emoteAndId = model.getEmoteMap().get(myId);
@@ -197,12 +212,19 @@ public class ShowImageAdapter extends FirestoreRecyclerAdapter<Image, ShowImageA
                     click.expressEmote(emote,
                             model.getPostId());
                 }
+                if (countCurrent > 0) {
+                    holder.tv_like.setText(countCurrent + " " + "người khác");
+                } else {
+                    holder.tv_like.setVisibility(View.INVISIBLE);
+                }
             }
         });
 
         //show cac emote
         holder.btn_like.setOnLongClickListener(view -> {
+            long countCurrent = model.getNumberEmote();
             holder.recyclerEmote.setVisibility(View.VISIBLE);
+            holder.tv_like.setVisibility(View.VISIBLE);
             EmoteAdapter emoteAdapter = new EmoteAdapter(context, emoteList, emote -> {
                 click.expressEmote(emote,
                         model.getPostId());
@@ -210,6 +232,11 @@ public class ShowImageAdapter extends FirestoreRecyclerAdapter<Image, ShowImageA
                 holder.recyclerEmote.setVisibility(View.GONE);
                 holder.btn_like.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#A8D38D")));
                 checkReaction(emote, holder.btn_like);
+                if (countCurrent > 0) {
+                    holder.tv_like.setText("Bạn và " + countCurrent + " " + "người khác");
+                } else {
+                    holder.tv_like.setText("Bạn");
+                }
             });
             holder.recyclerEmote.setLayoutManager(new LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false));
             holder.recyclerEmote.setAdapter(emoteAdapter);
@@ -281,6 +308,7 @@ public class ShowImageAdapter extends FirestoreRecyclerAdapter<Image, ShowImageA
         private final ImageButton btn_send;
         private final Button btn_like, btn_comment;
         private final RecyclerView recyclerEmote;
+        private final FrameLayout frameLayout;
 
         public ShowImageViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -300,6 +328,7 @@ public class ShowImageAdapter extends FirestoreRecyclerAdapter<Image, ShowImageA
             tv_like = itemView.findViewById(R.id.tv_like);
             tv_comment = itemView.findViewById(R.id.tv_comment);
             recyclerEmote = itemView.findViewById(R.id.recycler_view_emote_in_post);
+            frameLayout = itemView.findViewById(R.id.heart_layout);
         }
     }
 
@@ -308,25 +337,29 @@ public class ShowImageAdapter extends FirestoreRecyclerAdapter<Image, ShowImageA
     public void onDataChanged() {
         super.onDataChanged();
         int itemCount = getItemCount();
+        Log.e(TAG, "onDataChanged: ");
         if (itemCount == 0) {
             MediaPlayerUtil.getInstance().setFirstTimeScrollToShow(false);
+            Log.e("kiemtrakhixoa", "onDataChanged: set lan dau sang show bang false");
             return;
         }
-        Log.e("kiemtranhac", "onDataChanged: " + itemCount);
+        //khi click vao item o trong general frag
         if (positionClick >= 0 && positionClick < getItemCount() && isGeneralClick) {
-            Log.e("kiemtranhac", "onDataChanged: general click");
+            Log.e("kiemtrakhixoa", "onDataChanged: general click");
             recyclerView.scrollToPosition(positionClick);
             Image image = getItem(positionClick);
             playVideo(image);
             if (image.getUrlMusic() == null) return;
             MediaPlayerUtil.getInstance().playMusic(context, image.getUrlMusic());
             isGeneralClick = false;
-        } else if (positionClick == 0 && MediaPlayerUtil.getInstance().isFirstTimeScrollToShow()) {
-            Log.e("kiemtranhac", "onDataChanged: lan dau sang show" + positionClick);
+        }
+        //khi lan dau vuot sang fragment show va co nhac
+        else if (positionClick == 0 && MediaPlayerUtil.getInstance().isFirstTimeScrollToShow()) {
+            Log.e("kiemtrakhixoa", "onDataChanged: lan dau sang show" + positionClick);
             Image image = getItem(positionClick);
             playVideo(image);
             MediaPlayerUtil.getInstance().setFirstTimeScrollToShow(false);
-            positionClick = - 1;
+            positionClick = -1;
             if (image.getUrlMusic() == null) return;
             MediaPlayerUtil.getInstance().setPosition(1);
             MediaPlayerUtil.getInstance().playMusic(context, image.getUrlMusic());
@@ -378,31 +411,25 @@ public class ShowImageAdapter extends FirestoreRecyclerAdapter<Image, ShowImageA
     }
 
     private String addPaddingForMarquee(String text, TextView textView) {
-        // 1. Lấy đối tượng Paint từ TextView
         Paint paint = textView.getPaint();
 
-        // 2. Đo chiều rộng của văn bản gốc
         float textWidth = paint.measureText(text);
 
-        // 3. Lấy chiều rộng của TextView (đã được chuyển đổi sang px)
         int textViewWidthInDp = 150;
         float density = context.getResources().getDisplayMetrics().density;
         int textViewWidthInPx = (int) (textViewWidthInDp * density);
 
-        // 4. Nếu văn bản ngắn hơn TextView, thêm khoảng trắng
         if (textWidth < textViewWidthInPx) {
             StringBuilder paddedText = new StringBuilder(text);
 
-            // Thêm khoảng trắng cho đến khi đủ dài để cuộn
             float spaceWidth = paint.measureText(" ");
-            int spacesToAdd = (int) ((textViewWidthInPx - textWidth) / spaceWidth) + 5; // Thêm thêm 5 khoảng trắng để đảm bảo
+            int spacesToAdd = (int) ((textViewWidthInPx - textWidth) / spaceWidth) + 5;
 
             for (int i = 0; i < spacesToAdd; i++) {
                 paddedText.append(" ");
             }
             return paddedText.toString();
         } else {
-            // Nếu văn bản đã đủ dài, trả về văn bản gốc
             return text;
         }
     }
@@ -441,4 +468,39 @@ public class ShowImageAdapter extends FirestoreRecyclerAdapter<Image, ShowImageA
                 break;
         }
     }
+
+    @Override
+    public void onChildChanged(@NonNull ChangeEventType type, @NonNull DocumentSnapshot snapshot, int newIndex, int oldIndex) {
+        super.onChildChanged(type, snapshot, newIndex, oldIndex);
+        ObservableSnapshotArray<Image> snapshotArray = getSnapshots();
+        //khi xoa bai post ma item sau co nhac va video
+        if (type == ChangeEventType.REMOVED) {
+            int snapShotSize = snapshotArray.size();
+            if (oldIndex < snapShotSize) {
+                positionClick = oldIndex;
+                notifyItemChanged(positionClick);
+                Image imageNew = snapshotArray.get(positionClick);
+                MediaPlayerUtil.getInstance().playMusic(context, imageNew.getUrlMusic());
+                playVideo(imageNew);
+            } else if (snapShotSize != 0) {
+                positionClick = oldIndex - 1;
+                notifyItemChanged(positionClick);
+                Image imageNew = snapshotArray.get(positionClick);
+                MediaPlayerUtil.getInstance().playMusic(context, imageNew.getUrlMusic());
+                playVideo(imageNew);
+            }
+            else {
+                MediaPlayerUtil.getInstance().getMediaPlayer().reset();
+            }
+        }
+        //khi luot sang fragment show ma truoc do chua co item nao, day la lan dau tien dang bai
+        else if (type == ChangeEventType.ADDED) {
+            if (snapshotArray.size() == 1 && !MediaPlayerUtil.getInstance().isInGeneral()) {
+                Image imageNew = snapshotArray.get(newIndex);
+                playVideo(imageNew);
+                MediaPlayerUtil.getInstance().prepareMusicBeforePlaying(context, imageNew.getUrlMusic());
+            }
+        }
+    }
+
 }

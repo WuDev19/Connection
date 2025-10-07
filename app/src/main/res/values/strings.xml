@@ -93,4 +93,6 @@
     <string name="delete_post">Xóa bài đăng</string>
     <string name="download">Tải xuống</string>
     <string name="share">Chia sẻ</string>
+    <string name="yourfriendmessage">Đây là tin nhắn bạn của bạn</string>
+    <string name="yourmessage">Đây là tin nhắn của bạn</string>
 </resources>

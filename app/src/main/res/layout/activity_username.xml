@@ -63,7 +63,8 @@
                 android:textStyle="bold"
                 android:textColorHint="@color/black"
                 android:textColor="@color/black"
-                android:inputType="textPersonName"/>
+                android:inputType="textPersonName"
+                android:maxLength="12"/>
 
         </com.google.android.material.textfield.TextInputLayout>
 

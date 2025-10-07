@@ -126,7 +126,8 @@ public class ChatViewModel extends ViewModel {
                 mapDelete,
                 avtMap,
                 aliasMap,
-                searchChat);
+                searchChat,
+                null);
         createNewChat.setValue(chatRoom);
     }
 

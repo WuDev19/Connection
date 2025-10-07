@@ -6,7 +6,9 @@ import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.GestureDetector;
 import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -17,6 +19,7 @@ import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 import androidx.lifecycle.LiveData;
@@ -35,6 +38,7 @@ import com.example.connection.adapter.EmoteShowInChatAdapter;
 import com.example.connection.model.ChatMessage;
 import com.example.connection.model.ChatRoom;
 import com.example.connection.model.EmoteModel;
+import com.example.connection.view.fragment.FragmentChangeBackgroundChat;
 import com.example.connection.view.fragment.FragmentChangeInfoChat;
 import com.example.connection.viewmodel.ChatViewModel;
 import com.firebase.ui.firestore.FirestoreRecyclerOptions;
@@ -56,7 +60,7 @@ public class ChatActivity extends AppCompatActivity {
     private TextView tv_username, tv_active;
     private ImageView img_back, img_info;
     private EditText edt_send_message;
-    private ImageView img_send_message, img_show_image_click, img_disable_image;
+    private ImageView img_send_message, img_show_image_click, img_disable_image, img_background;
     private PlayerView playerViewChat;
     private CardView cardView;
     private View scrimOverlay;
@@ -104,14 +108,32 @@ public class ChatActivity extends AppCompatActivity {
             chatViewModel.sendMessage(message);
         });
 
-        img_disable_image.setOnClickListener(view -> {
-            recyclerView.setOnTouchListener((view1, motionEvent) -> {
+        GestureDetector recyclerViewDetector = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener(){
+            @Override
+            public void onLongPress(@NonNull MotionEvent e) {
+                super.onLongPress(e);
+                FragmentChangeBackgroundChat fragmentChangeBackgroundChat = new FragmentChangeBackgroundChat();
+                Bundle bundle = new Bundle();
+                bundle.putString("chatId", chatRoom.getChatRoomId());
+                fragmentChangeBackgroundChat.setArguments(bundle);
+                fragmentChangeBackgroundChat.show(getSupportFragmentManager(), fragmentChangeBackgroundChat.getTag());
+            }
+
+            @Override
+            public boolean onSingleTapUp(@NonNull MotionEvent e) {
                 if (!adapter.getPositionIsShowingEmote().isEmpty()) {
                     int pos = adapter.getPositionIsShowingEmote().get(0);
                     adapter.getPositionIsShowingEmote().clear();
                     adapter.notifyItemChanged(pos);
                     Log.e(TAG, "onCreate:1 ");
                 }
+                return true;
+            }
+        });
+
+        img_disable_image.setOnClickListener(view -> {
+            recyclerView.setOnTouchListener((view1, motionEvent) -> {
+                recyclerViewDetector.onTouchEvent(motionEvent);
                 return false;
             });
             scrimOverlay.setVisibility(View.GONE);
@@ -203,12 +225,7 @@ public class ChatActivity extends AppCompatActivity {
         });
 
         recyclerView.setOnTouchListener((v, event) -> {
-            if (!adapter.getPositionIsShowingEmote().isEmpty()) {
-                int pos = adapter.getPositionIsShowingEmote().get(0);
-                adapter.getPositionIsShowingEmote().clear();
-                adapter.notifyItemChanged(pos);
-                Log.e(TAG, "onCreate: 2" );
-            }
+            recyclerViewDetector.onTouchEvent(event);
             return false;
         });
 
@@ -222,6 +239,13 @@ public class ChatActivity extends AppCompatActivity {
             if (chatRoom == null) {
                 chatViewModel.createNewChatRoom();
             } else {
+                if(chatRoom.getBackground() != null){
+                    Glide.with(this)
+                            .load(chatRoom.getBackground())
+                            .error(R.color.secondary)
+                            .into(img_background);
+                    Log.e(TAG, "onCreate: gan background");
+                }
                 setUpRecyclerViewMessage(chatRoom);
                 chatViewModel.listeningChatRoom();
             }
@@ -248,6 +272,13 @@ public class ChatActivity extends AppCompatActivity {
 
     private void updateChatRoomUi(ChatRoom chatRoom1) {
         if (chatRoom == null || chatRoom1 == null) return;
+        if(chatRoom1.getBackground() != null){
+            Glide.with(this)
+                    .load(chatRoom1.getBackground())
+                    .error(R.color.secondary)
+                    .into(img_background);
+            Log.e(TAG, "updateChatRoomUi: ");
+        }
         if (chatRoom1.getUserId().size() >= 3) {
             String oldName = chatRoom.getChatName();
             String newName = chatRoom1.getChatName();
@@ -282,6 +313,7 @@ public class ChatActivity extends AppCompatActivity {
         recyclerView = findViewById(R.id.recycler_view_message);
         img_show_image_click = findViewById(R.id.img_show_image_click_chat);
         img_disable_image = findViewById(R.id.img_disable_image);
+        img_background = findViewById(R.id.img_back_ground_in_chat);
         cardView = findViewById(R.id.card_image_chat);
         playerViewChat = findViewById(R.id.player_view_video_click_chat);
         scrimOverlay = findViewById(R.id.scrim_overlay);
