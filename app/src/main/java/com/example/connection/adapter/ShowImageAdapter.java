@@ -89,9 +89,10 @@ public class ShowImageAdapter extends FirestoreRecyclerAdapter<Image, ShowImageA
 
         void showOptions(String postId, String url);
 
+        void handleButton(Button btn_like);
+
     }
 
-    // TODO: 10/6/2025 playvideo va nhac cua bai post khac khi xoa bai viet 
     @SuppressLint("SetTextI18n")
     @Override
     protected void onBindViewHolder(@NonNull ShowImageViewHolder holder, int position, @NonNull Image model) {
@@ -186,10 +187,8 @@ public class ShowImageAdapter extends FirestoreRecyclerAdapter<Image, ShowImageA
             holder.recyclerEmote.setVisibility(View.GONE);
         });
 
-        //nhan nut like
-        //van bi doan gang o day, fix them sau
-        // TODO: 10/3/2025
         holder.btn_like.setOnClickListener(view -> {
+            click.handleButton(holder.btn_like); //vo hieu hoa nut nay den khi transaction xong
             long countCurrent = model.getNumberEmote();
             holder.tv_like.setVisibility(View.VISIBLE);
             if (!model.getEmoteMap().containsKey(myId)) {
@@ -226,6 +225,7 @@ public class ShowImageAdapter extends FirestoreRecyclerAdapter<Image, ShowImageA
             holder.recyclerEmote.setVisibility(View.VISIBLE);
             holder.tv_like.setVisibility(View.VISIBLE);
             EmoteAdapter emoteAdapter = new EmoteAdapter(context, emoteList, emote -> {
+                click.handleButton(holder.btn_like); //vo hieu hoa nut nay den khi transaction xong
                 click.expressEmote(emote,
                         model.getPostId());
                 holder.recyclerEmote.setAdapter(null);
@@ -233,7 +233,12 @@ public class ShowImageAdapter extends FirestoreRecyclerAdapter<Image, ShowImageA
                 holder.btn_like.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#A8D38D")));
                 checkReaction(emote, holder.btn_like);
                 if (countCurrent > 0) {
-                    holder.tv_like.setText("Bạn và " + countCurrent + " " + "người khác");
+                    if(model.getEmoteMap().containsKey(myId)){
+                        holder.tv_like.setText("Bạn");
+                    }
+                    else {
+                        holder.tv_like.setText("Bạn và " + countCurrent + " " + "người khác");
+                    }
                 } else {
                     holder.tv_like.setText("Bạn");
                 }
@@ -332,7 +337,6 @@ public class ShowImageAdapter extends FirestoreRecyclerAdapter<Image, ShowImageA
         }
     }
 
-    // TODO: 10/4/2025 xu ly logic cho phat nhac cho item dau tien 
     @Override
     public void onDataChanged() {
         super.onDataChanged();

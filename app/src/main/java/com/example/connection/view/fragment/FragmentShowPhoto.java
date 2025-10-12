@@ -27,6 +27,7 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RemoteViews;
 import android.widget.Toast;
@@ -54,6 +55,7 @@ public class FragmentShowPhoto extends Fragment {
     private EditText edt_send_message;
     private ExoPlayer exoPlayer;
     private boolean onceScroll;
+    private Button bt_like;
 
     public FragmentShowPhoto() {
     }
@@ -92,6 +94,14 @@ public class FragmentShowPhoto extends Fragment {
         showPhotoViewModel.getSendMessageSuccess().observe(getViewLifecycleOwner(), aBoolean -> {
             edt_send_message.setText("");
             Toast.makeText(getContext(), "Gửi tin nhắn thành công", Toast.LENGTH_LONG).show();
+        });
+
+        showPhotoViewModel.getExpressDone().observe(getViewLifecycleOwner(), done -> {
+            if(done){
+                if(bt_like != null){
+                    bt_like.setEnabled(true);
+                }
+            }
         });
 
     }
@@ -176,6 +186,12 @@ public class FragmentShowPhoto extends Fragment {
                                     fragmentOptionsPost.show(requireActivity().getSupportFragmentManager(), fragmentOptionsPost.getTag());
                                 }
 
+                                @Override
+                                public void handleButton(Button btn_like) {
+                                    bt_like = btn_like;
+                                    btn_like.setEnabled(false);
+                                }
+
                             }, recyclerView, position, isGeneralClick, exoPlayer);
 
                             recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -200,12 +216,14 @@ public class FragmentShowPhoto extends Fragment {
                                                 handleMusic(manager, snapView);
                                             }
                                         }
+                                        if(bt_like != null){
+                                            bt_like.setEnabled(true);
+                                        }
                                     } else if (newState == RecyclerView.SCROLL_STATE_DRAGGING) {
                                         MediaPlayerUtil.getInstance().pauseMusic();
                                         exoPlayer.pause();
                                     }
                                 }
-
                             });
                             adapter.startListening();
                             scrollWhenClickGeneralFrag();

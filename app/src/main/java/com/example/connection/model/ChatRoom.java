@@ -25,6 +25,7 @@ public class ChatRoom implements Parcelable {
     private Map<String, String> alias;
     private List<String> searchChat;
     private String background;
+    private int isRandom;
 
     public ChatRoom() {
     }
@@ -40,7 +41,8 @@ public class ChatRoom implements Parcelable {
                     Map<String, String> avtSender,
                     Map<String, String> alias,
                     List<String> searchChat,
-                    String background) {
+                    String background,
+                    int isRandom) {
         this.chatRoomId = chatRoomId;
         this.chatName = chatName;
         this.chatRoomAvt = chatRoomAvt;
@@ -53,6 +55,7 @@ public class ChatRoom implements Parcelable {
         this.alias = alias;
         this.searchChat = searchChat;
         this.background = background;
+        this.isRandom = isRandom;
     }
 
     protected ChatRoom(Parcel in) {
@@ -92,6 +95,7 @@ public class ChatRoom implements Parcelable {
 
         background = in.readString();
 
+        isRandom = in.readInt();
     }
 
     public static final Creator<ChatRoom> CREATOR = new Creator<ChatRoom>() {
@@ -105,6 +109,14 @@ public class ChatRoom implements Parcelable {
             return new ChatRoom[size];
         }
     };
+
+    public int getIsRandom() {
+        return isRandom;
+    }
+
+    public void setIsRandom(int isRandom) {
+        this.isRandom = isRandom;
+    }
 
     public List<String> getSearchChat() {
         return searchChat;
@@ -250,6 +262,8 @@ public class ChatRoom implements Parcelable {
         parcel.writeStringList(searchChat);
 
         parcel.writeString(background);
+
+        parcel.writeInt(isRandom);
     }
 
 }

@@ -50,7 +50,7 @@ public class ChatMessageAdapter extends FirestoreRecyclerAdapter<ChatMessage, Ch
     public interface OnItemClick {
         void onImageClick(String urlImage);
 
-        void onMessageLongClick(String idMess, Map<String, String> emoteMap);
+        void onMessageLongClick(String idMess, String idUser, String emote);
 
         void onMessageClickToShowEmote(String idMess, Map<String, String> emoteMap);
     }
@@ -166,11 +166,7 @@ public class ChatMessageAdapter extends FirestoreRecyclerAdapter<ChatMessage, Ch
                 positionIsShowingEmote.add(position);
                 holder.recyclerViewEmoteRight.setVisibility(View.VISIBLE);
                 holder.recyclerViewEmoteLeft.setVisibility(View.GONE);
-                EmoteAdapter emoteAdapter = new EmoteAdapter(context, emoteList, emote -> {
-                    Map<String, String> emoteMap = model.getEmote();
-                    emoteMap.put(myId, emote);
-                    onItemClick.onMessageLongClick(model.getIdMessage(), emoteMap);
-                });
+                EmoteAdapter emoteAdapter = new EmoteAdapter(context, emoteList, emote -> onItemClick.onMessageLongClick(model.getIdMessage(), myId, emote));
                 holder.recyclerViewEmoteRight.setLayoutManager(new LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false));
                 holder.recyclerViewEmoteRight.setAdapter(emoteAdapter);
                 return true;
@@ -273,11 +269,7 @@ public class ChatMessageAdapter extends FirestoreRecyclerAdapter<ChatMessage, Ch
                 positionIsShowingEmote.add(position);
                 holder.recyclerViewEmoteLeft.setVisibility(View.VISIBLE);
                 holder.recyclerViewEmoteRight.setVisibility(View.GONE);
-                EmoteAdapter emoteAdapter = new EmoteAdapter(context, emoteList, emote -> {
-                    Map<String, String> emoteMap = model.getEmote();
-                    emoteMap.put(myId, emote);
-                    onItemClick.onMessageLongClick(model.getIdMessage(), emoteMap);
-                });
+                EmoteAdapter emoteAdapter = new EmoteAdapter(context, emoteList, emote -> onItemClick.onMessageLongClick(model.getIdMessage(), myId, emote));
                 holder.recyclerViewEmoteLeft.setLayoutManager(new LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false));
                 holder.recyclerViewEmoteLeft.setAdapter(emoteAdapter);
                 return true;

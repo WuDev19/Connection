@@ -1,17 +1,26 @@
 package com.example.connection.repository;
 
+import android.content.Context;
 import android.util.Log;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
+import androidx.work.Data;
+import androidx.work.ExistingWorkPolicy;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.WorkManager;
 import com.example.connection.model.ChatRoom;
 import com.example.connection.model.User;
+import com.example.connection.work.DeleteWork;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.QuerySnapshot;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 public class RecentChatRepository {
 
@@ -96,6 +105,36 @@ public class RecentChatRepository {
                         Log.e(TAG, "searchChatRoom: loi" + Objects.requireNonNull(task.getException()).getMessage());
                     }
                 });
+    }
+
+    public Task<QuerySnapshot> getNumberUser(int number){
+        return db.collection("users")
+                .limit(number)
+                .get();
+    }
+
+    public String createChatRoomId(){
+        return db.collection("chatroom")
+                .document()
+                .getId();
+    }
+
+    public Task<Void> createChatRoom(ChatRoom chatRoom){
+        return db.collection("chatroom")
+                .document(chatRoom.getChatRoomId())
+                .set(chatRoom);
+    }
+
+    public void scheduleDeleteRandomChat(Context context, String chatRoomId){
+        Log.e("deleteRandomChat", "scheduleDeleteRandomChat: ");
+        Data data = new Data.Builder()
+                .putString("chatRoomId", chatRoomId)
+                .build();
+        OneTimeWorkRequest workRequest = new OneTimeWorkRequest.Builder(DeleteWork.class)
+                .setInputData(data)
+                .setInitialDelay(15, TimeUnit.MINUTES)
+                .build();
+        WorkManager.getInstance(context).enqueueUniqueWork("deleteRandomChat" + chatRoomId, ExistingWorkPolicy.KEEP, workRequest);
     }
 
 }

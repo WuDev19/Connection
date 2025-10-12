@@ -337,7 +337,6 @@ public class FragmentTakePhoto extends Fragment {
         });
     }
 
-    // TODO: 10/6/2025 bug khi quay video 2 lan
     private void sendPhotoToFirebaseFireStore() {
         img_music.setOnClickListener(view -> {
             FragmentChooseMusic fragmentChooseMusic = new FragmentChooseMusic(new FragmentChooseMusic.onSelectedMusic() {
@@ -732,6 +731,12 @@ public class FragmentTakePhoto extends Fragment {
         if (exoPlayer != null) {
             exoPlayer.release();
             exoPlayer = null;
+        }
+        if(runnableProcess != null){
+            handlerVideo.removeCallbacks(runnableProcess);
+        }
+        if(runnableVideo != null){
+            handlerVideo.removeCallbacks(runnableVideo);
         }
     }
 

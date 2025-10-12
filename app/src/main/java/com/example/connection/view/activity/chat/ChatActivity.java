@@ -12,7 +12,6 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.PopupMenu;
@@ -38,6 +37,7 @@ import com.example.connection.adapter.EmoteShowInChatAdapter;
 import com.example.connection.model.ChatMessage;
 import com.example.connection.model.ChatRoom;
 import com.example.connection.model.EmoteModel;
+import com.example.connection.view.fragment.FragmentChangeAlias;
 import com.example.connection.view.fragment.FragmentChangeBackgroundChat;
 import com.example.connection.view.fragment.FragmentChangeInfoChat;
 import com.example.connection.viewmodel.ChatViewModel;
@@ -46,12 +46,10 @@ import com.google.android.material.card.MaterialCardView;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.Query;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-
 import de.hdodenhof.circleimageview.CircleImageView;
 
 public class ChatActivity extends AppCompatActivity {
@@ -73,7 +71,6 @@ public class ChatActivity extends AppCompatActivity {
     private String urlVideo;
     private ChatRoom chatRoom;
     private String otherId;
-    private boolean needRefresh = false;
     private final List<String> emoteList = Arrays.asList(
             "\uD83D\uDC4D",
             "\uD83D\uDE02",
@@ -155,7 +152,7 @@ public class ChatActivity extends AppCompatActivity {
 
         img_info.setOnClickListener(view -> {
             if (chatRoom.getUserId().size() >= 3) {
-                FragmentChangeInfoChat fragmentChangeInfoChat = new FragmentChangeInfoChat(() -> setUpRecyclerViewMessage(chatRoom));
+                FragmentChangeInfoChat fragmentChangeInfoChat = new FragmentChangeInfoChat();
                 Bundle bundle = new Bundle();
                 bundle.putParcelable("chat_room1", chatRoom);
                 fragmentChangeInfoChat.setArguments(bundle);
@@ -171,51 +168,11 @@ public class ChatActivity extends AppCompatActivity {
                         chatViewModel.getDelete();
                         return true;
                     } else if (menuItem.getItemId() == R.id.alias_chat) {
-                        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                        @SuppressLint("InflateParams") View view1 = getLayoutInflater().inflate(R.layout.custom_dialog_change_alias, null);
-                        Button btn_cancel = view1.findViewById(R.id.btn_cancel_change_alias);
-                        Button btn_remove = view1.findViewById(R.id.btn_remove_alias);
-                        Button btn_confirm = view1.findViewById(R.id.btn_confirm_alias);
-                        EditText edt_alias = view1.findViewById(R.id.edt_set_alias);
-                        String alias = chatRoom.getAlias().get(otherId);
-                        if (alias != null) {
-                            if (alias.contains("_")) {
-                                edt_alias.setText(alias.split("_")[1]);
-                            } else {
-                                edt_alias.setText(alias);
-                            }
-                        }
-                        builder.setTitle("Chỉnh sửa biệt danh");
-                        builder.setMessage("Biệt danh này chỉ được nhìn thấy trong đoạn chat");
-                        builder.setView(view1);
-                        AlertDialog dialog = builder.create();
-                        Window window = dialog.getWindow();
-                        if (window != null) {
-                            window.setBackgroundDrawableResource(R.drawable.custom_dialog);
-                            dialog.show();
-                        } else {
-                            Toast.makeText(this, "Có lỗi gì đó xảy ra, hãy thử lại", Toast.LENGTH_LONG).show();
-                        }
-                        btn_cancel.setOnClickListener(view2 -> dialog.dismiss());
-                        btn_remove.setOnClickListener(view22 -> {
-                            if (alias != null) {
-                                if (!alias.contains("_")) return;
-                                edt_alias.setText("");
-                            }
-                            chatViewModel.updateChatNameTwoPeople(null, otherId);
-                            needRefresh = true;
-                            dialog.dismiss();
-                        });
-                        btn_confirm.setOnClickListener(view22 -> {
-                            String aliasNew = edt_alias.getText().toString().trim();
-                            if (alias != null && !alias.contains("_") && alias.equals(aliasNew))
-                                return;
-                            if (!aliasNew.isEmpty()) {
-                                chatViewModel.updateChatNameTwoPeople(aliasNew, otherId);
-                                needRefresh = true;
-                                dialog.dismiss();
-                            }
-                        });
+                        FragmentChangeAlias fragmentChangeAlias = new FragmentChangeAlias();
+                        Bundle bundle = new Bundle();
+                        bundle.putParcelable("chat_room_to_change_alias", chatRoom);
+                        fragmentChangeAlias.setArguments(bundle);
+                        fragmentChangeAlias.show(getSupportFragmentManager(), fragmentChangeAlias.getTag());
                         return true;
                     }
                     return false;
@@ -258,35 +215,31 @@ public class ChatActivity extends AppCompatActivity {
             }
         });
 
-        chatViewModel.getChatRoomListeningLiveData().observe(this, chatRoom1 -> {
-            if (chatRoom1 == null) return;
-            ChatActivity.this.updateChatRoomUi(chatRoom1);
-            chatRoom = chatRoom1;
-            if (needRefresh) {
-                adapter.setData(chatRoom.getAvtSender(), chatRoom.getAlias());
-                needRefresh = false;
-            }
+        chatViewModel.getChatRoomListeningLiveData().observe(this, chatRoomNew -> {
+            if (chatRoomNew == null || chatRoomNew.getIsRandom() == 1) return;
+            Log.e(TAG, "onCreate: updateChatROom");
+            ChatActivity.this.updateChatRoomUi(chatRoomNew);
+            chatRoom = chatRoomNew;
         });
 
     }
 
-    private void updateChatRoomUi(ChatRoom chatRoom1) {
-        if (chatRoom == null || chatRoom1 == null) return;
-        if(chatRoom1.getBackground() != null){
+    private void updateChatRoomUi(ChatRoom chatRoomNew) {
+        if(chatRoom == null || chatRoomNew == null) return;
+        if(!chatRoom.getBackground().equals(chatRoomNew.getBackground()) && chatRoomNew.getBackground() != null){
             Glide.with(this)
-                    .load(chatRoom1.getBackground())
+                    .load(chatRoomNew.getBackground())
                     .error(R.color.secondary)
                     .into(img_background);
-            Log.e(TAG, "updateChatRoomUi: ");
         }
-        if (chatRoom1.getUserId().size() >= 3) {
+        if(chatRoomNew.getUserId().size() >= 3) {
             String oldName = chatRoom.getChatName();
-            String newName = chatRoom1.getChatName();
+            String newName = chatRoomNew.getChatName();
             if (oldName != null && newName != null && !oldName.equals(newName)) {
                 tv_username.setText(newName);
             }
             String oldAvt = chatRoom.getChatRoomAvt();
-            String newAvt = chatRoom1.getChatRoomAvt();
+            String newAvt = chatRoomNew.getChatRoomAvt();
             if (oldAvt != null && newAvt != null && !oldAvt.equals(newAvt)) {
                 Glide.with(this)
                         .load(newAvt)
@@ -294,12 +247,15 @@ public class ChatActivity extends AppCompatActivity {
                         .into(img_avatar);
             }
         } else {
-            String alias = chatRoom1.getAlias().get(otherId);
+            String alias = chatRoomNew.getAlias().get(otherId);
             if (alias != null) {
                 if (alias.contains("_")) {
                     tv_username.setText(alias.split("_")[1]);
                 } else tv_username.setText(alias);
             }
+        }
+        if(!chatRoom.getAlias().equals(chatRoomNew.getAlias())){
+            adapter.setData(chatRoomNew.getAvtSender(), chatRoomNew.getAlias());
         }
     }
 
@@ -341,33 +297,43 @@ public class ChatActivity extends AppCompatActivity {
 
     private void showChatRoomExist(ChatRoom chatRoom) {
         chatViewModel.setChatRoomId(chatRoom.getChatRoomId());
-        if (chatRoom.getUserId().size() <= 2) {
-            otherId = getOtherUserId(chatRoom.getUserId());
-            if (otherId == null) return;
-            if (otherId.contains("_delete")) {
-                otherId = otherId.split("_")[0];
-            }
-            chatViewModel.getOtherUser(otherId).observe(this, otherUser -> {
-                if (otherUser != null) {
-                    String alias = chatRoom.getAlias().get(otherId);
-                    if (alias != null) {
-                        if (alias.contains("_")) {
-                            tv_username.setText(alias.split("_")[1]);
-                        } else tv_username.setText(alias);
-                    }
-                    Glide.with(ChatActivity.this)
-                            .load(otherUser.getAvatarUser())
-                            .error(R.drawable.icon_avatar)
-                            .into(img_avatar);
-                    if (otherUser.isActive()) tv_active.setVisibility(View.VISIBLE);
-                }
-            });
-        } else {
+        if(chatRoom.getIsRandom() == 1){
             tv_username.setText(chatRoom.getChatName());
             Glide.with(ChatActivity.this)
                     .load(chatRoom.getChatRoomAvt())
-                    .error(R.drawable.icon_avatar)
+                    .error(R.drawable.anonymous_avt)
                     .into(img_avatar);
+            otherId = getOtherUserId(chatRoom.getUserId());
+        }
+        else {
+            if (chatRoom.getUserId().size() <= 2) {
+                otherId = getOtherUserId(chatRoom.getUserId());
+                if (otherId == null) return;
+                if (otherId.contains("_delete")) {
+                    otherId = otherId.split("_")[0];
+                }
+                chatViewModel.getOtherUser(otherId).observe(this, otherUser -> {
+                    if (otherUser != null) {
+                        String alias = chatRoom.getAlias().get(otherId);
+                        if (alias != null) {
+                            if (alias.contains("_")) {
+                                tv_username.setText(alias.split("_")[1]);
+                            } else tv_username.setText(alias);
+                        }
+                        Glide.with(ChatActivity.this)
+                                .load(otherUser.getAvatarUser())
+                                .error(R.drawable.icon_avatar)
+                                .into(img_avatar);
+                        if (otherUser.isActive()) tv_active.setVisibility(View.VISIBLE);
+                    }
+                });
+            } else {
+                tv_username.setText(chatRoom.getChatName());
+                Glide.with(ChatActivity.this)
+                        .load(chatRoom.getChatRoomAvt())
+                        .error(R.drawable.icon_avatar)
+                        .into(img_avatar);
+            }
         }
     }
 
@@ -448,8 +414,8 @@ public class ChatActivity extends AppCompatActivity {
                         }
 
                         @Override
-                        public void onMessageLongClick(String idMess, Map<String, String> emoteMap) {
-                            chatViewModel.expressEmote(idMess, emoteMap);
+                        public void onMessageLongClick(String idMess, String idUser, String emote) {
+                            chatViewModel.expressEmote(idMess, idUser, emote);
                         }
 
                         @Override
@@ -485,7 +451,7 @@ public class ChatActivity extends AppCompatActivity {
                             }
 
                             img_clear.setOnClickListener(view1 -> alertDialog.dismiss());
-                            EmoteShowInChatAdapter emoteShowInChatAdapter = new EmoteShowInChatAdapter(ChatActivity.this, list, idUser -> chatViewModel.removeEmote(idMess, idUser, emoteMap));
+                            EmoteShowInChatAdapter emoteShowInChatAdapter = new EmoteShowInChatAdapter(ChatActivity.this, list, idUser -> chatViewModel.removeEmote(idMess, idUser));
                             recycler_view_show_emote.setAdapter(emoteShowInChatAdapter);
                             recycler_view_show_emote.setLayoutManager(new LinearLayoutManager(ChatActivity.this));
 

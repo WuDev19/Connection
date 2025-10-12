@@ -78,7 +78,6 @@ public class InfoRepository {
 
                     List<Task<QuerySnapshot>> tasks = new ArrayList<>();
 
-                    // TODO: 10/5/2025 them update alias 
                     for (DocumentSnapshot documentSnapshot : chatResult) {
                         Log.e(TAG, "updateRelativeInfo: chat");
                         ChatRoom chatRoom = documentSnapshot.toObject(ChatRoom.class);

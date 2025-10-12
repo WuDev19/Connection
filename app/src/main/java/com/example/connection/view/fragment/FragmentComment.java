@@ -2,7 +2,6 @@ package com.example.connection.view.fragment;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.content.DialogInterface;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -39,7 +38,8 @@ public class FragmentComment extends BottomSheetDialogFragment {
     private ImageButton img_send;
     private CommentPostAdapter adapter;
 
-    public FragmentComment() {}
+    public FragmentComment() {
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -85,13 +85,13 @@ public class FragmentComment extends BottomSheetDialogFragment {
 
         commentViewModel.getError().observe(getViewLifecycleOwner(), error ->
                 Toast.makeText(getContext(),
-                error,
-                Toast.LENGTH_SHORT)
-                .show());
+                                error,
+                                Toast.LENGTH_SHORT)
+                        .show());
 
         img_send.setOnClickListener(view1 -> {
             String comment = edt_comment.getText().toString().trim();
-            if(comment.isEmpty()) return;
+            if (comment.isEmpty()) return;
             commentViewModel.setComment(postId, comment);
             edt_comment.setText("");
         });
@@ -124,7 +124,7 @@ public class FragmentComment extends BottomSheetDialogFragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        if(adapter != null){
+        if (adapter != null) {
             adapter.stopListening();
         }
     }

@@ -95,4 +95,8 @@
     <string name="share">Chia sẻ</string>
     <string name="yourfriendmessage">Đây là tin nhắn bạn của bạn</string>
     <string name="yourmessage">Đây là tin nhắn của bạn</string>
+    <string name="random">Ngẫu nhiên</string>
+    <string name="start">Bắt đầu</string>
+    <string name="option_quantity">10</string>
+    <string name="enter_number">Nhập số lượng người dùng để random</string>
 </resources>

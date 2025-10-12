@@ -139,7 +139,8 @@ public class ShowPhotoRepository {
                                     avtMap,
                                     aliasMap,
                                     searchChat,
-                                    null);
+                                    null,
+                                    0);
                         }
                         sendMessage1(mess, chatRoomId, myId, otherId);
                     }

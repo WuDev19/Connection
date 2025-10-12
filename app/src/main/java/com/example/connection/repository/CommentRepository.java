@@ -75,6 +75,14 @@ public class CommentRepository {
                 .delete();
     }
 
+    public Task<DocumentSnapshot> getComment(String postId, String commentId){
+        return db.collection("post_photo")
+                .document(postId)
+                .collection("comments")
+                .document(commentId)
+                .get();
+    }
+
     public Task<Void> decreaseNumberComment(String postId){
         DocumentReference postRef = db.collection("post_photo")
                 .document(postId);

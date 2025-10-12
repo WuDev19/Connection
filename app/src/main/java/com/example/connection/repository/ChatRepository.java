@@ -13,6 +13,7 @@ import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentChange;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
@@ -119,10 +120,16 @@ public class ChatRepository {
         });
     }
 
-    public Task<Void> modifyEmote(ChatRoom chatRoom, Map<String, String> emoteMap, String idMessage){
+    public Task<Void> expressEmote(ChatRoom chatRoom, String idMessage, String idUser, String emote){
         return getChatroomMessageReference(chatRoom.getChatRoomId())
                 .document(idMessage)
-                .update("emote", emoteMap);
+                .update("emote." + idUser, emote);
+    }
+
+    public Task<Void> deleteEmote(ChatRoom chatRoom, String idMessage, String idUser){
+        return getChatroomMessageReference(chatRoom.getChatRoomId())
+                .document(idMessage)
+                .update("emote." + idUser, FieldValue.delete());
     }
 
     private CollectionReference getChatroomMessageReference(String chatRoomId){
@@ -252,10 +259,10 @@ public class ChatRepository {
         }
     }
 
-    public Task<Void> updateChatNameTwoPeople(ChatRoom chatRoom){
+    public Task<Void> updateChatNameTwoPeople(ChatRoom chatRoom, String isUser, String alias){
         return db.collection("chatroom")
                 .document(chatRoom.getChatRoomId())
-                .set(chatRoom);
+                .update("alias." + isUser, alias);
     }
 
     public LiveData<Map<String, String>> listeningReaction(ChatRoom chatRoom, String idMess){

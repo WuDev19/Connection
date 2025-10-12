@@ -48,62 +48,78 @@ public class RecentChatUserAdapter extends FirestoreRecyclerAdapter<ChatRoom, Re
     @SuppressLint("SetTextI18n")
     @Override
     protected void onBindViewHolder(@NonNull RecentChatUserViewHolder holder, int position, @NonNull ChatRoom model) {
-        Log.e("Checkchat", "onBindViewHolder: " + position);
         if (holder.getBindingAdapterPosition() != position) return;
-        if (model.getUserId().size() <= 2) {
-            recentChatViewModel.getInfo(model).observe(lifecycleOwner, otherUser -> {
-                if (otherUser == null) return;
-                if (otherUser.isActive()) {
-                    holder.img_active.setVisibility(View.VISIBLE);
-                } else {
-                    Log.e(TAG, "Hide");
-                    holder.img_active.setVisibility(View.GONE);
-                }
-                String alias = model.getAlias().get(otherUser.getId());
-                if(alias != null){
-                    if (alias.contains("_")) {
-                        holder.tv_username.setText(alias.split("_")[1]);
-                    }
-                    else holder.tv_username.setText(alias);
-                }
-                Glide.with(holder.itemView.getContext()).load(otherUser.getAvatarUser()).error(R.drawable.icon_avatar).into(holder.img_avatar);
-                if (model.getLastMessage() != null) {
-                    if (!model.getLastMessageSenderId().equals(otherUser.getId())) {
-                        if (model.getLastMessage().contains("_")) {
-                            String[] mess = model.getLastMessage().split("_");
-                            holder.tv_message.setText("Bạn: " + mess[0]);
-                        } else {
-                            if (model.getLastMessage().contains("https://")) {
-                                holder.tv_message.setText("Bạn: " + "Đã gửi một ảnh");
-                            } else {
-                                holder.tv_message.setText("Bạn: " + model.getLastMessage());
-                                Log.e("checkk", "onBindViewHolder: khac id");
-                            }
-
-                        }
-                    } else {
-                        if (model.getLastMessage().contains("_")) {
-                            String[] mess = model.getLastMessage().split("_");
-                            holder.tv_message.setText(mess[0]);
-                        } else {
-                            if (model.getLastMessage().contains("https://")) {
-                                holder.tv_message.setText("Đã gửi một ảnh");
-                            } else {
-                                holder.tv_message.setText(model.getLastMessage());
-                            }
-                        }
-                    }
-                }
-            });
-        } else {
-            Glide.with(context).load(model.getChatRoomAvt()).error(R.drawable.icon_avatar).into(holder.img_avatar);
+        if(model.getIsRandom() == 1){
+            Glide.with(context)
+                    .load(model.getChatRoomAvt())
+                    .error(R.drawable.anonymous_avt)
+                    .into(holder.img_avatar);
             holder.tv_username.setText(model.getChatName());
             if(model.getLastMessageSenderId() != null){
                 if(model.getLastMessageSenderId().equals(FirebaseAuth.getInstance().getUid())){
-                    holder.tv_message.setText("Bạn: " + model.getLastMessage().split(": ")[1]);
+                    holder.tv_message.setText("Bạn: " + model.getLastMessage());
                 }
                 else {
                     holder.tv_message.setText(model.getLastMessage());
+                }
+            }
+        }
+        else {
+            if (model.getUserId().size() <= 2) {
+                recentChatViewModel.getInfo(model).observe(lifecycleOwner, otherUser -> {
+                    if (otherUser == null) return;
+                    if (otherUser.isActive()) {
+                        holder.img_active.setVisibility(View.VISIBLE);
+                    } else {
+                        Log.e(TAG, "Hide");
+                        holder.img_active.setVisibility(View.GONE);
+                    }
+                    String alias = model.getAlias().get(otherUser.getId());
+                    if(alias != null){
+                        if (alias.contains("_")) {
+                            holder.tv_username.setText(alias.split("_")[1]);
+                        }
+                        else holder.tv_username.setText(alias);
+                    }
+                    Glide.with(holder.itemView.getContext()).load(otherUser.getAvatarUser()).error(R.drawable.icon_avatar).into(holder.img_avatar);
+                    if (model.getLastMessage() != null) {
+                        if (!model.getLastMessageSenderId().equals(otherUser.getId())) {
+                            if (model.getLastMessage().contains("_")) {
+                                String[] mess = model.getLastMessage().split("_");
+                                holder.tv_message.setText("Bạn: " + mess[0]);
+                            } else {
+                                if (model.getLastMessage().contains("https://")) {
+                                    holder.tv_message.setText("Bạn: " + "Đã gửi một ảnh");
+                                } else {
+                                    holder.tv_message.setText("Bạn: " + model.getLastMessage());
+                                    Log.e("checkk", "onBindViewHolder: khac id");
+                                }
+
+                            }
+                        } else {
+                            if (model.getLastMessage().contains("_")) {
+                                String[] mess = model.getLastMessage().split("_");
+                                holder.tv_message.setText(mess[0]);
+                            } else {
+                                if (model.getLastMessage().contains("https://")) {
+                                    holder.tv_message.setText("Đã gửi một ảnh");
+                                } else {
+                                    holder.tv_message.setText(model.getLastMessage());
+                                }
+                            }
+                        }
+                    }
+                });
+            } else {
+                Glide.with(context).load(model.getChatRoomAvt()).error(R.drawable.icon_avatar).into(holder.img_avatar);
+                holder.tv_username.setText(model.getChatName());
+                if(model.getLastMessageSenderId() != null){
+                    if(model.getLastMessageSenderId().equals(FirebaseAuth.getInstance().getUid())){
+                        holder.tv_message.setText("Bạn: " + model.getLastMessage().split(": ")[1]);
+                    }
+                    else {
+                        holder.tv_message.setText(model.getLastMessage());
+                    }
                 }
             }
         }

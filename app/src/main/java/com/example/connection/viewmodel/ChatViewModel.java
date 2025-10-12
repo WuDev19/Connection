@@ -1,14 +1,17 @@
 package com.example.connection.viewmodel;
 
 import android.util.Log;
+
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
+
 import com.example.connection.model.ChatRoom;
 import com.example.connection.model.User;
 import com.example.connection.repository.ChatRepository;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.Query;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -127,7 +130,8 @@ public class ChatViewModel extends ViewModel {
                 avtMap,
                 aliasMap,
                 searchChat,
-                null);
+                null,
+                0);
         createNewChat.setValue(chatRoom);
     }
 
@@ -167,27 +171,25 @@ public class ChatViewModel extends ViewModel {
         chatRepository.unregisterListeningChatRoom();
     }
 
-    public void expressEmote(String idMessage, Map<String, String> emoteMap) {
-        chatRepository.modifyEmote(chatRoom, emoteMap, idMessage).addOnCompleteListener(task -> {
+    public void expressEmote(String idMessage, String idUser, String emote) {
+        chatRepository.expressEmote(chatRoom, idMessage, idUser, emote).addOnCompleteListener(task -> {
             if (!task.isSuccessful()) {
                 Log.e(TAG, "onComplete: " + Objects.requireNonNull(task.getException()).getMessage());
             }
         });
     }
 
-    public void removeEmote(String idMessage, String idUser, Map<String, String> emoteMap) {
+    public void removeEmote(String idMessage, String idUser) {
         if (idUser != null && idUser.equals(currentUserId)) {
-            if (emoteMap.remove(idUser) != null) {
-                chatRepository.modifyEmote(chatRoom, emoteMap, idMessage).addOnCompleteListener(task -> {
-                    if (!task.isSuccessful()) {
-                        Log.e(TAG, "onComplete: " + Objects.requireNonNull(task.getException()).getMessage());
-                    }
-                });
-            }
+            chatRepository.deleteEmote(chatRoom, idMessage, idUser).addOnCompleteListener(task -> {
+                if (!task.isSuccessful()) {
+                    Log.e(TAG, "onComplete: " + Objects.requireNonNull(task.getException()).getMessage());
+                }
+            });
         }
     }
 
-    public LiveData<Map<String, String>> registerListeningReaction(String idMess){
+    public LiveData<Map<String, String>> registerListeningReaction(String idMess) {
         return chatRepository.listeningReaction(chatRoom, idMess);
     }
 
@@ -217,35 +219,29 @@ public class ChatViewModel extends ViewModel {
     }
 
     public void updateChatNameTwoPeople(String alias, String otherId) {
-        Map<String, String> aliasMap = chatRoom.getAlias();
-        List<String> searchChat = chatRoom.getSearchChat();
-        String oldAlias = aliasMap.get(otherId);
+        Log.e("ChatActivity", "updateChatNameTwoPeople: ");
+        String oldAlias = chatRoom.getAlias().get(otherId);
         String newAlias = null;
         if (oldAlias != null) {
             if (oldAlias.contains("_")) {
                 if (alias != null) {
                     newAlias = oldAlias.split("_")[0] + "_" + alias;
-                    searchChat.add(alias.toLowerCase());
-                    searchChat.remove(oldAlias.split("_")[1].toLowerCase());
                 } else {
                     newAlias = oldAlias.split("_")[0];
-                    searchChat.remove(oldAlias.split("_")[1].toLowerCase());
                 }
             } else {
                 if (alias != null) {
                     newAlias = oldAlias + "_" + alias;
-                    searchChat.add(alias.toLowerCase());
                 }
             }
         }
-        if (newAlias != null) aliasMap.put(otherId, newAlias);
-        chatRoom.setAlias(aliasMap);
-        chatRoom.setSearchChat(searchChat);
-        chatRepository.updateChatNameTwoPeople(chatRoom).addOnCompleteListener(task -> {
-            if (!task.isSuccessful()) {
-                Log.e(TAG, "onComplete: " + Objects.requireNonNull(task.getException()).getMessage());
-            }
-        });
+        if (newAlias != null) {
+            chatRepository.updateChatNameTwoPeople(chatRoom, otherId, newAlias).addOnCompleteListener(task -> {
+                if (!task.isSuccessful()) {
+                    Log.e(TAG, "onComplete: " + Objects.requireNonNull(task.getException()).getMessage());
+                }
+            });
+        }
     }
 
     public LiveData<Boolean> getSend() {

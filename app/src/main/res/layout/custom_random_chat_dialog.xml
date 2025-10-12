@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <TextView
+        android:id="@+id/tv1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/enter_number"
+        android:layout_centerHorizontal="true"
+        android:textColor="@color/black"/>
+
+    <LinearLayout
+        android:id="@+id/linear_quantity"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@+id/tv1"
+        android:layout_marginTop="10dp"
+        android:gravity="center">
+
+        <ImageButton
+            android:id="@+id/img_sub"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/icon_sub"
+            tools:ignore="contentDescription"
+            android:background="@drawable/border_view"
+            android:padding="4dp"
+            android:layout_marginEnd="10dp"/>
+
+        <EditText
+            android:id="@+id/edt_quantity"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/option_quantity"
+            android:background="@drawable/border_view"
+            android:importantForAutofill="no"
+            android:padding="10dp"
+            android:backgroundTint="#E8E6E6"
+            android:inputType="number"
+            tools:ignore="LabelFor"
+            android:textColor="@color/black"/>
+
+        <ImageButton
+            android:id="@+id/img_add"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/icon_add"
+            tools:ignore="contentDescription"
+            android:background="@drawable/border_view"
+            android:padding="4dp"
+            android:layout_marginStart="10dp"/>
+
+    </LinearLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler_view_random_chat"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_below="@id/linear_quantity"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="10dp"
+        android:background="@android:color/transparent"/>
+
+    <RelativeLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="10dp"
+        android:layout_below="@id/recycler_view_random_chat"
+        android:layout_marginBottom="10dp">
+
+        <Button
+            android:id="@+id/btn_cancel_quantity"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/Cancel"
+            style="?android:attr/buttonBarButtonStyle"
+            android:backgroundTint="@color/background"
+            android:textColor="@color/black"/>
+
+        <Button
+            android:id="@+id/btn_start"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/start"
+            style="?android:attr/buttonBarButtonStyle"
+            android:backgroundTint="@color/background"
+            android:layout_toEndOf="@id/btn_cancel_quantity"
+            android:textColor="@color/black"/>
+
+        <Button
+            android:id="@+id/btn_confirm_random_chat"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/confirm"
+            style="?android:attr/buttonBarButtonStyle"
+            android:backgroundTint="@color/background"
+            android:layout_toEndOf="@+id/btn_cancel_quantity"
+            android:visibility="invisible"
+            android:textColor="@color/black"/>
+
+    </RelativeLayout>
+
+</RelativeLayout>

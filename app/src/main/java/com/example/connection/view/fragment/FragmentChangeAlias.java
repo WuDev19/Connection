@@ -6,11 +6,9 @@ import android.app.Dialog;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -36,16 +34,7 @@ public class FragmentChangeAlias extends BottomSheetDialogFragment {
     private ImageView img_back;
     private RecyclerView recyclerView;
     private FragmentChangeAliasViewModel fragmentChangeAliasViewModel;
-    private OnShowHide onShowHide;
     private ChangeAliasAdapter adapter;
-
-    public interface OnShowHide {
-        void onHide();
-    }
-
-    public FragmentChangeAlias(OnShowHide onShowHide) {
-        this.onShowHide = onShowHide;
-    }
 
     public FragmentChangeAlias(){}
 
@@ -153,12 +142,6 @@ public class FragmentChangeAlias extends BottomSheetDialogFragment {
             }
         });
         return bottomSheetDialog;
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        onShowHide.onHide();
     }
 
     @Override

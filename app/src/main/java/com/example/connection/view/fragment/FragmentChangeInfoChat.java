@@ -57,15 +57,6 @@ public class FragmentChangeInfoChat extends BottomSheetDialogFragment {
     private ChatRoom chatRoom;
     private UserSearchAddToGroupAdapter userSearchAddToGroupAdapter;
     private LiveData<List<User>> currentLiveData;
-    private OnStateFragmentAlias onStateFragmentAlias;
-
-    public interface OnStateFragmentAlias{
-        void onHideFrag();
-    }
-
-    public FragmentChangeInfoChat(OnStateFragmentAlias onStateFragmentAlias) {
-        this.onStateFragmentAlias = onStateFragmentAlias;
-    }
 
     public FragmentChangeInfoChat(){}
 
@@ -168,7 +159,7 @@ public class FragmentChangeInfoChat extends BottomSheetDialogFragment {
     }
 
     private void changeAlias() {
-        FragmentChangeAlias fragmentChangeAlias = new FragmentChangeAlias(onStateFragmentAlias::onHideFrag);
+        FragmentChangeAlias fragmentChangeAlias = new FragmentChangeAlias();
         Bundle bundle = new Bundle();
         bundle.putParcelable("chat_room_to_change_alias", chatRoom);
         fragmentChangeAlias.setArguments(bundle);
@@ -362,4 +353,5 @@ public class FragmentChangeInfoChat extends BottomSheetDialogFragment {
         super.onStop();
         fragmentChangeInfoChatViewModel.unregisterListeningChatRoom();
     }
+
 }

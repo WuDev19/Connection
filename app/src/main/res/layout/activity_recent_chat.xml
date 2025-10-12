@@ -30,20 +30,35 @@
             android:layout_height="40dp"
             android:contentDescription="@string/app_name"
             android:src="@drawable/icon_back"
-            android:layout_margin="10dp"/>
+            android:layout_margin="5dp"/>
 
         <TextView
             android:id="@+id/chat_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/chat"
-            android:textSize="24sp"
+            android:textSize="20sp"
             android:textStyle="bold"
             android:layout_toEndOf="@+id/img_back_recent_chat"
             android:padding="6dp"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="5dp"
             android:layout_marginStart="5dp"
-            android:textColor="@color/black"/>
+            android:textColor="@color/black"
+            android:layout_toStartOf="@id/tv_random_chat"/>
+
+        <TextView
+            android:id="@+id/tv_random_chat"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/random"
+            android:background="@drawable/border_view"
+            android:layout_marginTop="10dp"
+            android:layout_marginEnd="10dp"
+            android:padding="5dp"
+            android:backgroundTint="@color/white"
+            android:textColor="@color/black"
+            android:layout_alignParentTop="true"
+            android:layout_toStartOf="@+id/tv_create_group"/>
 
         <TextView
             android:id="@+id/tv_create_group"
@@ -52,13 +67,12 @@
             android:text="@string/create_group"
             android:layout_alignParentEnd="true"
             android:background="@drawable/border_view"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="10dp"
             android:layout_marginEnd="10dp"
             android:padding="5dp"
             android:backgroundTint="@color/white"
             android:textColor="@color/black"
-            android:layout_alignParentTop="true"
-            tools:ignore="RelativeOverlap" />
+            android:layout_alignParentTop="true" />
 
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/txt_layout_search_chat"

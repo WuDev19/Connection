@@ -2,12 +2,12 @@ package com.example.connection.repository;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
-
 import com.example.connection.listener.OnStateListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
@@ -16,15 +16,12 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.WriteBatch;
-
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Objects;
 import java.util.UUID;
@@ -140,18 +137,26 @@ public class OptionsPostRepository {
                         Log.e(TAG, "Folder đã tồn tại");
                     }
                     FileOutputStream outputStream = null;
+                    File photoFile = null, videoFile = null;
                     if(url.contains(".mp4")){
-                        File photoFile = new File(folderConnection, UUID.randomUUID() + ".mp4");
-                        outputStream = new FileOutputStream(photoFile);
-                    } else if (url.contains(".jpg")) {
-                        File videoFile = new File(folderConnection, UUID.randomUUID() + ".jpg");
+                        videoFile = new File(folderConnection, UUID.randomUUID() + ".mp4");
                         outputStream = new FileOutputStream(videoFile);
+                    } else if (url.contains(".jpg")) {
+                        photoFile = new File(folderConnection, UUID.randomUUID() + ".jpg");
+                        outputStream = new FileOutputStream(photoFile);
                     }
                     ghiFile(inputStream, outputStream, onStateListener);
                     if (outputStream != null) {
-                        onStateListener.onSuccess("Tải về thành công");
                         outputStream.flush();
                         outputStream.close();
+                        Intent intent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+                        if (url.contains(".mp4") && videoFile != null){
+                            intent.setData(Uri.fromFile(videoFile));
+                        } else if (url.contains(".jpg") && photoFile != null) {
+                            intent.setData(Uri.fromFile(photoFile));
+                        }
+                        context.sendBroadcast(intent);
+                        onStateListener.onSuccess("Tải về thành công");
                     }
                 }
             } catch (IOException e) {

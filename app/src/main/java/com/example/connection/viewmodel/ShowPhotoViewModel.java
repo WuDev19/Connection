@@ -15,6 +15,7 @@ public class ShowPhotoViewModel extends ViewModel implements ShowPhotoRepository
     private final MutableLiveData<Boolean> updateWidget = new MutableLiveData<>();
     private final MutableLiveData<Boolean> sendMessageSuccess = new MutableLiveData<>();
     private final MutableLiveData<Query> query = new MutableLiveData<>();
+    private final MutableLiveData<Boolean> expressDone = new MutableLiveData<>();
     private final String TAG = getClass().getName();
 
     public ShowPhotoViewModel() {
@@ -49,8 +50,14 @@ public class ShowPhotoViewModel extends ViewModel implements ShowPhotoRepository
 
     public void expressEmote(String emote, String postId) {
         showPhotoRepository.modifyEmote(postId, emote)
-                .addOnSuccessListener(unused -> Log.e(TAG, "onSuccess: "))
-                .addOnFailureListener(e -> Log.e(TAG, "onFailure: " + e.getMessage()));
+                .addOnSuccessListener(unused -> {
+                    Log.e(TAG, "onSuccess: ");
+                    expressDone.setValue(true);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "onFailure: " + e.getMessage());
+                    expressDone.setValue(true);
+                });
     }
 
     public LiveData<Boolean> getUpdateWidget() {
@@ -63,6 +70,10 @@ public class ShowPhotoViewModel extends ViewModel implements ShowPhotoRepository
 
     public LiveData<Query> getQuery() {
         return query;
+    }
+
+    public LiveData<Boolean> getExpressDone() {
+        return expressDone;
     }
 
     @Override

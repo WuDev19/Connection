@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<de.hdodenhof.circleimageview.CircleImageView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/img_random_avt"
+    android:layout_width="100dp"
+    android:layout_height="100dp"
+    android:src="@drawable/anonymous_avt"
+    android:scaleType="centerCrop"
+    android:background="@android:color/transparent"/>

@@ -4,14 +4,15 @@ import android.content.Intent;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.lifecycle.ViewModelProvider;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 import com.example.connection.R;
-import com.example.connection.utils.MediaPlayerUtil;
 import com.example.connection.viewmodel.OptionsPostViewModel;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 
@@ -60,10 +61,22 @@ public class FragmentOptionsPost extends BottomSheetDialogFragment {
         });
 
         relative_delete.setOnClickListener(view12 -> {
-            optionsPostViewModel.deletePost(postId);
-            relative_delete.setEnabled(false);
-            relative_share.setEnabled(false);
-            relative_download.setEnabled(false);
+            AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
+            builder.setTitle("Xóa bài đăng");
+            builder.setMessage("Bạn chắc chắn muốn xóa ?");
+            builder.setPositiveButton("Có", (dialogInterface, i) -> {
+                optionsPostViewModel.deletePost(postId);
+                relative_delete.setEnabled(false);
+                relative_share.setEnabled(false);
+                relative_download.setEnabled(false);
+            });
+            builder.setNegativeButton("Không", null);
+            AlertDialog dialog = builder.create();
+            Window window = dialog.getWindow();
+            if(window != null){
+                window.setBackgroundDrawableResource(R.drawable.custom_dialog);
+                dialog.show();
+            }
         });
 
         relative_download.setOnClickListener(view13 -> optionsPostViewModel.downloadPost(url, requireContext()));
