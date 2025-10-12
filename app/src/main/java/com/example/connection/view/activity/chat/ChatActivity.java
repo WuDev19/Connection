@@ -240,7 +240,7 @@ public class ChatActivity extends AppCompatActivity {
 
     private void updateChatRoomUi(ChatRoom chatRoomNew) {
         if (chatRoom == null || chatRoomNew == null) return;
-        if (!chatRoom.getBackground().equals(chatRoomNew.getBackground()) && chatRoomNew.getBackground() != null) {
+        if (chatRoomNew.getBackground() != null && chatRoom.getBackground() != null && !chatRoom.getBackground().equals(chatRoomNew.getBackground())) {
             Glide.with(this)
                     .load(chatRoomNew.getBackground())
                     .error(R.color.secondary)
