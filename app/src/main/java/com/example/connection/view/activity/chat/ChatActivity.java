@@ -17,6 +17,7 @@ import android.widget.ImageView;
 import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -30,6 +31,7 @@ import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.ui.PlayerView;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.bumptech.glide.Glide;
 import com.example.connection.R;
 import com.example.connection.adapter.ChatMessageAdapter;
@@ -46,10 +48,12 @@ import com.google.android.material.card.MaterialCardView;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.Query;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+
 import de.hdodenhof.circleimageview.CircleImageView;
 
 public class ChatActivity extends AppCompatActivity {
@@ -105,7 +109,7 @@ public class ChatActivity extends AppCompatActivity {
             chatViewModel.sendMessage(message);
         });
 
-        GestureDetector recyclerViewDetector = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener(){
+        GestureDetector recyclerViewDetector = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() {
             @Override
             public void onLongPress(@NonNull MotionEvent e) {
                 super.onLongPress(e);
@@ -165,7 +169,17 @@ public class ChatActivity extends AppCompatActivity {
                 }
                 popupMenu.setOnMenuItemClickListener(menuItem -> {
                     if (menuItem.getItemId() == R.id.menu_delete) {
-                        chatViewModel.getDelete();
+                        AlertDialog.Builder builder = new AlertDialog.Builder(ChatActivity.this);
+                        builder.setTitle("Xóa đoạn chat");
+                        builder.setMessage("Bạn có chắc chắn muốn xóa?");
+                        builder.setNegativeButton("Không", null);
+                        builder.setPositiveButton("Có", (dialogInterface, i) -> chatViewModel.getDelete());
+                        AlertDialog dialog = builder.create();
+                        Window window = dialog.getWindow();
+                        if (window != null) {
+                            window.setBackgroundDrawableResource(R.drawable.custom_dialog);
+                            dialog.show();
+                        }
                         return true;
                     } else if (menuItem.getItemId() == R.id.alias_chat) {
                         FragmentChangeAlias fragmentChangeAlias = new FragmentChangeAlias();
@@ -196,7 +210,7 @@ public class ChatActivity extends AppCompatActivity {
             if (chatRoom == null) {
                 chatViewModel.createNewChatRoom();
             } else {
-                if(chatRoom.getBackground() != null){
+                if (chatRoom.getBackground() != null) {
                     Glide.with(this)
                             .load(chatRoom.getBackground())
                             .error(R.color.secondary)
@@ -225,14 +239,14 @@ public class ChatActivity extends AppCompatActivity {
     }
 
     private void updateChatRoomUi(ChatRoom chatRoomNew) {
-        if(chatRoom == null || chatRoomNew == null) return;
-        if(!chatRoom.getBackground().equals(chatRoomNew.getBackground()) && chatRoomNew.getBackground() != null){
+        if (chatRoom == null || chatRoomNew == null) return;
+        if (!chatRoom.getBackground().equals(chatRoomNew.getBackground()) && chatRoomNew.getBackground() != null) {
             Glide.with(this)
                     .load(chatRoomNew.getBackground())
                     .error(R.color.secondary)
                     .into(img_background);
         }
-        if(chatRoomNew.getUserId().size() >= 3) {
+        if (chatRoomNew.getUserId().size() >= 3) {
             String oldName = chatRoom.getChatName();
             String newName = chatRoomNew.getChatName();
             if (oldName != null && newName != null && !oldName.equals(newName)) {
@@ -254,7 +268,7 @@ public class ChatActivity extends AppCompatActivity {
                 } else tv_username.setText(alias);
             }
         }
-        if(!chatRoom.getAlias().equals(chatRoomNew.getAlias())){
+        if (!chatRoom.getAlias().equals(chatRoomNew.getAlias())) {
             adapter.setData(chatRoomNew.getAvtSender(), chatRoomNew.getAlias());
         }
     }
@@ -297,15 +311,14 @@ public class ChatActivity extends AppCompatActivity {
 
     private void showChatRoomExist(ChatRoom chatRoom) {
         chatViewModel.setChatRoomId(chatRoom.getChatRoomId());
-        if(chatRoom.getIsRandom() == 1){
+        if (chatRoom.getIsRandom() == 1) {
             tv_username.setText(chatRoom.getChatName());
             Glide.with(ChatActivity.this)
                     .load(chatRoom.getChatRoomAvt())
                     .error(R.drawable.anonymous_avt)
                     .into(img_avatar);
             otherId = getOtherUserId(chatRoom.getUserId());
-        }
-        else {
+        } else {
             if (chatRoom.getUserId().size() <= 2) {
                 otherId = getOtherUserId(chatRoom.getUserId());
                 if (otherId == null) return;
@@ -421,7 +434,7 @@ public class ChatActivity extends AppCompatActivity {
                         @Override
                         public void onMessageClickToShowEmote(String idMess, Map<String, String> emoteMap) {
                             List<EmoteModel> list = new ArrayList<>();
-                            for(Map.Entry<String, String> entry : emoteMap.entrySet()){
+                            for (Map.Entry<String, String> entry : emoteMap.entrySet()) {
                                 EmoteModel emoteModel = new EmoteModel("",
                                         entry.getKey(),
                                         chatRoom1.getAvtSender().get(entry.getKey()),
@@ -458,7 +471,7 @@ public class ChatActivity extends AppCompatActivity {
                             LiveData<Map<String, String>> liveData = chatViewModel.registerListeningReaction(idMess);
                             Observer<Map<String, String>> observer = stringStringMap -> {
                                 List<EmoteModel> list1 = new ArrayList<>();
-                                for(Map.Entry<String, String> entry : stringStringMap.entrySet()){
+                                for (Map.Entry<String, String> entry : stringStringMap.entrySet()) {
                                     EmoteModel emoteModel = new EmoteModel("",
                                             entry.getKey(),
                                             chatRoom1.getAvtSender().get(entry.getKey()),
@@ -513,7 +526,7 @@ public class ChatActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if(adapter != null){
+        if (adapter != null) {
             adapter.stopListening();
         }
     }
