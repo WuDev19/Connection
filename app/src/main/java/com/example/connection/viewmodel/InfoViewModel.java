@@ -73,4 +73,10 @@ public class InfoViewModel extends ViewModel implements OnStateListener {
         loading.setValue(isLoading);
     }
 
+    @Override
+    protected void onCleared() {
+        super.onCleared();
+        infoRepository.shutdownService();
+    }
+
 }

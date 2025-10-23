@@ -8,7 +8,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.media.MediaPlayer;
@@ -21,6 +23,8 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.camera.core.Camera;
+import androidx.camera.core.CameraControl;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
@@ -44,6 +48,8 @@ import androidx.media3.common.MediaItem;
 import androidx.media3.common.Player;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.ui.PlayerView;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.os.Handler;
 import android.os.Message;
@@ -61,13 +67,17 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.airbnb.lottie.LottieAnimationView;
 import com.denzcoskun.imageslider.ImageSlider;
 import com.denzcoskun.imageslider.constants.ScaleTypes;
 import com.denzcoskun.imageslider.models.SlideModel;
 import com.example.connection.R;
+import com.example.connection.adapter.ChooseFriendToPostAdapter;
 import com.example.connection.model.Image;
+import com.example.connection.model.SelectionFriendModel;
 import com.example.connection.utils.MediaPlayerUtil;
 import com.example.connection.viewmodel.TakePhotoViewModel;
+import com.google.android.material.slider.Slider;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -82,7 +92,8 @@ import java.util.concurrent.Executors;
 
 public class FragmentTakePhoto extends Fragment {
 
-    private ImageButton btn_gallery, btn_success, btn_cancel, btn_rotate, btn_download, btn_take_photo, btn_start_video, btn_red_dot;
+    private ImageButton btn_gallery, btn_cancel, btn_rotate, btn_download, btn_take_photo, btn_start_video, btn_red_dot;
+    private LottieAnimationView btn_success;
     private TextInputEditText edt_status;
     private ImageView imgFromGallery, img_music;
     private TextView tv_number_post, tv_music_name, tv_singer;
@@ -90,15 +101,18 @@ public class FragmentTakePhoto extends Fragment {
     private PreviewView previewView;
     private PlayerView playerViewVideo;
     private Preview preview;
+    private Slider slider_zoom;
     private View view1, view2;
-    private FrameLayout frame_photo_video;
+    private FrameLayout frame_photo_video, frame_slider;
     private ImageSlider imageSlider;
     private CardView cardViewSlider;
+    private RecyclerView recycler_view_choose_friend_to_post;
     private ActivityResultLauncher<Intent> resultLauncher;
     private ImageCapture imageCapture;
     private VideoCapture<Recorder> videoCapture;
     private Recording recording;
     private ExecutorService cameraExecutor;
+    private CameraControl cameraControl;
     private ListenableFuture<ProcessCameraProvider> listenableFuture;
     private CameraSelector.Builder cameraSelector;
     private ProcessCameraProvider cameraProvider;
@@ -116,6 +130,10 @@ public class FragmentTakePhoto extends Fragment {
     private boolean isVideo = false;
     private boolean isStop = false;
     private long firstTouch, lastTouch;
+    private List<String> listFriendId;
+    private final List<String> tmpFriendList = new ArrayList<>();
+    private List<SelectionFriendModel> selectionFriendList = new ArrayList<>();
+    private ChooseFriendToPostAdapter adapter;
     private final List<SlideModel> slideModels = new ArrayList<>();
     private final BroadcastReceiver receiver = new BroadcastReceiver() {
         @Override
@@ -145,6 +163,7 @@ public class FragmentTakePhoto extends Fragment {
                 imgFromGallery.setVisibility(View.VISIBLE);
                 imgFromGallery.setImageBitmap(photo);
                 btn_success.setVisibility(View.VISIBLE);
+                btn_success.playAnimation();
                 btn_cancel.setVisibility(View.VISIBLE);
                 edt_status.setVisibility(View.VISIBLE);
                 btn_download.setVisibility(View.VISIBLE);
@@ -196,6 +215,15 @@ public class FragmentTakePhoto extends Fragment {
         GestureDetector gestureDetectorPhoto = new GestureDetector(requireContext(), new GestureDetector.SimpleOnGestureListener() {
             @Override
             public boolean onSingleTapUp(@NonNull MotionEvent e) {
+                frame_slider.animate()
+                        .scaleX(0.13f)
+                        .scaleY(0.35f)
+                        .withEndAction(() -> {
+                            frame_slider.setBackgroundTintList(ColorStateList.valueOf(Color.WHITE));
+                            slider_zoom.setEnabled(false);
+                            frame_slider.setVisibility(View.GONE);
+                        })
+                        .start();
                 takePhoto();
                 return true;
             }
@@ -280,8 +308,33 @@ public class FragmentTakePhoto extends Fragment {
             return true;
         });
 
+        frame_slider.setOnClickListener(view32 -> {
+            frame_slider.setBackgroundTintList(ColorStateList.valueOf(Color.TRANSPARENT));
+            frame_slider.animate()
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .setDuration(500)
+                    .withEndAction(() -> slider_zoom.setEnabled(true))
+                    .start();
+        });
+
+        previewView.setOnClickListener(view34 ->
+                frame_slider.animate()
+                        .scaleX(0.13f)
+                        .scaleY(0.35f)
+                        .withEndAction(() -> {
+                            frame_slider.setBackgroundTintList(ColorStateList.valueOf(Color.WHITE));
+                            slider_zoom.setEnabled(false);
+                        })
+                        .start());
+
+        slider_zoom.addOnChangeListener((slider, value, fromUser) -> cameraControl.setLinearZoom(value));
+
         takePhotoViewModel.getSuccessLiveData().observe(getViewLifecycleOwner(), success -> {
             Toast.makeText(FragmentTakePhoto.this.requireContext(), success, Toast.LENGTH_SHORT).show();
+            if (!tmpFriendList.isEmpty()) {
+                tmpFriendList.clear();
+            }
             if (isVideo) {
                 if (file != null && file.delete()) Log.e(TAG, "onChanged: xoa cache");
             }
@@ -289,6 +342,9 @@ public class FragmentTakePhoto extends Fragment {
 
         takePhotoViewModel.getFailureLiveData().observe(getViewLifecycleOwner(), error -> {
             Toast.makeText(requireContext(), error, Toast.LENGTH_SHORT).show();
+            if (!tmpFriendList.isEmpty()) {
+                tmpFriendList.clear();
+            }
             if (isVideo) {
                 if (file != null && file.delete()) Log.e(TAG, "onChanged: xoa cache");
             }
@@ -305,12 +361,36 @@ public class FragmentTakePhoto extends Fragment {
             }
             imageSlider.setImageList(slideModels);
         });
+
+        takePhotoViewModel.getListFriendLiveData().observe(getViewLifecycleOwner(), list -> {
+            if (list != null) {
+                listFriendId = list;
+            } else listFriendId = new ArrayList<>();
+        });
+
+        takePhotoViewModel.getSelectionFriendLiveData().observe(getViewLifecycleOwner(), selectionFriendModels ->
+                selectionFriendList = selectionFriendModels);
+
+        adapter = new ChooseFriendToPostAdapter(requireContext(), selectionFriendList, model -> {
+            if (model.isSelected()) {
+                tmpFriendList.add(model.getId());
+            } else {
+                tmpFriendList.remove(model.getId());
+            }
+        });
+        recycler_view_choose_friend_to_post.setAdapter(adapter);
+        recycler_view_choose_friend_to_post.setLayoutManager(new LinearLayoutManager(
+                requireContext(),
+                LinearLayoutManager.HORIZONTAL,
+                false));
+        recycler_view_choose_friend_to_post.setItemAnimator(null);
     }
 
     private void cancelSendPhoto() {
         btn_cancel.setOnClickListener(view -> {
             if (isVideo) {
-                if (file != null && file.delete()) Log.e(TAG, "cancelSendPhoto: xoa cache thanh cong");
+                if (file != null && file.delete())
+                    Log.e(TAG, "cancelSendPhoto: xoa cache thanh cong");
                 playerViewVideo.setVisibility(View.GONE);
                 btn_start_video.setAlpha(1f);
                 file = null;
@@ -331,6 +411,10 @@ public class FragmentTakePhoto extends Fragment {
             frame_photo_video.setVisibility(View.VISIBLE);
             btn_gallery.setVisibility(View.VISIBLE);
             btn_rotate.setVisibility(View.VISIBLE);
+            frame_slider.setVisibility(View.VISIBLE);
+            recycler_view_choose_friend_to_post.setAdapter(null);
+            recycler_view_choose_friend_to_post.setVisibility(View.GONE);
+            tmpFriendList.clear();
             if (mediaPlayer != null) {
                 mediaPlayer.reset();
             }
@@ -379,7 +463,14 @@ public class FragmentTakePhoto extends Fragment {
         });
         btn_success.setOnClickListener(view -> {
             String status = Objects.requireNonNull(edt_status.getText()).toString().trim();
-            takePhotoViewModel.uploadPost(photo, file, urlMusic, musicName, singerName, status, requireContext().getApplicationContext(), isVideo);
+            if (!tmpFriendList.isEmpty()) {
+                String currentId = takePhotoViewModel.getCurrentUserId();
+                if (!tmpFriendList.contains(currentId)) {
+                    tmpFriendList.add(currentId);
+                }
+                listFriendId = tmpFriendList;
+            }
+            takePhotoViewModel.uploadPost(photo, file, urlMusic, musicName, singerName, status, requireContext().getApplicationContext(), isVideo, listFriendId);
             if (isVideo) {
                 playerViewVideo.setVisibility(View.GONE);
                 btn_start_video.setAlpha(1f);
@@ -400,6 +491,9 @@ public class FragmentTakePhoto extends Fragment {
             frame_photo_video.setVisibility(View.VISIBLE);
             btn_gallery.setVisibility(View.VISIBLE);
             btn_rotate.setVisibility(View.VISIBLE);
+            frame_slider.setVisibility(View.VISIBLE);
+            recycler_view_choose_friend_to_post.setAdapter(null);
+            recycler_view_choose_friend_to_post.setVisibility(View.GONE);
             Toast.makeText(requireContext(), "Vui lòng chờ xử lý", Toast.LENGTH_LONG).show();
             if (mediaPlayer != null) {
                 mediaPlayer.reset();
@@ -517,6 +611,7 @@ public class FragmentTakePhoto extends Fragment {
                 imgFromGallery.setVisibility(View.VISIBLE);
                 imgFromGallery.setImageURI(uri);
                 btn_success.setVisibility(View.VISIBLE);
+                btn_success.playAnimation();
                 btn_cancel.setVisibility(View.VISIBLE);
                 btn_download.setVisibility(View.VISIBLE);
                 edt_status.setVisibility(View.VISIBLE);
@@ -563,6 +658,12 @@ public class FragmentTakePhoto extends Fragment {
         progressBar = view.findViewById(R.id.progress_bar9);
         imageSlider = view.findViewById(R.id.unseen_image_slider);
         cardViewSlider = view.findViewById(R.id.card_view_slider);
+        slider_zoom = view.findViewById(R.id.slider_zoom);
+        recycler_view_choose_friend_to_post = view.findViewById(R.id.recycler_view_choose_to_post);
+        frame_slider = view.findViewById(R.id.frame_slider);
+        frame_slider.setScaleX(0.13f);
+        frame_slider.setScaleY(0.35f);
+        slider_zoom.setEnabled(false);
         exoPlayer = new ExoPlayer.Builder(requireContext()).build();
         playerViewVideo.setPlayer(exoPlayer);
         view1.setBackgroundResource(R.drawable.button_corner_black);
@@ -594,7 +695,8 @@ public class FragmentTakePhoto extends Fragment {
                     cameraSelector.requireLensFacing(CameraSelector.LENS_FACING_FRONT);
                 }
                 cameraProvider.unbindAll();
-                cameraProvider.bindToLifecycle(FragmentTakePhoto.this, cameraSelector.build(), preview, imageCapture, videoCapture);
+                Camera camera = cameraProvider.bindToLifecycle(FragmentTakePhoto.this, cameraSelector.build(), preview, imageCapture, videoCapture);
+                cameraControl = camera.getCameraControl();
                 Log.e(TAG, "startCamera: 2");
             } catch (Exception e) {
                 Log.e(TAG, "startCamera: " + e.getMessage());
@@ -603,6 +705,9 @@ public class FragmentTakePhoto extends Fragment {
     }
 
     private void takePhoto() {
+        recycler_view_choose_friend_to_post.setVisibility(View.VISIBLE);
+        adapter.setData(selectionFriendList);
+        recycler_view_choose_friend_to_post.setAdapter(adapter);
         isVideo = false;
         btn_take_photo.animate()
                 .rotation(180f)
@@ -703,14 +808,27 @@ public class FragmentTakePhoto extends Fragment {
     private void showVideo() {
         playerViewVideo.setVisibility(View.VISIBLE);
         btn_success.setVisibility(View.VISIBLE);
+        btn_success.playAnimation();
         btn_cancel.setVisibility(View.VISIBLE);
         edt_status.setVisibility(View.VISIBLE);
         btn_download.setVisibility(View.VISIBLE);
         img_music.setVisibility(View.VISIBLE);
+        recycler_view_choose_friend_to_post.setVisibility(View.VISIBLE);
+        adapter.setData(selectionFriendList);
+        recycler_view_choose_friend_to_post.setAdapter(adapter);
         frame_photo_video.setVisibility(View.GONE);
         btn_gallery.setVisibility(View.GONE);
         btn_rotate.setVisibility(View.GONE);
         previewView.setVisibility(View.GONE);
+        frame_slider.animate()
+                .scaleX(0.13f)
+                .scaleY(0.35f)
+                .withEndAction(() -> {
+                    frame_slider.setBackgroundTintList(ColorStateList.valueOf(Color.WHITE));
+                    slider_zoom.setEnabled(false);
+                    frame_slider.setVisibility(View.GONE);
+                })
+                .start();
     }
 
     private Bitmap flipBitmap(Bitmap bitmap) {
@@ -732,10 +850,10 @@ public class FragmentTakePhoto extends Fragment {
             exoPlayer.release();
             exoPlayer = null;
         }
-        if(runnableProcess != null){
+        if (runnableProcess != null) {
             handlerVideo.removeCallbacks(runnableProcess);
         }
-        if(runnableVideo != null){
+        if (runnableVideo != null) {
             handlerVideo.removeCallbacks(runnableVideo);
         }
     }

@@ -7,8 +7,6 @@ import com.cloudinary.android.callback.ErrorInfo;
 import com.cloudinary.android.callback.UploadCallback;
 import com.example.connection.listener.OnStateListener;
 import com.example.connection.model.ChatRoom;
-import com.example.connection.model.Comment;
-import com.example.connection.model.EmoteModel;
 import com.example.connection.model.Image;
 import com.example.connection.model.User;
 import com.google.android.gms.tasks.Task;
@@ -21,12 +19,16 @@ import com.google.firebase.firestore.WriteBatch;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class InfoRepository {
 
     private final OnStateListener onStateListener;
     private final String TAG = getClass().getName();
     private final FirebaseFirestore db;
+    private final ExecutorService updateEmoteAndCommentService = Executors.newSingleThreadExecutor();
 
     public InfoRepository(OnStateListener onStateListener) {
         this.onStateListener = onStateListener;
@@ -48,6 +50,7 @@ public class InfoRepository {
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         updateRelativeInfo(id, user);
+                        updateEmoteAndComment(id, user);
                         onStateListener.onSuccess("Cập nhật thông tin thành công");
                         onStateListener.onLoading(false);
                     } else {
@@ -61,7 +64,6 @@ public class InfoRepository {
 
     // TODO: 10/3/2025 xu ly neu batchsize > 500 
     private void updateRelativeInfo(String id, User user) {
-        WriteBatch writeBatch = db.batch();
 
         Task<QuerySnapshot> taskChat = db.collection("chatroom")
                 .whereArrayContains("userId", id)
@@ -73,10 +75,10 @@ public class InfoRepository {
 
         Tasks.whenAllSuccess(taskChat, taskPost)
                 .addOnSuccessListener(results -> {
+                    WriteBatch batchChatAndPost = db.batch();
+
                     QuerySnapshot chatResult = (QuerySnapshot) results.get(0);
                     QuerySnapshot postResult = (QuerySnapshot) results.get(1);
-
-                    List<Task<QuerySnapshot>> tasks = new ArrayList<>();
 
                     for (DocumentSnapshot documentSnapshot : chatResult) {
                         Log.e(TAG, "updateRelativeInfo: chat");
@@ -86,62 +88,82 @@ public class InfoRepository {
                             avtMap.put(user.getId(), user.getAvatarUser());
                             Map<String, String> aliasMap = chatRoom.getAlias();
                             String alias = aliasMap.get(user.getId());
-                            if(alias != null){
-                                if(alias.contains("_")){
+                            if (alias != null) {
+                                if (alias.contains("_")) {
                                     alias = user.getUserName() + "_" + alias.split("_")[1];
-                                }
-                                else {
+                                } else {
                                     alias = user.getUserName();
                                 }
                                 aliasMap.put(user.getId(), alias);
-                                writeBatch.update(documentSnapshot.getReference(), "alias", aliasMap);
+                                batchChatAndPost.update(documentSnapshot.getReference(), "alias", aliasMap);
                             }
-                            writeBatch.update(documentSnapshot.getReference(), "avtSender", avtMap);
+                            batchChatAndPost.update(documentSnapshot.getReference(), "avtSender", avtMap);
                         }
                     }
                     for (DocumentSnapshot documentSnapshot : postResult) {
                         Log.e(TAG, "updateRelativeInfo: post");
                         Image image = documentSnapshot.toObject(Image.class);
                         if (image != null) {
-                            tasks.add(documentSnapshot.getReference().collection("emotes")
-                                    .whereEqualTo("idUser", id)
-                                    .get());
-                            tasks.add(documentSnapshot.getReference().collection("comments")
-                                    .whereEqualTo("idUser", id)
-                                    .get());
-                            writeBatch.update(documentSnapshot.getReference(), "avatarPoster", user.getAvatarUser());
-                            writeBatch.update(documentSnapshot.getReference(), "userNamePoster", user.getUserName());
+                            batchChatAndPost.update(documentSnapshot.getReference(), "avatarPoster", user.getAvatarUser());
+                            batchChatAndPost.update(documentSnapshot.getReference(), "userNamePoster", user.getUserName());
                         }
                     }
-                    Tasks.whenAllSuccess(tasks)
-                            .addOnSuccessListener(objects -> {
-                                for (Object object : objects) {
+                    batchChatAndPost.commit().addOnCompleteListener(task1 -> {
+                        if (task1.isSuccessful()) {
+                            Log.e(TAG, "Update avatar thành công cho cả chatroom và post_photo");
+                        }
+                    });
+                })
+                .addOnFailureListener(e -> Log.e(TAG, "onFailure: " + e.getMessage()));
+    }
+
+    private void updateEmoteAndComment(String id, User user) {
+        updateEmoteAndCommentService.execute(() -> db.collection("post_photo")
+                .whereArrayContains("friendId", id)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<Task<QuerySnapshot>> taskList = new ArrayList<>();
+                    for (DocumentSnapshot documentSnapshot : queryDocumentSnapshots) {
+                        taskList.add(documentSnapshot.getReference().collection("emotes")
+                                .whereEqualTo("idUser", id)
+                                .get());
+                        taskList.add(documentSnapshot.getReference().collection("comments")
+                                .whereEqualTo("idUser", id)
+                                .get());
+                    }
+                    if (taskList.isEmpty()) return;
+                    Tasks.whenAllSuccess(taskList)
+                            .addOnSuccessListener(objects1 -> {
+                                WriteBatch batchEmoteAndComment = db.batch();
+                                for (Object object : objects1) {
                                     if (object instanceof QuerySnapshot) {
                                         QuerySnapshot querySnapshot = (QuerySnapshot) object;
                                         for (DocumentSnapshot docSnap : querySnapshot) {
                                             if (docSnap.exists()) {
-                                                if (docSnap.toObject(EmoteModel.class) != null) {
-                                                    Log.e(TAG, "updateRelativeInfo: emote");
-                                                    writeBatch.update(docSnap.getReference(), "urlAvt", user.getAvatarUser());
-                                                    writeBatch.update(docSnap.getReference(), "username", user.getUserName());
-                                                } else if (docSnap.toObject(Comment.class) != null) {
-                                                    Log.e(TAG, "updateRelativeInfo: comment");
-                                                    writeBatch.update(docSnap.getReference(), "avtComment", user.getAvatarUser());
-                                                    writeBatch.update(docSnap.getReference(), "userNameComment", user.getUserName());
+                                                String path = docSnap.getReference().getPath();
+                                                Log.e(TAG, "onSuccess: " + path);
+                                                if (path.contains("emotes")) {
+                                                    batchEmoteAndComment.update(docSnap.getReference(), "urlAvt", user.getAvatarUser());
+                                                    batchEmoteAndComment.update(docSnap.getReference(), "username", user.getUserName());
+                                                } else if (path.contains("comments")) {
+                                                    batchEmoteAndComment.update(docSnap.getReference(), "avtComment", user.getAvatarUser());
+                                                    batchEmoteAndComment.update(docSnap.getReference(), "userNameComment", user.getUserName());
                                                 }
                                             }
                                         }
                                     }
                                 }
-                                writeBatch.commit().addOnCompleteListener(task1 -> {
+                                batchEmoteAndComment.commit().addOnCompleteListener(task1 -> {
                                     if (task1.isSuccessful()) {
-                                        Log.e(TAG, "Update avatar thành công cho cả chatroom và post_photo");
+                                        Log.e(TAG, "Update avatar thành công cho cả emote và comment");
+                                    } else {
+                                        Log.e(TAG, "updateRelativeInfo: " + Objects.requireNonNull(task1.getException()).getMessage());
                                     }
                                 });
                             })
                             .addOnFailureListener(e -> Log.e(TAG, "onFailure: " + e.getMessage()));
                 })
-                .addOnFailureListener(e -> Log.e(TAG, "onFailure: " + e.getMessage()));
+                .addOnFailureListener(e -> Log.e(TAG, "onFailure: " + e.getMessage())));
     }
 
     public void upload_avt(Uri uri, String username, User user) {
@@ -187,6 +209,11 @@ public class InfoRepository {
 
             }
         }).dispatch();
+    }
+
+    public void shutdownService(){
+        Log.e(TAG, "shutdownService: ");
+        updateEmoteAndCommentService.shutdown();
     }
 
 }

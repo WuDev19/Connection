@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.media.MediaPlayer;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -337,11 +338,13 @@ public class ShowImageAdapter extends FirestoreRecyclerAdapter<Image, ShowImageA
         }
     }
 
+    // TODO: 10/16/2025 xem lại chút logic
     @Override
     public void onDataChanged() {
         super.onDataChanged();
         int itemCount = getItemCount();
         Log.e(TAG, "onDataChanged: ");
+        Log.e("kiemtrakhixoa", "onDataChanged: lan dau sang show" + positionClick + " " + MediaPlayerUtil.getInstance().isFirstTimeScrollToShow());
         if (itemCount == 0) {
             MediaPlayerUtil.getInstance().setFirstTimeScrollToShow(false);
             Log.e("kiemtrakhixoa", "onDataChanged: set lan dau sang show bang false");
@@ -368,6 +371,7 @@ public class ShowImageAdapter extends FirestoreRecyclerAdapter<Image, ShowImageA
             MediaPlayerUtil.getInstance().setPosition(1);
             MediaPlayerUtil.getInstance().playMusic(context, image.getUrlMusic());
         }
+        Log.e("kiemtrakhixoa", "onDataChanged: lan dau sang show" + positionClick + " " + MediaPlayerUtil.getInstance().isFirstTimeScrollToShow());
     }
 
     public String getTimeAgo(String time, Timestamp timestamp) {
@@ -494,12 +498,17 @@ public class ShowImageAdapter extends FirestoreRecyclerAdapter<Image, ShowImageA
                 playVideo(imageNew);
             }
             else {
-                MediaPlayerUtil.getInstance().getMediaPlayer().reset();
+                MediaPlayer mediaPlayer = MediaPlayerUtil.getInstance().getMediaPlayer();
+                if(mediaPlayer != null){
+                    Log.e("kiem tra thu tu", "onChildChanged: reset");
+                    MediaPlayerUtil.getInstance().getMediaPlayer().reset();
+                }
             }
         }
         //khi luot sang fragment show ma truoc do chua co item nao, day la lan dau tien dang bai
         else if (type == ChangeEventType.ADDED) {
             if (snapshotArray.size() == 1 && !MediaPlayerUtil.getInstance().isInGeneral()) {
+                Log.e("kiemtrakhixoa", "onDataChanged: add" );
                 Image imageNew = snapshotArray.get(newIndex);
                 playVideo(imageNew);
                 MediaPlayerUtil.getInstance().prepareMusicBeforePlaying(context, imageNew.getUrlMusic());

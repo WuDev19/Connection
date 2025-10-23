@@ -10,7 +10,9 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@color/secondary"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:clipToPadding="false"
+        android:clipChildren="false">
 
         <androidx.cardview.widget.CardView
             android:id="@+id/cardview"
@@ -25,7 +27,8 @@
                 android:id="@+id/img_take_photo"
                 android:layout_width="match_parent"
                 android:layout_height="380dp"
-                app:scaleType="fillCenter"/>
+                app:scaleType="fillCenter"
+                android:background="@color/white"/>
 
             <ImageView
                 android:id="@+id/img_picture_from_gallery"
@@ -124,6 +127,31 @@
                     android:visibility="gone" />
 
             </LinearLayout>
+
+            <FrameLayout
+                android:id="@+id/frame_slider"
+                android:layout_width="wrap_content"
+                android:layout_height="30dp"
+                android:background="@drawable/border_avatar"
+                android:layout_gravity="center_horizontal"
+                android:backgroundTint="@color/white"
+                android:layout_marginTop="5dp">
+
+                <com.google.android.material.slider.Slider
+                    android:id="@+id/slider_zoom"
+                    android:layout_width="300dp"
+                    android:layout_height="wrap_content"
+                    app:trackHeight="6dp"
+                    app:thumbHeight="20dp"
+                    app:thumbWidth="20dp"
+                    android:layout_gravity="center"
+                    app:labelBehavior="gone"
+                    app:haloRadius="0dp"
+                    android:background="@null"
+                    app:thumbColor="@color/background"
+                    app:trackColor="@color/secondary"/>
+
+            </FrameLayout>
 
         </androidx.cardview.widget.CardView>
 
@@ -231,18 +259,17 @@
 
             </FrameLayout>
 
-            <ImageButton
+            <com.airbnb.lottie.LottieAnimationView
                 android:id="@+id/button_success"
                 android:layout_width="70dp"
                 android:layout_height="70dp"
                 android:layout_gravity="bottom"
                 android:layout_marginStart="50dp"
                 android:layout_marginEnd="50dp"
-                android:background="@drawable/icon_take_photo1"
-                android:contentDescription="@string/button_success"
-                android:scaleType="centerCrop"
-                android:src="@drawable/icon_done"
-                android:visibility="gone" />
+                android:visibility="gone"
+                app:lottie_rawRes="@raw/success"
+                app:lottie_autoPlay="true"
+                app:lottie_repeatCount="0"/>
 
             <ImageButton
                 android:id="@+id/button_rotate"
@@ -268,13 +295,24 @@
 
         </LinearLayout>
 
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycler_view_choose_to_post"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="5dp"
+            android:layout_marginBottom="5dp"
+            android:layout_marginEnd="5dp"
+            android:visibility="gone"
+            android:clipToPadding="false"
+            android:clipChildren="false"/>
+
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="20dp"
             android:orientation="horizontal">
-
 
             <TextView
                 android:id="@+id/tv_number_post"

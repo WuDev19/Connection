@@ -14,7 +14,10 @@ import com.cloudinary.android.callback.ErrorInfo;
 import com.cloudinary.android.callback.UploadCallback;
 import com.example.connection.listener.OnStateListener;
 import com.example.connection.model.Image;
+import com.example.connection.model.SelectionFriendModel;
 import com.example.connection.model.User;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentReference;
@@ -39,12 +42,14 @@ public class TakePhotoRepository {
 
     private final String currentUserId;
     private User user;
-    private List<String> mList;
     private final FirebaseFirestore db;
     private ListenerRegistration listenListFriend, postListenerRealTime;
     private final String TAG = getClass().getName();
     private final OnStateListener onStateListener;
     private final ExecutorService downloadExecutor = Executors.newSingleThreadExecutor();
+    private final Map<String, SelectionFriendModel> cacheFriend = new HashMap<>();
+    private List<String> listFriendId = new ArrayList<>();
+    private final List<SelectionFriendModel> listChooseFriend = new ArrayList<>();
 
     public TakePhotoRepository(OnStateListener onStateListener) {
         currentUserId = FirebaseAuth.getInstance().getUid();
@@ -56,7 +61,15 @@ public class TakePhotoRepository {
         void updateUI(List<Image> unseenImage);
     }
 
-    public void getUserInfoFromFirebase() {
+    public interface OnGetListFriendCallback {
+        void getListFriend(List<SelectionFriendModel> friends);
+
+        void getListFriendId(List<String> listFriendId);
+
+        void error(String err);
+    }
+
+    public void getUserInfoFromFirebase(OnGetListFriendCallback callback) {
 
         if (currentUserId == null) return;
 
@@ -72,10 +85,46 @@ public class TakePhotoRepository {
 
                     user = value.toObject(User.class);
                     if (user != null) {
-                        mList = user.getFriend();
-                        Log.e(TAG, "onEvent: " + mList);
+                        if (!user.getFriend().equals(listFriendId)) {
+                            for (String id : listFriendId) {
+                                if (!user.getFriend().contains(id)) {
+                                    cacheFriend.remove(id);
+                                }
+                            }
+                            listFriendId = user.getFriend();
+                            callback.getListFriendId(listFriendId);
+                            listChooseFriend.clear();
+                            List<Task<DocumentSnapshot>> tasksList = new ArrayList<>();
+                            for (String id : listFriendId) {
+                                if (cacheFriend.containsKey(id)) {
+                                    SelectionFriendModel model = cacheFriend.get(id);
+                                    if(model != null){
+                                        model.setSelected(false);
+                                        listChooseFriend.add(model);
+                                    }
+                                } else {
+                                    Task<DocumentSnapshot> task = db.collection("users").document(id).get();
+                                    tasksList.add(task);
+                                }
+                            }
+                            Tasks.whenAllSuccess(tasksList).addOnSuccessListener(objects -> {
+                                for (Task<DocumentSnapshot> task : tasksList) {
+                                    if(task.isSuccessful()){
+                                        User userTmp = task.getResult().toObject(User.class);
+                                        if (userTmp != null) {
+                                            String avt = userTmp.getAvatarUser();
+                                            String userTmpId = userTmp.getId();
+                                            String username = userTmp.getUserName();
+                                            SelectionFriendModel model = new SelectionFriendModel(userTmpId, avt, username, false);
+                                            listChooseFriend.add(model);
+                                            cacheFriend.put(userTmpId, model);
+                                        }
+                                    }
+                                }
+                                callback.getListFriend(listChooseFriend);
+                            });
+                        }
                     }
-
                 });
     }
 
@@ -88,7 +137,7 @@ public class TakePhotoRepository {
         }
     }
 
-    public void uploadBitmap(Bitmap bitmap, String urlMusic, String name, String singer, String status, Context context) {
+    public void uploadBitmap(Bitmap bitmap, String urlMusic, String name, String singer, String status, List<String> mList, Context context) {
         try {
             Log.e("status", "uploadBitmap: " + status);
             File file = new File(context.getCacheDir(), "temp_img.jpg");
@@ -150,7 +199,7 @@ public class TakePhotoRepository {
         }
     }
 
-    public void uploadVideo(File file, String urlMusic, String name, String singer, String status) {
+    public void uploadVideo(File file, String urlMusic, String name, String singer, String status, List<String> mList) {
         MediaManager.get().upload(file.getAbsolutePath())
                 .unsigned("post_upload")
                 .option("resource_type", "video")
@@ -357,6 +406,10 @@ public class TakePhotoRepository {
         } catch (IOException e) {
             onStateListener.onFailure(e.getMessage());
         }
+    }
+
+    public String getCurrentUserId() {
+        return currentUserId;
     }
 
 }

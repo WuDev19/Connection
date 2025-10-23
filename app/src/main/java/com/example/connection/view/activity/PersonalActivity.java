@@ -63,7 +63,7 @@ public class PersonalActivity extends AppCompatActivity {
             Toast.makeText(this, success, Toast.LENGTH_SHORT).show();
             Intent intent = new Intent(this, LoginActivity.class);
             startActivity(intent);
-            finish();
+            finishAffinity();
         });
 
         personalViewModel.getError().observe(this, error -> {
