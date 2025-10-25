@@ -11,12 +11,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.example.connection.R;
 import com.example.connection.model.SelectionFriendModel;
-
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import de.hdodenhof.circleimageview.CircleImageView;
 
 public class ChooseFriendToPostAdapter extends RecyclerView.Adapter<ChooseFriendToPostAdapter.ChooseFriendToPostViewHolder> {
@@ -24,7 +19,6 @@ public class ChooseFriendToPostAdapter extends RecyclerView.Adapter<ChooseFriend
     private final Context context;
     private final List<SelectionFriendModel> listFriend;
     private final OnItemClickListener onItemClickListener;
-    private Set<String> cacheAvt = new HashSet<>();
 
     public ChooseFriendToPostAdapter(Context context, List<SelectionFriendModel> listFriend, OnItemClickListener onItemClickListener) {
         this.context = context;
