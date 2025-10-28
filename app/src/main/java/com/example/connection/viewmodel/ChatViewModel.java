@@ -130,7 +130,7 @@ public class ChatViewModel extends ViewModel {
                 avtMap,
                 aliasMap,
                 searchChat,
-                null,
+                "",
                 0);
         createNewChat.setValue(chatRoom);
     }
@@ -216,32 +216,6 @@ public class ChatViewModel extends ViewModel {
             chatRepository.deleteOneSide(chatRoom, userIds);
         }
 
-    }
-
-    public void updateChatNameTwoPeople(String alias, String otherId) {
-        Log.e("ChatActivity", "updateChatNameTwoPeople: ");
-        String oldAlias = chatRoom.getAlias().get(otherId);
-        String newAlias = null;
-        if (oldAlias != null) {
-            if (oldAlias.contains("_")) {
-                if (alias != null) {
-                    newAlias = oldAlias.split("_")[0] + "_" + alias;
-                } else {
-                    newAlias = oldAlias.split("_")[0];
-                }
-            } else {
-                if (alias != null) {
-                    newAlias = oldAlias + "_" + alias;
-                }
-            }
-        }
-        if (newAlias != null) {
-            chatRepository.updateChatNameTwoPeople(chatRoom, otherId, newAlias).addOnCompleteListener(task -> {
-                if (!task.isSuccessful()) {
-                    Log.e(TAG, "onComplete: " + Objects.requireNonNull(task.getException()).getMessage());
-                }
-            });
-        }
     }
 
     public LiveData<Boolean> getSend() {

@@ -130,7 +130,7 @@ public class RecentChatViewModel extends ViewModel {
                 avtMap,
                 aliasMap,
                 new ArrayList<>(),
-                null,
+                "",
                 1);
         recentChatRepository.createChatRoom(chatRoom).addOnCompleteListener(task -> {
             if(task.isSuccessful()){

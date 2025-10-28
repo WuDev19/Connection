@@ -210,7 +210,7 @@ public class ChatActivity extends AppCompatActivity {
             if (chatRoom == null) {
                 chatViewModel.createNewChatRoom();
             } else {
-                if (chatRoom.getBackground() != null) {
+                if (chatRoom.getBackground() != null && !chatRoom.getBackground().isEmpty()) {
                     Glide.with(this)
                             .load(chatRoom.getBackground())
                             .error(R.color.secondary)
@@ -231,7 +231,7 @@ public class ChatActivity extends AppCompatActivity {
 
         chatViewModel.getChatRoomListeningLiveData().observe(this, chatRoomNew -> {
             if (chatRoomNew == null || chatRoomNew.getIsRandom() == 1) return;
-            Log.e(TAG, "onCreate: updateChatROom");
+            Log.e(TAG, "onCreate: updateChatRoom");
             ChatActivity.this.updateChatRoomUi(chatRoomNew);
             chatRoom = chatRoomNew;
         });

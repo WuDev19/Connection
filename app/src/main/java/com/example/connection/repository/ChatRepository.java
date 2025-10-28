@@ -259,12 +259,6 @@ public class ChatRepository {
         }
     }
 
-    public Task<Void> updateChatNameTwoPeople(ChatRoom chatRoom, String isUser, String alias){
-        return db.collection("chatroom")
-                .document(chatRoom.getChatRoomId())
-                .update("alias." + isUser, alias);
-    }
-
     public LiveData<Map<String, String>> listeningReaction(ChatRoom chatRoom, String idMess){
         MutableLiveData<Map<String, String>> mapMutableLiveData = new MutableLiveData<>();
 

@@ -156,7 +156,7 @@ public class FragmentCreateGroupChat extends BottomSheetDialogFragment {
                     avtMap,
                     aliasMap,
                     searchChat,
-                    null,
+                    "",
                     0);
             createGroupChatViewModel.setChatRoomToFireStore(chatRoom);
         });
