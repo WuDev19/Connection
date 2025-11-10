@@ -695,7 +695,11 @@ public class FragmentTakePhoto extends Fragment {
                     cameraSelector.requireLensFacing(CameraSelector.LENS_FACING_FRONT);
                 }
                 cameraProvider.unbindAll();
-                Camera camera = cameraProvider.bindToLifecycle(FragmentTakePhoto.this, cameraSelector.build(), preview, imageCapture, videoCapture);
+                Camera camera = cameraProvider.bindToLifecycle(FragmentTakePhoto.this,
+                        cameraSelector.build(),
+                        preview,
+                        imageCapture,
+                        videoCapture);
                 cameraControl = camera.getCameraControl();
                 Log.e(TAG, "startCamera: 2");
             } catch (Exception e) {
