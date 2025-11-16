@@ -54,16 +54,6 @@ public class ChooseFriendToPostAdapter extends RecyclerView.Adapter<ChooseFriend
         SelectionFriendModel model = listFriend.get(position);
         if (model != null) {
 
-            if (model.isSelected()) {
-                holder.img_avt.setScaleX(1.5f);
-                holder.img_avt.setScaleY(1.5f);
-            }
-
-            else {
-                holder.img_avt.setScaleX(1f);
-                holder.img_avt.setScaleY(1f);
-            }
-
             if(model.getAvt() != null){
                 Glide.with(context)
                         .load(model.getAvt())
@@ -79,10 +69,15 @@ public class ChooseFriendToPostAdapter extends RecyclerView.Adapter<ChooseFriend
                 holder.tv_username.setVisibility(View.INVISIBLE);
                 boolean newState = !model.isSelected();
                 model.setSelected(newState);
-                notifyItemChanged(position);
-                if(newState){
-                    onItemClickListener.onClick(model);
+                if (model.isSelected()) {
+                    holder.img_avt.setScaleX(1.5f);
+                    holder.img_avt.setScaleY(1.5f);
                 }
+                else {
+                    holder.img_avt.setScaleX(1f);
+                    holder.img_avt.setScaleY(1f);
+                }
+                onItemClickListener.onClick(model);
             });
 
             holder.img_avt.setOnLongClickListener(view -> {
