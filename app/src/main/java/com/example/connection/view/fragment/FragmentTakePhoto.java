@@ -603,6 +603,7 @@ public class FragmentTakePhoto extends Fragment {
                 if (intent == null) {
                     return;
                 }
+                isVideo = false;
                 Uri uri = intent.getData();
                 previewView.setVisibility(View.GONE);
                 frame_photo_video.setVisibility(View.GONE);

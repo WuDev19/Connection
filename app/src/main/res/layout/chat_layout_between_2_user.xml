@@ -40,7 +40,7 @@
             android:backgroundTint="#F1EEEE"
             android:textColor="@color/black"
             android:layout_marginStart="35dp"
-            android:layout_alignBottom="@+id/avt_user_in_chat" />
+            android:layout_below="@+id/tv_alias" />
 
         <TextView
             android:id="@+id/tv_emote_in_chat_left"
