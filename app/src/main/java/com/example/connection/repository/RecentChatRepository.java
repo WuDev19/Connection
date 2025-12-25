@@ -10,7 +10,7 @@ import androidx.work.OneTimeWorkRequest;
 import androidx.work.WorkManager;
 import com.example.connection.model.ChatRoom;
 import com.example.connection.model.User;
-import com.example.connection.work.DeleteWork;
+import com.example.connection.data.worker.DeleteWork;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;

@@ -1,9 +1,9 @@
 package com.example.connection.repository;
 
 import android.app.Application;
-import com.example.connection.listener.UserDao;
-import com.example.connection.model.MusicDatabase;
-import com.example.connection.model.MyMusic;
+import com.example.connection.data.local.UserDao;
+import com.example.connection.data.local.MusicDatabase;
+import com.example.connection.data.local.MyMusic;
 import com.google.firebase.firestore.FirebaseFirestore;
 import java.util.List;
 import java.util.concurrent.ExecutorService;

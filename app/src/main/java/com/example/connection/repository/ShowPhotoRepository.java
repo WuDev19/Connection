@@ -7,7 +7,7 @@ import com.example.connection.model.ChatRoom;
 import com.example.connection.model.EmoteModel;
 import com.example.connection.model.Image;
 import com.example.connection.model.User;
-import com.example.connection.utils.SharePreUtil;
+import com.example.connection.constants.SharePreUtil;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;

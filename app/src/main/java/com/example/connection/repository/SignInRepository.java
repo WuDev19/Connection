@@ -2,8 +2,8 @@ package com.example.connection.repository;
 
 import android.app.Activity;
 import android.util.Log;
-import com.example.connection.listener.OnStateListener;
-import com.example.connection.utils.SharePreUtil;
+import com.example.connection.ui.state.OnStateListener;
+import com.example.connection.constants.SharePreUtil;
 import com.google.firebase.FirebaseNetworkException;
 import com.google.firebase.FirebaseTooManyRequestsException;
 import com.google.firebase.auth.FirebaseAuth;

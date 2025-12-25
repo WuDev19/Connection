@@ -1,8 +1,8 @@
 package com.example.connection.repository;
 
 import android.content.Context;
-import com.example.connection.listener.OnStateListener;
-import com.example.connection.utils.SharePreUtil;
+import com.example.connection.ui.state.OnStateListener;
+import com.example.connection.constants.SharePreUtil;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 

@@ -9,7 +9,7 @@ import androidx.lifecycle.MutableLiveData;
 import com.cloudinary.android.MediaManager;
 import com.cloudinary.android.callback.ErrorInfo;
 import com.cloudinary.android.callback.UploadCallback;
-import com.example.connection.listener.OnStateListener;
+import com.example.connection.ui.state.OnStateListener;
 import com.example.connection.model.ChatRoom;
 import com.example.connection.model.User;
 import com.google.android.gms.tasks.Task;

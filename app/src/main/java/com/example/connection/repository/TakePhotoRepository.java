@@ -12,7 +12,7 @@ import android.util.Log;
 import com.cloudinary.android.MediaManager;
 import com.cloudinary.android.callback.ErrorInfo;
 import com.cloudinary.android.callback.UploadCallback;
-import com.example.connection.listener.OnStateListener;
+import com.example.connection.ui.state.OnStateListener;
 import com.example.connection.model.Image;
 import com.example.connection.model.SelectionFriendModel;
 import com.example.connection.model.User;

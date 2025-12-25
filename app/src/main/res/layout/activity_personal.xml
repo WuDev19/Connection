@@ -7,7 +7,7 @@
     android:background="@color/secondary"
     android:id="@+id/personal_activity"
     android:fitsSystemWindows="true"
-    tools:context=".view.activity.PersonalActivity">
+    tools:context=".ui.view.activity.PersonalActivity">
 
     <RelativeLayout
         android:layout_width="match_parent"

@@ -5,7 +5,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".view.activity.authentication.SignInActivity"
+    tools:context=".ui.view.activity.authentication.SignInActivity"
     android:background="@color/background">
 
     <com.airbnb.lottie.LottieAnimationView

@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     android:background="@color/background"
     android:fitsSystemWindows="true"
-    tools:context=".view.activity.chat.ChatActivity">
+    tools:context=".ui.view.activity.chat.ChatActivity">
 
 
     <FrameLayout

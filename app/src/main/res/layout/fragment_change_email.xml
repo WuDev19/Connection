@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:background="@drawable/corner_bottom_sheet"
     android:orientation="vertical"
-    tools:context=".view.fragment.FragmentChangeEmail">
+    tools:context=".ui.view.fragment.FragmentChangeEmail">
 
     <View
         android:layout_width="40dp"

@@ -8,7 +8,7 @@ import androidx.lifecycle.MutableLiveData;
 import com.example.connection.model.Image;
 import com.example.connection.model.User;
 import com.example.connection.model.WidgetModel;
-import com.example.connection.utils.SharePreUtil;
+import com.example.connection.constants.SharePreUtil;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.auth.FirebaseAuth;

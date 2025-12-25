@@ -1,6 +1,6 @@
 package com.example.connection.repository;
 
-import com.example.connection.listener.OnStateListener;
+import com.example.connection.ui.state.OnStateListener;
 import com.example.connection.model.User;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;

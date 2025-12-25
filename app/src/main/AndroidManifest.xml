@@ -21,7 +21,7 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <application
-        android:name=".application.Cloudinary"
+        android:name=".constants.Cloudinary"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -32,25 +32,25 @@
         android:theme="@style/Theme.Connection"
         tools:targetApi="31">
         <activity
-            android:name=".view.activity.PersonalActivity"
+            android:name=".ui.view.activity.PersonalActivity"
             android:exported="false" />
         <activity
-            android:name=".view.activity.authentication.UsernameActivity"
+            android:name=".ui.view.activity.authentication.UsernameActivity"
             android:exported="false" />
         <activity
-            android:name=".view.activity.chat.RecentChatActivity"
+            android:name=".ui.view.activity.chat.RecentChatActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
         <activity
-            android:name=".view.activity.authentication.SignInActivity"
+            android:name=".ui.view.activity.authentication.SignInActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
         <activity
-            android:name=".view.activity.authentication.SignUpActivity"
+            android:name=".ui.view.activity.authentication.SignUpActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
         <activity
-            android:name=".view.activity.CustomSplashActivity"
+            android:name=".ui.view.activity.CustomSplashActivity"
             android:exported="true"
             android:screenOrientation="portrait">
             <intent-filter>
@@ -60,25 +60,25 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".view.activity.authentication.OTPActivity"
+            android:name=".ui.view.activity.authentication.OTPActivity"
             android:exported="true"
             android:screenOrientation="portrait" />
         <activity
-            android:name=".view.activity.chat.ChatActivity"
+            android:name=".ui.view.activity.chat.ChatActivity"
             android:exported="true"
             android:screenOrientation="portrait" />
         <activity
-            android:name=".view.activity.MainActivity"
+            android:name=".ui.view.activity.MainActivity"
             android:exported="true"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustPan" />
         <activity
-            android:name=".view.activity.authentication.LoginActivity"
+            android:name=".ui.view.activity.authentication.LoginActivity"
             android:exported="true"
             android:screenOrientation="portrait" />
 
         <receiver
-            android:name=".work.WidgetProvider"
+            android:name=".data.worker.WidgetProvider"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />

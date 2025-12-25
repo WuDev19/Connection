@@ -3,20 +3,14 @@ package com.example.connection.repository;
 import android.content.Context;
 import android.util.Log;
 
-import androidx.annotation.Nullable;
-
-import com.example.connection.listener.OnStateListener;
+import com.example.connection.ui.state.OnStateListener;
 import com.example.connection.model.User;
-import com.example.connection.utils.SharePreUtil;
-import com.google.android.gms.tasks.Task;
+import com.example.connection.constants.SharePreUtil;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.ListenerRegistration;
 
 public class PersonalRepository {

@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".view.fragment.FragmentChangeAlias"
+    tools:context=".ui.view.fragment.FragmentChangeAlias"
     android:orientation="vertical"
     android:background="@drawable/corner_bottom_sheet">
 
