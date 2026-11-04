@@ -519,6 +519,9 @@ public class ChatActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         super.onStop();
+        if (exoPlayer != null) {
+            exoPlayer.pause();
+        }
         chatViewModel.unregisterSeenMessageListening();
         chatViewModel.unregisterListeningChatRoom();
     }
@@ -528,6 +531,10 @@ public class ChatActivity extends AppCompatActivity {
         super.onDestroy();
         if (adapter != null) {
             adapter.stopListening();
+        }
+        if (exoPlayer != null) {
+            exoPlayer.release();
+            exoPlayer = null;
         }
     }
 

@@ -5,7 +5,6 @@ import android.util.Log;
 
 import com.example.connection.ui.state.OnStateListener;
 import com.example.connection.model.User;
-import com.example.connection.constants.SharePreUtil;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException;
 import com.google.firebase.auth.FirebaseUser;
@@ -59,7 +58,9 @@ public class PersonalRepository {
     }
 
     public void updateNewEmailToFireStore(Context context){
-        String newEmail = SharePreUtil.getInstance(context.getApplicationContext()).getEmail();
+        FirebaseUser currentUser = auth.getCurrentUser();
+        if (currentUser == null) return;
+        String newEmail = currentUser.getEmail();
         String id = auth.getUid();
         if(id == null || newEmail == null) return;
         firestore.collection("users").document(id).get().addOnCompleteListener(task -> {
@@ -105,7 +106,8 @@ public class PersonalRepository {
                                             Exception exception = task111.getException();
                                             if(exception != null){
                                                 onStateListener.onFailure(exception.getMessage());
-                                            }                                        }
+                                            }
+                                        }
                                     });
                                     if (task11.getException() instanceof FirebaseAuthRecentLoginRequiredException) {
                                         onStateListener.onFailure("Dang nhap lai");

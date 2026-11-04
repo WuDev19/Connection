@@ -74,20 +74,29 @@ public class ChatViewModel extends ViewModel {
         if (currentUserId == null || chatRoomId == null || chatRoom == null) return;
         List<String> userIds = chatRoom.getUserId();
         Map<String, Long> map = chatRoom.getDeleteChat();
+        List<String> updatedUserIds = new ArrayList<>();
         boolean check = false;
-        for (String id : userIds) {
-            if (id.contains("delete")) {
-                check = true;
-                userIds.remove(id);
-                id = id.split("_")[0];
-                userIds.add(id);
-                map.put(id, Timestamp.now().toDate().getTime());
+        if (userIds != null) {
+            for (String id : userIds) {
+                if (id.contains("delete")) {
+                    check = true;
+                    String cleanedId = id.split("_")[0];
+                    updatedUserIds.add(cleanedId);
+                    if (map != null) {
+                        map.put(cleanedId, Timestamp.now().toDate().getTime());
+                    }
+                } else {
+                    updatedUserIds.add(id);
+                }
             }
         }
         if (check) {
-            chatRoom.setUserId(userIds);
-            chatRoom.setDeleteChat(map);
+            chatRoom.setUserId(updatedUserIds);
+            if (map != null) {
+                chatRoom.setDeleteChat(map);
+            }
         }
+        userIds = updatedUserIds;
         send.setValue(true);
         chatRoom.setLastMessageSenderId(currentUserId);
         chatRoom.setLastMessageTimestamp(Timestamp.now());
@@ -121,8 +130,7 @@ public class ChatViewModel extends ViewModel {
         chatRoom = new ChatRoom(chatRoomId,
                 null,
                 null,
-                Arrays.asList(currentUserId, otherUser.getId())
-                ,
+                Arrays.asList(currentUserId, otherUser.getId()),
                 null,
                 null,
                 null,
@@ -215,7 +223,6 @@ public class ChatViewModel extends ViewModel {
         } else {
             chatRepository.deleteOneSide(chatRoom, userIds);
         }
-
     }
 
     public LiveData<Boolean> getSend() {

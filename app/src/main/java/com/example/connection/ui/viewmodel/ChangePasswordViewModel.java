@@ -20,36 +20,31 @@ public class ChangePasswordViewModel extends ViewModel implements OnStateListene
     }
 
     public void checkPasswordConfirm(Context context, String oldPassword, String newPassword, String newPasswordConfirm){
-        String password = changePasswordRepository.getPassword(context);
-        if(password == null || oldPassword.compareTo(password) != 0 || newPassword.compareTo(newPasswordConfirm) != 0
+        if(oldPassword == null || newPassword == null || newPasswordConfirm == null
                 || oldPassword.isEmpty()
                 || newPassword.isEmpty()
                 || newPasswordConfirm.isEmpty()){
-            if(password == null || oldPassword.compareTo(password) != 0){
-                errorLiveData.setValue("Mật khẩu cũ không chính xác");
-            }
-            if(newPassword.compareTo(newPasswordConfirm) != 0){
-                errorLiveData.setValue("Mật khẩu xác nhận không chính xác");
-            }
-            if(oldPassword.isEmpty() || newPassword.isEmpty() || newPasswordConfirm.isEmpty()){
-                errorLiveData.setValue("Vui lòng nhập đầy đủ thông tin");
-            }
+            errorLiveData.setValue("Vui lòng nhập đầy đủ thông tin");
             return;
         }
-        passwordConfirmLiveData.setValue(newPasswordConfirm);
-    }
-
-    public void setPassword(Context context, String newPassword){
-        changePasswordRepository.setPassword(context, newPassword);
-    }
-
-    public void updatePassword(String newPasswordConfirm){
+        if(newPassword.compareTo(newPasswordConfirm) != 0){
+            errorLiveData.setValue("Mật khẩu xác nhận không chính xác");
+            return;
+        }
         FirebaseUser user = changePasswordRepository.getUser();
         if(user == null) {
             errorLiveData.setValue("Mạng có vẻ kém, vui lòng kiểm tra lại mạng");
             return;
         }
-        changePasswordRepository.updatePassword(user, newPasswordConfirm);
+        changePasswordRepository.updatePassword(user, oldPassword, newPasswordConfirm);
+    }
+
+    public void setPassword(Context context, String newPassword){
+        // No-op: Plaintext passwords are no longer saved to SharedPreferences.
+    }
+
+    public void updatePassword(String newPasswordConfirm){
+        // Deprecated: Handled in checkPasswordConfirm with reauthentication.
     }
 
     public LiveData<String> getError() {
@@ -70,12 +65,11 @@ public class ChangePasswordViewModel extends ViewModel implements OnStateListene
     }
 
     @Override
-    public void onFailure(String error) {
-        errorLiveData.setValue(error);
+    public void onFailure(String failure) {
+        errorLiveData.setValue(failure);
     }
 
     @Override
     public void onLoading(boolean isLoading) {
-
     }
 }

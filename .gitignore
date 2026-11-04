@@ -14,3 +14,5 @@
 .cxx
 local.properties
 report
+.codegraph
+app/google-services.json

@@ -9,7 +9,7 @@ public class SharePreUtil {
     private final SharedPreferences sharedPreferences;
 
     private SharePreUtil(Context context){
-        sharedPreferences = context.getSharedPreferences("passwordUser", Context.MODE_PRIVATE);
+        sharedPreferences = context.getSharedPreferences("app_preferences", Context.MODE_PRIVATE);
     }
 
     public static synchronized SharePreUtil getInstance(Context context){
@@ -17,14 +17,6 @@ public class SharePreUtil {
             instance = new SharePreUtil(context);
         }
         return instance;
-    }
-
-    @SuppressLint("ApplySharedPref")
-    public void writeEmailAndPassword(String password, String email){
-        @SuppressLint("CommitPrefEdits") SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putString("password_confirm", password);
-        editor.putString("email_change", email);
-        editor.commit();
     }
 
     public boolean firstUseApp(){
@@ -40,20 +32,6 @@ public class SharePreUtil {
 
     public boolean enableWidget(){
         return sharedPreferences.getBoolean("enable_widget", false);
-    }
-
-    public String getPassword(){
-        return sharedPreferences.getString("password_confirm", null);
-    }
-
-    public void setNewPassword(String newPassword){
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putString("password_confirm", newPassword);
-        editor.apply();
-    }
-
-    public String getEmail(){
-        return sharedPreferences.getString("email_change", null);
     }
 
     @SuppressLint("ApplySharedPref")

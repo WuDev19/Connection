@@ -56,12 +56,6 @@ public class FragmentChangePassword extends BottomSheetDialogFragment {
 
         bt_confirm.setOnClickListener(view1 -> confirmToChange());
 
-        changePasswordViewModel.getPasswordConfirmLiveData().observe(getViewLifecycleOwner(), newPasswordConfirm -> {
-            if (newPasswordConfirm != null && !newPasswordConfirm.isEmpty()) {
-                changePasswordViewModel.updatePassword(newPasswordConfirm);
-            }
-        });
-
         changePasswordViewModel.getError().observe(getViewLifecycleOwner(), error -> {
             bt_confirm.setEnabled(true);
             Toast.makeText(getContext(), error, Toast.LENGTH_SHORT).show();
@@ -75,9 +69,6 @@ public class FragmentChangePassword extends BottomSheetDialogFragment {
             tv_new_password.setText("");
             tv_new_password_confirm.setText("");
             progressBar.setVisibility(View.GONE);
-            if (newPassword != null && !newPassword.isEmpty()) {
-                changePasswordViewModel.setPassword(getContext(), newPassword);
-            }
         });
 
     }

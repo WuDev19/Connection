@@ -206,6 +206,32 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        mainViewModel.getCountMessageLiveData().observe(this, countMessage -> {
+            if (countMessage == null) return;
+            int number = 0;
+            for (Integer integer : countMessage.values()) {
+                number += integer;
+            }
+            if (number != 0) {
+                tv_message.setText(String.valueOf(number));
+            } else {
+                tv_message.setText("");
+            }
+        });
+
+        mainViewModel.getListFriendConfirmLiveData().observe(this, list -> {
+            if (list != null) {
+                friendConfirm = list;
+                friendConfirm.remove(currentUserId);
+                if (friendConfirm.isEmpty()) {
+                    tv_notification.setText("");
+                } else {
+                    tv_notification.setText(String.valueOf(friendConfirm.size()));
+                    numberOfNotification = friendConfirm.size();
+                }
+            }
+        });
+
     }
 
     @SuppressLint("ApplySharedPref")
@@ -303,28 +329,7 @@ public class MainActivity extends AppCompatActivity {
         super.onStart();
         Log.e(TAG, "onStart: ");
         mainViewModel.getRealtimeUnseenMessage();
-        mainViewModel.getCountMessageLiveData().observe(this, countMessage -> {
-            if(countMessage == null) return;
-            int number = 0;
-            for (Integer integer : countMessage.values()) {
-                number += integer;
-            }
-            if (number != 0) {
-                tv_message.setText(String.valueOf(number));
-            } else tv_message.setText("");
-        });
         mainViewModel.getNotificationListenerRealtime();
-        mainViewModel.getListFriendConfirmLiveData().observe(this, list -> {
-            if(list != null){
-                friendConfirm = list;
-                friendConfirm.remove(currentUserId);
-                if (friendConfirm.isEmpty()) tv_notification.setText("");
-                else {
-                    tv_notification.setText(String.valueOf(friendConfirm.size()));
-                    numberOfNotification = friendConfirm.size();
-                }
-            }
-        });
     }
 
     @Override

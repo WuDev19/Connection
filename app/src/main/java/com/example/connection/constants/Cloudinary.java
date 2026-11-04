@@ -2,6 +2,7 @@ package com.example.connection.constants;
 
 import android.app.Application;
 import com.cloudinary.android.MediaManager;
+import com.example.connection.BuildConfig;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -11,7 +12,7 @@ public class Cloudinary extends Application {
     public void onCreate() {
         super.onCreate();
         Map<String, String> config = new HashMap<>();
-        config.put("cloud_name", "dsmw3ean4");
+        config.put("cloud_name", BuildConfig.CLOUDINARY_NAME);
         MediaManager.init(this, config);
     }
 }

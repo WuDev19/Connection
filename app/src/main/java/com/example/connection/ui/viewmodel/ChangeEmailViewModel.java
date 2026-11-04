@@ -29,19 +29,22 @@ public class ChangeEmailViewModel extends ViewModel implements OnStateListener {
     }
 
     public void checkPassword(String newEmail, String password, Context context){
-        String mPassword = changeEmailRepository.getPassword(context);
-        if(password == null) return;
-        if(password.compareTo(mPassword) != 0 || newEmail.isEmpty()){
-            if(password.compareTo(mPassword) != 0){
-                errorLiveData.setValue("Mật khẩu không chính xác");
-            }
-            if(newEmail.isEmpty()){
-                errorLiveData.setValue("Vui lòng nhập email");
-            }
+        if(newEmail == null || newEmail.isEmpty()){
+            errorLiveData.setValue("Vui lòng nhập email");
             return;
         }
-        checkPassWordLiveData.setValue(newEmail);
+        if(password == null || password.isEmpty()){
+            errorLiveData.setValue("Vui lòng nhập mật khẩu");
+            return;
+        }
+        FirebaseUser user = changeEmailRepository.getUser();
+        if(user == null) {
+            errorLiveData.setValue("Mạng có vẻ kém, vui lòng kiểm tra lại mạng");
+            return;
+        }
+        changeEmailRepository.reauthenticate(user, password, () -> checkPassWordLiveData.setValue(newEmail));
     }
+
     public LiveData<String> getVerifySuccess() {
         return verifySuccess;
     }
@@ -60,12 +63,11 @@ public class ChangeEmailViewModel extends ViewModel implements OnStateListener {
     }
 
     @Override
-    public void onFailure(String error) {
-        errorLiveData.setValue(error);
+    public void onFailure(String failure) {
+        errorLiveData.setValue(failure);
     }
 
     @Override
     public void onLoading(boolean isLoading) {
-
     }
 }

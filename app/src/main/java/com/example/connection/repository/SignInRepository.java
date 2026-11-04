@@ -3,7 +3,6 @@ package com.example.connection.repository;
 import android.app.Activity;
 import android.util.Log;
 import com.example.connection.ui.state.OnStateListener;
-import com.example.connection.constants.SharePreUtil;
 import com.google.firebase.FirebaseNetworkException;
 import com.google.firebase.FirebaseTooManyRequestsException;
 import com.google.firebase.auth.FirebaseAuth;
@@ -24,7 +23,6 @@ public class SignInRepository {
     public void getSignInWithEmailAndPassword(String email, String password, Activity activity) {
         mAuth.signInWithEmailAndPassword(email, password).addOnCompleteListener(activity, task -> {
             if (task.isSuccessful()) {
-                SharePreUtil.getInstance(activity.getApplicationContext()).writeEmailAndPassword(password, email);
                 Log.e(TAG, "getSignInWithEmailAndPassword: success");
                 onStateListener.onSuccess("Success");
             } else {

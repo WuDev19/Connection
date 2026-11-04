@@ -1,8 +1,8 @@
 package com.example.connection.repository;
 
-import android.content.Context;
 import com.example.connection.ui.state.OnStateListener;
-import com.example.connection.constants.SharePreUtil;
+import com.google.firebase.auth.AuthCredential;
+import com.google.firebase.auth.EmailAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
@@ -14,28 +14,31 @@ public class ChangePasswordRepository {
         this.onStateListener = onStateListener;
     }
 
-    public String getPassword(Context context){
-        return SharePreUtil.getInstance(context.getApplicationContext()).getPassword();
-    }
-
-    public void setPassword(Context context, String newPassword){
-        SharePreUtil.getInstance(context.getApplicationContext()).setNewPassword(newPassword);
-    }
-
     public FirebaseUser getUser(){
         return FirebaseAuth.getInstance().getCurrentUser();
     }
 
-    public void updatePassword(FirebaseUser user, String newPasswordConfirm){
-        user.updatePassword(newPasswordConfirm).addOnCompleteListener(task -> {
-            if(task.isSuccessful()){
-                onStateListener.onSuccess(newPasswordConfirm);
-            }
-            else{
-                Exception exception = task.getException();
-                if(exception != null){
-                    onStateListener.onFailure(exception.getMessage());
-                }
+    public void updatePassword(FirebaseUser user, String oldPassword, String newPasswordConfirm){
+        if (user == null || user.getEmail() == null) {
+            onStateListener.onFailure("Không tìm thấy thông tin tài khoản");
+            return;
+        }
+        AuthCredential credential = EmailAuthProvider.getCredential(user.getEmail(), oldPassword);
+        user.reauthenticate(credential).addOnCompleteListener(reauthTask -> {
+            if (reauthTask.isSuccessful()) {
+                user.updatePassword(newPasswordConfirm).addOnCompleteListener(task -> {
+                    if(task.isSuccessful()){
+                        onStateListener.onSuccess(newPasswordConfirm);
+                    }
+                    else{
+                        Exception exception = task.getException();
+                        if(exception != null){
+                            onStateListener.onFailure(exception.getMessage());
+                        }
+                    }
+                });
+            } else {
+                onStateListener.onFailure("Mật khẩu cũ không chính xác");
             }
         });
     }

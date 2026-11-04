@@ -1,6 +1,9 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.google.services)}
+    alias(libs.plugins.google.services)
+}
 
 android {
     namespace = "com.example.connection"
@@ -14,11 +17,26 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        val localProps = Properties()
+        val localPropertiesFile = rootProject.file("local.properties")
+        if (localPropertiesFile.exists()) {
+            localPropertiesFile.inputStream().use { stream ->
+                localProps.load(stream)
+            }
+        }
+        val cloudinaryName = localProps.getProperty("CLOUDINARY_CLOUD_NAME", "dsmw3ean4")
+        buildConfigField("String", "CLOUDINARY_NAME", "\"$cloudinaryName\"")
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -29,13 +47,9 @@ android {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
     }
-
-
 }
 
-
 dependencies {
-
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.activity)
@@ -59,19 +73,18 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.gson)
     implementation(libs.retrofit2.converter.gson)
-    implementation (libs.androidx.room.runtime )
-    annotationProcessor (libs.androidx.room.compiler)
-    implementation (libs.media3.exoplayer)
-    implementation (libs.androidx.media3.exoplayer.dash)
-    implementation (libs.androidx.media3.ui)
+    implementation(libs.androidx.room.runtime)
+    annotationProcessor(libs.androidx.room.compiler)
+    implementation(libs.media3.exoplayer)
+    implementation(libs.androidx.media3.exoplayer.dash)
+    implementation(libs.androidx.media3.ui)
     implementation(libs.imageslideshow)
-    implementation (libs.lottie)
+    implementation(libs.lottie)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.storage)
-    implementation (libs.firebase.ui.firestore)
+    implementation(libs.firebase.ui.firestore)
     implementation(libs.circleimageview)
-    implementation (libs.imagepicker)
-
+    implementation(libs.imagepicker)
 }
