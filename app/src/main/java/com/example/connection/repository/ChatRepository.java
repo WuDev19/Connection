@@ -69,15 +69,18 @@ public class ChatRepository {
     }
 
     public void setSeenMessage(String chatRoomId) {
-        if(currentUserId == null) return;
+        if(currentUserId == null || chatRoomId == null) return;
+
+        db.collection("chatroom").document(chatRoomId)
+                .update("unreadCounts." + currentUserId, 0L);
+
         if(seenMessageListening != null) seenMessageListening.remove();
         seenMessageListening = db.collection("chatroom").document(chatRoomId)
                 .collection("chats")
                 .whereNotEqualTo("senderId", currentUserId)
                 .whereEqualTo("seen", false)
                 .addSnapshotListener((value, error) -> {
-                    if(error != null) return;
-                    if(value == null) return;
+                    if(error != null || value == null || value.isEmpty()) return;
                     WriteBatch writeBatch = db.batch();
                     for(DocumentSnapshot documentSnapshot : value){
                         writeBatch.update(documentSnapshot.getReference(), "seen", true);
@@ -110,9 +113,22 @@ public class ChatRepository {
     }
 
     public void sendMessage(String message, String chatRoomId, ChatRoom chatRoom) {
-        db.collection("chatroom").document(chatRoomId).set(chatRoom);
+        if (chatRoom != null && chatRoomId != null) {
+            Map<String, Long> unread = chatRoom.getUnreadCounts();
+            if (chatRoom.getUserId() != null) {
+                for (String uid : chatRoom.getUserId()) {
+                    String cleanUid = uid.split("_")[0];
+                    if (!cleanUid.equals(currentUserId)) {
+                        long count = unread.getOrDefault(cleanUid, 0L);
+                        unread.put(cleanUid, count + 1);
+                    }
+                }
+            }
+            chatRoom.setUnreadCounts(unread);
+            db.collection("chatroom").document(chatRoomId).set(chatRoom);
+        }
         DocumentReference docRefChatMessage = getChatroomMessageReference(chatRoomId).document();
-        ChatMessage chatMessage = new ChatMessage(docRefChatMessage.getId(),message, currentUserId, Timestamp.now().toDate().getTime(), false, new HashMap<>());
+        ChatMessage chatMessage = new ChatMessage(docRefChatMessage.getId(), message, currentUserId, Timestamp.now().toDate().getTime(), false, new HashMap<>());
         docRefChatMessage.set(chatMessage).addOnCompleteListener(task -> {
             if (task.isSuccessful()){
                 Log.e(TAG, "Gửi thành công");

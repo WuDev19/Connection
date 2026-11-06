@@ -10,6 +10,8 @@ public class ChatMessage {
     private Long timestamp;
     private boolean seen;
     private Map<String, String> emote;
+    private String messageType; // "TEXT", "IMAGE", "VIDEO"
+    private String mediaUrl;
 
     public ChatMessage() {
     }
@@ -21,6 +23,58 @@ public class ChatMessage {
         this.timestamp = timestamp;
         this.seen = seen;
         this.emote = emote;
+        this.messageType = detectMessageType(message);
+        this.mediaUrl = extractMediaUrl(message);
+    }
+
+    public ChatMessage(String idMessage, String message, String senderId, Long timestamp, boolean seen, Map<String, String> emote, String messageType, String mediaUrl) {
+        this.idMessage = idMessage;
+        this.message = message;
+        this.senderId = senderId;
+        this.timestamp = timestamp;
+        this.seen = seen;
+        this.emote = emote;
+        this.messageType = messageType;
+        this.mediaUrl = mediaUrl;
+    }
+
+    private static String detectMessageType(String msg) {
+        if (msg == null) return "TEXT";
+        if (msg.contains(".mp4")) return "VIDEO";
+        if (msg.contains(".jpg") || msg.contains(".png") || msg.contains("https://")) return "IMAGE";
+        return "TEXT";
+    }
+
+    private static String extractMediaUrl(String msg) {
+        if (msg == null) return null;
+        if (msg.contains("_")) {
+            String[] parts = msg.split("_");
+            if (parts.length > 1 && parts[1].startsWith("http")) return parts[1];
+        }
+        if (msg.startsWith("http")) return msg;
+        return null;
+    }
+
+    public String getMessageType() {
+        if (messageType == null || messageType.isEmpty()) {
+            messageType = detectMessageType(message);
+        }
+        return messageType;
+    }
+
+    public void setMessageType(String messageType) {
+        this.messageType = messageType;
+    }
+
+    public String getMediaUrl() {
+        if (mediaUrl == null || mediaUrl.isEmpty()) {
+            mediaUrl = extractMediaUrl(message);
+        }
+        return mediaUrl;
+    }
+
+    public void setMediaUrl(String mediaUrl) {
+        this.mediaUrl = mediaUrl;
     }
 
     public Map<String, String> getEmote() {

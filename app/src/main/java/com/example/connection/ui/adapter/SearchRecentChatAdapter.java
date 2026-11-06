@@ -52,25 +52,29 @@ public class SearchRecentChatAdapter extends RecyclerView.Adapter<SearchRecentCh
     public void onBindViewHolder(@NonNull SearchRecentChatViewHolder holder, int position) {
         ChatRoom chatRoom = chatRoomList.get(position);
         if(chatRoom != null){
-            if(chatRoom.getUserId().size() >= 3){
+            List<String> userIds = chatRoom.getUserId();
+            if(userIds != null && userIds.size() >= 3){
                 Glide.with(context)
                         .load(chatRoom.getChatRoomAvt())
                         .error(R.drawable.icon_avatar)
                         .into(holder.circleImageView);
-                holder.materialTextView.setText(chatRoom.getChatName());
+                holder.materialTextView.setText(chatRoom.getChatName() != null ? chatRoom.getChatName() : "");
             }
             else {
-                String otherId = getOtherUserId(chatRoom.getUserId());
+                String otherId = getOtherUserId(userIds);
+                String avt = (chatRoom.getAvtSender() != null && otherId != null) ? chatRoom.getAvtSender().get(otherId) : null;
                 Glide.with(context)
-                        .load(chatRoom.getAvtSender().get(otherId))
+                        .load(avt)
                         .error(R.drawable.icon_avatar)
                         .into(holder.circleImageView);
-                String alias = chatRoom.getAlias().get(otherId);
+                String alias = (chatRoom.getAlias() != null && otherId != null) ? chatRoom.getAlias().get(otherId) : null;
                 if(alias != null){
                     if (alias.contains("_")) {
                         holder.materialTextView.setText(alias.split("_")[1]);
                     }
                     else holder.materialTextView.setText(alias);
+                } else {
+                    holder.materialTextView.setText(chatRoom.getChatName() != null ? chatRoom.getChatName() : "");
                 }
 
             }
@@ -80,7 +84,7 @@ public class SearchRecentChatAdapter extends RecyclerView.Adapter<SearchRecentCh
 
     @Override
     public int getItemCount() {
-        if(!chatRoomList.isEmpty()) return chatRoomList.size();
+        if(chatRoomList != null && !chatRoomList.isEmpty()) return chatRoomList.size();
         return 0;
     }
 
@@ -99,6 +103,7 @@ public class SearchRecentChatAdapter extends RecyclerView.Adapter<SearchRecentCh
     }
 
     private String getOtherUserId(List<String> list) {
+        if (list == null || list.size() < 2) return null;
         String myId = FirebaseAuth.getInstance().getUid();
         if (myId == null) return null;
         if (myId.equals(list.get(0))) {

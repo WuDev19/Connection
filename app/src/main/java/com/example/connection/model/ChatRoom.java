@@ -7,6 +7,7 @@ import androidx.annotation.NonNull;
 
 import com.google.firebase.Timestamp;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +27,7 @@ public class ChatRoom implements Parcelable {
     private List<String> searchChat;
     private String background;
     private int isRandom;
+    private Map<String, Long> unreadCounts;
 
     public ChatRoom() {
     }
@@ -56,6 +58,7 @@ public class ChatRoom implements Parcelable {
         this.searchChat = searchChat;
         this.background = background;
         this.isRandom = isRandom;
+        this.unreadCounts = new HashMap<>();
     }
 
     protected ChatRoom(Parcel in) {
@@ -96,6 +99,14 @@ public class ChatRoom implements Parcelable {
         background = in.readString();
 
         isRandom = in.readInt();
+
+        unreadCounts = new HashMap<>();
+        int unreadSize = in.readInt();
+        for (int i = 0; i < unreadSize; i++) {
+            String key = in.readString();
+            long value = in.readLong();
+            unreadCounts.put(key, value);
+        }
     }
 
     public static final Creator<ChatRoom> CREATOR = new Creator<ChatRoom>() {
@@ -119,6 +130,9 @@ public class ChatRoom implements Parcelable {
     }
 
     public List<String> getSearchChat() {
+        if (searchChat == null) {
+            searchChat = new ArrayList<>();
+        }
         return searchChat;
     }
 
@@ -127,10 +141,16 @@ public class ChatRoom implements Parcelable {
     }
 
     public Map<String, String> getAvtSender() {
+        if (avtSender == null) {
+            avtSender = new HashMap<>();
+        }
         return avtSender;
     }
 
     public Map<String, String> getAlias() {
+        if (alias == null) {
+            alias = new HashMap<>();
+        }
         return alias;
     }
 
@@ -159,6 +179,9 @@ public class ChatRoom implements Parcelable {
     }
 
     public Map<String, Long> getDeleteChat() {
+        if (deleteChat == null) {
+            deleteChat = new HashMap<>();
+        }
         return deleteChat;
     }
 
@@ -175,6 +198,9 @@ public class ChatRoom implements Parcelable {
     }
 
     public List<String> getUserId() {
+        if (userId == null) {
+            userId = new ArrayList<>();
+        }
         return userId;
     }
 
@@ -212,6 +238,17 @@ public class ChatRoom implements Parcelable {
 
     public void setBackground(String background) {
         this.background = background;
+    }
+
+    public Map<String, Long> getUnreadCounts() {
+        if (unreadCounts == null) {
+            unreadCounts = new HashMap<>();
+        }
+        return unreadCounts;
+    }
+
+    public void setUnreadCounts(Map<String, Long> unreadCounts) {
+        this.unreadCounts = unreadCounts;
     }
 
     @Override
@@ -264,6 +301,16 @@ public class ChatRoom implements Parcelable {
         parcel.writeString(background);
 
         parcel.writeInt(isRandom);
+
+        if (unreadCounts != null) {
+            parcel.writeInt(unreadCounts.size());
+            for (Map.Entry<String, Long> entry : unreadCounts.entrySet()) {
+                parcel.writeString(entry.getKey());
+                parcel.writeLong(entry.getValue());
+            }
+        } else {
+            parcel.writeInt(0);
+        }
     }
 
 }

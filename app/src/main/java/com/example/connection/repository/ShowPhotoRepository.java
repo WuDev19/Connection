@@ -14,6 +14,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import java.util.ArrayList;
@@ -21,7 +22,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 public class ShowPhotoRepository {
 
@@ -70,26 +70,19 @@ public class ShowPhotoRepository {
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     for (DocumentSnapshot documentSnapshot : queryDocumentSnapshots) {
-                        documentSnapshot.getReference().get().addOnCompleteListener(task -> {
-                            if (task.isSuccessful()) {
-                                Image image = documentSnapshot.toObject(Image.class);
-                                if (image == null) return;
-                                List<String> list = image.getSeen();
-                                if (list == null) {
-                                    return;
-                                }
-                                if (list.contains(myId)) return;
-                                list.add(myId);
-                                documentSnapshot.getReference().update("seen", list).addOnCompleteListener(task1 -> {
-                                    if (task1.isSuccessful()) {
-                                        Log.e(TAG, "Câp nhật thành công");
-                                    } else {
-                                        Log.e(TAG, Objects.requireNonNull(Objects.requireNonNull(task1.getException()).getMessage()));
-                                    }
-                                });
-                            } else
-                                Log.e(TAG, Objects.requireNonNull(Objects.requireNonNull(task.getException()).getMessage()));
-                        });
+                        Image image = documentSnapshot.toObject(Image.class);
+                        if (image == null) continue;
+                        List<String> list = image.getSeen();
+                        if (list == null || !list.contains(myId)) {
+                            documentSnapshot.getReference().update("seen", FieldValue.arrayUnion(myId))
+                                    .addOnCompleteListener(task1 -> {
+                                        if (task1.isSuccessful()) {
+                                            Log.e(TAG, "Cập nhật seen thành công");
+                                        } else if (task1.getException() != null) {
+                                            Log.e(TAG, task1.getException().getMessage());
+                                        }
+                                    });
+                        }
                     }
                     if (SharePreUtil.getInstance(context.getApplicationContext()).enableWidget()) {
                         onUpdateWidget.onUpdate(true);
@@ -102,7 +95,8 @@ public class ShowPhotoRepository {
         if (myId == null) return null;
         return db.collection("post_photo")
                 .whereArrayContains("friendId", myId)
-                .orderBy("timestamp", Query.Direction.DESCENDING);
+                .orderBy("timestamp", Query.Direction.DESCENDING)
+                .limit(10);
     }
 
     public void sendMessage(String chatRoomId, String otherId, String otherUserName, String avtPoster, String mess) {
@@ -167,6 +161,12 @@ public class ShowPhotoRepository {
         chatRoom.setLastMessageSenderId(currentUserId);
         chatRoom.setLastMessageTimestamp(Timestamp.now());
         chatRoom.setLastMessage(message);
+
+        Map<String, Long> unread = chatRoom.getUnreadCounts();
+        long currentUnread = unread.getOrDefault(otherUserId, 0L);
+        unread.put(otherUserId, currentUnread + 1);
+        chatRoom.setUnreadCounts(unread);
+
         db.collection("chatroom").document(chatRoomId).set(chatRoom);
 
         DocumentReference docRefChatMessage = getChatroomMessageReference(chatRoomId).document();
@@ -202,7 +202,6 @@ public class ShowPhotoRepository {
                         DocumentReference emoteRef = db.collection("post_photo").document(postId).collection("emotes").document(emoteId);
                         DocumentSnapshot emoteSnap = transaction.get(emoteRef);
                         String oldEmote = emoteIdAndEmote.split("_")[1];
-                        //xoa reaction
                         if (oldEmote.equals(emote)) {
                             Log.e(TAG, "modifyEmote: xoa");
                             emoteMap.remove(myId);
@@ -213,18 +212,14 @@ public class ShowPhotoRepository {
                             }
                             transaction.update(postRef, "numberEmote", newCount);
                             transaction.update(postRef, "emoteMap", emoteMap);
-                        }
-                        //cap nhat reaction
-                        else {
+                        } else {
                             Log.e(TAG, "modifyEmote: cap nhat");
                             transaction.update(emoteRef, "emote", emote);
                             transaction.update(emoteRef, "timestamp", Timestamp.now());
                             transaction.update(postRef, "emoteMap." + myId, emoteId + "_" + emote);
                         }
                     }
-                }
-                //lan dau tha reaction
-                else {
+                } else {
                     Log.e(TAG, "modifyEmote: tao moi");
                     String emoteId = getIdEmote(postId);
                     DocumentReference emoteRef = db.collection("post_photo").document(postId).collection("emotes").document(emoteId);

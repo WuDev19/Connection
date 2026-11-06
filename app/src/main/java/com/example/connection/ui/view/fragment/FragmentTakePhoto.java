@@ -13,7 +13,7 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
-import android.media.MediaPlayer;
+
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -119,7 +119,14 @@ public class FragmentTakePhoto extends Fragment {
     private boolean checkLancing = true; //cam sau
     private final String TAG = "FragmentTakePhoto";
     private Bitmap photo;
-    private MediaPlayer mediaPlayer = new MediaPlayer();
+    private ExoPlayer musicPlayer;
+
+    private void ensureMusicPlayer() {
+        if (musicPlayer == null && getContext() != null) {
+            musicPlayer = new ExoPlayer.Builder(requireContext().getApplicationContext()).build();
+            musicPlayer.setRepeatMode(Player.REPEAT_MODE_ALL);
+        }
+    }
     private String urlMusic, musicName, singerName;
     private ActivityResultLauncher<String> permissionLauncher;
     private TakePhotoViewModel takePhotoViewModel;
@@ -139,13 +146,13 @@ public class FragmentTakePhoto extends Fragment {
         @Override
         public void onReceive(Context context, Intent intent) {
             if ("click_when_take_playing".equals(intent.getAction())) {
-                if (mediaPlayer != null && mediaPlayer.isPlaying()) {
-                    mediaPlayer.pause();
+                if (musicPlayer != null && musicPlayer.isPlaying()) {
+                    musicPlayer.pause();
                 }
             }
             if ("back_press_when_playing".equals(intent.getAction())) {
-                if (mediaPlayer != null && !mediaPlayer.isPlaying() && MediaPlayerUtil.getInstance().getPosition() == 0) {
-                    mediaPlayer.start();
+                if (musicPlayer != null && !musicPlayer.isPlaying() && MediaPlayerUtil.getInstance().getPosition() == 0) {
+                    musicPlayer.play();
                 }
             }
         }
@@ -415,8 +422,9 @@ public class FragmentTakePhoto extends Fragment {
             recycler_view_choose_friend_to_post.setAdapter(null);
             recycler_view_choose_friend_to_post.setVisibility(View.GONE);
             tmpFriendList.clear();
-            if (mediaPlayer != null) {
-                mediaPlayer.reset();
+            if (musicPlayer != null) {
+                musicPlayer.stop();
+                musicPlayer.clearMediaItems();
             }
         });
     }
@@ -435,27 +443,25 @@ public class FragmentTakePhoto extends Fragment {
                     tv_music_name.setSelected(true);
                     tv_singer.setVisibility(View.VISIBLE);
                     tv_singer.setText(singer);
-                    try {
-                        mediaPlayer.reset();
-                        mediaPlayer.setDataSource(requireContext(), Uri.parse(url));
-                        mediaPlayer.setOnPreparedListener(MediaPlayer::start);
-                        mediaPlayer.prepareAsync();
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
+                    ensureMusicPlayer();
+                    if (musicPlayer != null) {
+                        musicPlayer.setMediaItem(MediaItem.fromUri(url));
+                        musicPlayer.prepare();
+                        musicPlayer.play();
                     }
                 }
 
                 @Override
                 public void onShow() {
-                    if (mediaPlayer != null) {
-                        mediaPlayer.pause();
+                    if (musicPlayer != null) {
+                        musicPlayer.pause();
                     }
                 }
 
                 @Override
                 public void onHide() {
-                    if (mediaPlayer != null) {
-                        mediaPlayer.start();
+                    if (musicPlayer != null) {
+                        musicPlayer.play();
                     }
                 }
             });
@@ -495,8 +501,9 @@ public class FragmentTakePhoto extends Fragment {
             recycler_view_choose_friend_to_post.setAdapter(null);
             recycler_view_choose_friend_to_post.setVisibility(View.GONE);
             Toast.makeText(requireContext(), "Vui lòng chờ xử lý", Toast.LENGTH_LONG).show();
-            if (mediaPlayer != null) {
-                mediaPlayer.reset();
+            if (musicPlayer != null) {
+                musicPlayer.stop();
+                musicPlayer.clearMediaItems();
             }
         });
     }
@@ -846,10 +853,10 @@ public class FragmentTakePhoto extends Fragment {
     public void onDestroy() {
         super.onDestroy();
         cameraExecutor.shutdown();
-        if (mediaPlayer != null) {
-            mediaPlayer.release();
-            mediaPlayer = null;
-            Log.e(TAG, "onDestroy: ");
+        if (musicPlayer != null) {
+            musicPlayer.release();
+            musicPlayer = null;
+            Log.e(TAG, "onDestroy: musicPlayer released");
         }
         if (exoPlayer != null) {
             exoPlayer.release();
@@ -872,15 +879,15 @@ public class FragmentTakePhoto extends Fragment {
                 requireActivity().finish();
             }
         });
-        if (mediaPlayer != null && !mediaPlayer.isPlaying()) mediaPlayer.start();
+        if (musicPlayer != null && !musicPlayer.isPlaying()) musicPlayer.play();
     }
 
     @Override
     public void onPause() {
         super.onPause();
         Log.e(TAG, "onPause: ");
-        if (mediaPlayer != null) {
-            mediaPlayer.pause();
+        if (musicPlayer != null) {
+            musicPlayer.pause();
         }
     }
 

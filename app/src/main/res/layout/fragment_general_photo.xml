@@ -3,15 +3,49 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ui.view.fragment.FragmentShowPhoto"
+    tools:context=".ui.view.fragment.FragmentGeneralPhoto"
     android:background="@color/secondary"
-    android:id="@+id/fragment_show">
+    android:id="@+id/fragment_general">
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_view_general_photo"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginEnd="2dp"
-        android:layout_marginBottom="2dp"/>
+        android:clipToPadding="false"
+        android:padding="3dp" />
+
+    <ProgressBar
+        android:id="@+id/progress_general_photo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:indeterminateTint="@color/background"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/layout_empty_general"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Chưa có bài đăng nào ✨"
+            android:textColor="@color/black"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Hãy kết nối thêm bạn bè để xem ảnh nhé!"
+            android:textColor="#666666"
+            android:textSize="13sp" />
+    </LinearLayout>
 
 </FrameLayout>

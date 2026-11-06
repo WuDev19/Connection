@@ -66,6 +66,44 @@ public class ChatMessageAdapter extends FirestoreRecyclerAdapter<ChatMessage, Ch
         return positionIsShowingEmote;
     }
 
+    private void renderMedia(ImageView imageView, String mediaUrl, String messageType) {
+        if ("VIDEO".equals(messageType) || (mediaUrl != null && mediaUrl.contains(".mp4"))) {
+            Glide.with(context)
+                    .load(mediaUrl)
+                    .frame(500000)
+                    .error(R.drawable.icon_avatar)
+                    .into(imageView);
+        } else {
+            Glide.with(context)
+                    .load(mediaUrl)
+                    .error(R.drawable.icon_avatar)
+                    .into(imageView);
+        }
+    }
+
+    private void bindEmote(TextView tvEmote, Map<String, String> emoteMap, String idMessage) {
+        if (emoteMap == null || emoteMap.isEmpty()) {
+            tvEmote.setVisibility(View.GONE);
+            return;
+        }
+        tvEmote.setVisibility(View.VISIBLE);
+        int count = 1;
+        StringBuilder emoteStr = new StringBuilder();
+        for (Map.Entry<String, String> entry : emoteMap.entrySet()) {
+            if (count <= 2) {
+                emoteStr.append(entry.getValue());
+                count++;
+            } else {
+                break;
+            }
+        }
+        if (count >= 3 && emoteMap.size() - 2 > 0) {
+            emoteStr.insert(0, (emoteMap.size() - 2) + "+");
+        }
+        tvEmote.setText(emoteStr.toString());
+        tvEmote.setOnClickListener(view -> onItemClick.onMessageClickToShowEmote(idMessage, emoteMap));
+    }
+
     @Override
     protected void onBindViewHolder(@NonNull ChatMessageViewHolder holder, int position, @NonNull ChatMessage model) {
 
@@ -75,93 +113,47 @@ public class ChatMessageAdapter extends FirestoreRecyclerAdapter<ChatMessage, Ch
         holder.recyclerViewEmoteRight.setAdapter(null);
         holder.recyclerViewEmoteRight.setVisibility(View.GONE);
 
+        String rawMessage = model.getMessage() != null ? model.getMessage() : "";
+        String mediaUrl = model.getMediaUrl();
+        String messageType = model.getMessageType();
+        boolean hasMedia = mediaUrl != null && !mediaUrl.isEmpty();
+        boolean hasCaption = rawMessage.contains("_");
+        String textMessage = hasCaption ? rawMessage.split("_")[0] : (hasMedia ? "" : rawMessage);
+
         if (model.getSenderId().equals(myId)) {
+            // Tin nhắn của tôi (Bên phải)
             holder.avt_in_chat.setVisibility(View.GONE);
             holder.tv_alias.setVisibility(View.GONE);
-
             holder.tv_message_left.setVisibility(View.GONE);
-            if (model.getEmote().isEmpty()) {
-                holder.tv_emote_right.setVisibility(View.GONE);
+            holder.cardview_left.setVisibility(View.GONE);
+            holder.tv_emote_left.setVisibility(View.GONE);
+
+            bindEmote(holder.tv_emote_right, model.getEmote(), model.getIdMessage());
+
+            if (hasMedia) {
+                holder.cardview_right.setVisibility(View.VISIBLE);
+                renderMedia(holder.img_picture_right, mediaUrl, messageType);
+                final String finalMediaUrl = mediaUrl;
+                holder.img_picture_right.setOnClickListener(view -> {
+                    onItemClick.onImageClick(finalMediaUrl);
+                    Log.e(TAG, "onBindViewHolder: " + finalMediaUrl);
+                });
+                if (hasCaption && !textMessage.isEmpty()) {
+                    holder.tv_message_right.setVisibility(View.VISIBLE);
+                    holder.tv_message_right.setText(textMessage);
+                } else {
+                    holder.tv_message_right.setVisibility(View.GONE);
+                }
             } else {
-                holder.tv_emote_right.setVisibility(View.VISIBLE);
-                int count = 1;
-                StringBuilder emote = new StringBuilder();
-                for (Map.Entry<String, String> entry : model.getEmote().entrySet()) {
-                    if (count <= 2) {
-                        emote.append(entry.getValue());
-                        count++;
-                    } else break;
-                }
-                if (count >= 3) {
-                    if (model.getEmote().size() - 2 != 0) {
-                        emote.insert(0, model.getEmote().size() - 2 + "+");
-                    }
-                }
-                holder.tv_emote_right.setText(emote);
-                holder.tv_emote_right.setOnClickListener(view -> onItemClick.onMessageClickToShowEmote(model.getIdMessage(), model.getEmote()));
+                holder.cardview_right.setVisibility(View.GONE);
+                holder.tv_message_right.setVisibility(View.VISIBLE);
+                holder.tv_message_right.setText(textMessage);
             }
 
-            if (model.getMessage().contains("_")) {
-                String[] mess = model.getMessage().split("_");
-                holder.tv_message_left.setVisibility(View.GONE);
-                holder.cardview_left.setVisibility(View.GONE);
-                holder.tv_emote_left.setVisibility(View.GONE);
-                holder.tv_message_right.setVisibility(View.VISIBLE);
-                holder.cardview_right.setVisibility(View.VISIBLE);
-                holder.tv_message_right.setText(mess[0]);
-                if (model.getMessage().contains(".jpg")) {
-                    Glide.with(context)
-                            .load(mess[1])
-                            .error(R.drawable.icon_avatar)
-                            .into(holder.img_picture_right);
-                } else if (model.getMessage().contains(".mp4")) {
-                    Glide.with(context)
-                            .load(mess[1])
-                            .frame(500000)
-                            .error(R.drawable.icon_avatar)
-                            .into(holder.img_picture_right);
-                }
-                String urlPost = mess[1];
-                holder.img_picture_right.setOnClickListener(view -> {
-                    onItemClick.onImageClick(urlPost);
-                    Log.e(TAG, "onBindViewHolder: " + urlPost);
-                });
-            } else {
-                if (model.getMessage().contains("https://")) {
-                    holder.tv_message_right.setVisibility(View.GONE);
-                    holder.tv_message_left.setVisibility(View.GONE);
-                    holder.cardview_left.setVisibility(View.GONE);
-                    holder.tv_emote_left.setVisibility(View.GONE);
-                    holder.cardview_right.setVisibility(View.VISIBLE);
-                    if (model.getMessage().contains(".jpg")) {
-                        Glide.with(context)
-                                .load(model.getMessage())
-                                .error(R.drawable.icon_avatar)
-                                .into(holder.img_picture_right);
-                    } else if (model.getMessage().contains(".mp4")) {
-                        Glide.with(context)
-                                .load(model.getMessage())
-                                .frame(500000)
-                                .error(R.drawable.icon_avatar)
-                                .into(holder.img_picture_right);
-                    }
-                    String urlPost = model.getMessage();
-                    holder.img_picture_right.setOnClickListener(view -> {
-                        onItemClick.onImageClick(urlPost);
-                        Log.e(TAG, "onBindViewHolder: " + urlPost);
-                    });
-                } else {
-                    holder.tv_message_left.setVisibility(View.GONE);
-                    holder.cardview_left.setVisibility(View.GONE);
-                    holder.tv_emote_left.setVisibility(View.GONE);
-                    holder.cardview_right.setVisibility(View.GONE);
-                    holder.tv_message_right.setVisibility(View.VISIBLE);
-                    holder.tv_message_right.setText(model.getMessage());
-                }
-            }
-            holder.tv_message_right.setOnLongClickListener(view -> {
-                if (!positionIsShowingEmote.isEmpty() && position != positionIsShowingEmote.get(0))
+            View.OnLongClickListener longClickListener = view -> {
+                if (!positionIsShowingEmote.isEmpty() && position != positionIsShowingEmote.get(0)) {
                     notifyItemChanged(positionIsShowingEmote.get(0));
+                }
                 positionIsShowingEmote.clear();
                 positionIsShowingEmote.add(position);
                 holder.recyclerViewEmoteRight.setVisibility(View.VISIBLE);
@@ -170,101 +162,62 @@ public class ChatMessageAdapter extends FirestoreRecyclerAdapter<ChatMessage, Ch
                 holder.recyclerViewEmoteRight.setLayoutManager(new LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false));
                 holder.recyclerViewEmoteRight.setAdapter(emoteAdapter);
                 return true;
-            });
+            };
+
+            holder.tv_message_right.setOnLongClickListener(longClickListener);
+            holder.cardview_right.setOnLongClickListener(longClickListener);
+
         } else {
+            // Tin nhắn của đối phương (Bên trái)
             holder.avt_in_chat.setVisibility(View.VISIBLE);
-            Glide.with(context)
-                    .load(avtSender.get(model.getSenderId()))
-                    .error(R.drawable.icon_avatar)
-                    .into(holder.avt_in_chat);
+            if (avtSender != null) {
+                Glide.with(context)
+                        .load(avtSender.get(model.getSenderId()))
+                        .error(R.drawable.icon_avatar)
+                        .into(holder.avt_in_chat);
+            }
             holder.tv_alias.setVisibility(View.VISIBLE);
-            String alias = aliasSender.get(model.getSenderId());
-            if (alias != null) {
-                if (alias.contains("_")) {
-                    holder.tv_alias.setText(alias.split("_")[1]);
-                } else {
-                    holder.tv_alias.setText(alias);
+            if (aliasSender != null) {
+                String alias = aliasSender.get(model.getSenderId());
+                if (alias != null) {
+                    if (alias.contains("_")) {
+                        holder.tv_alias.setText(alias.split("_")[1]);
+                    } else {
+                        holder.tv_alias.setText(alias);
+                    }
                 }
             }
 
             holder.tv_emote_right.setVisibility(View.GONE);
-            if (model.getEmote().isEmpty()) {
-                holder.tv_emote_left.setVisibility(View.GONE);
+            holder.tv_message_right.setVisibility(View.GONE);
+            holder.cardview_right.setVisibility(View.GONE);
+
+            bindEmote(holder.tv_emote_left, model.getEmote(), model.getIdMessage());
+
+            if (hasMedia) {
+                holder.cardview_left.setVisibility(View.VISIBLE);
+                renderMedia(holder.img_picture_left, mediaUrl, messageType);
+                final String finalMediaUrl = mediaUrl;
+                holder.img_picture_left.setOnClickListener(view -> {
+                    onItemClick.onImageClick(finalMediaUrl);
+                    Log.e(TAG, "onBindViewHolder: " + finalMediaUrl);
+                });
+                if (hasCaption && !textMessage.isEmpty()) {
+                    holder.tv_message_left.setVisibility(View.VISIBLE);
+                    holder.tv_message_left.setText(textMessage);
+                } else {
+                    holder.tv_message_left.setVisibility(View.GONE);
+                }
             } else {
-                holder.tv_emote_left.setVisibility(View.VISIBLE);
-                int count = 1;
-                StringBuilder emote = new StringBuilder();
-                for (Map.Entry<String, String> entry : model.getEmote().entrySet()) {
-                    if (count <= 2) {
-                        emote.append(entry.getValue());
-                        count++;
-                    } else break;
-                }
-                if (count >= 3) {
-                    if (model.getEmote().size() - 2 != 0) {
-                        emote.insert(0, model.getEmote().size() - 2 + "+");
-                    }
-                }
-                holder.tv_emote_left.setText(emote.toString());
-                holder.tv_emote_left.setOnClickListener(view -> onItemClick.onMessageClickToShowEmote(model.getIdMessage(), model.getEmote()));
+                holder.cardview_left.setVisibility(View.GONE);
+                holder.tv_message_left.setVisibility(View.VISIBLE);
+                holder.tv_message_left.setText(textMessage);
             }
 
-            if (model.getMessage().contains("_")) {
-                String[] mess = model.getMessage().split("_");
-                holder.tv_message_left.setVisibility(View.VISIBLE);
-                holder.cardview_left.setVisibility(View.VISIBLE);
-                holder.tv_message_right.setVisibility(View.GONE);
-                holder.cardview_right.setVisibility(View.GONE);
-                holder.tv_emote_right.setVisibility(View.GONE);
-                holder.tv_message_left.setText(mess[0]);
-                if (model.getMessage().contains(".jpg")) {
-                    Glide.with(context)
-                            .load(mess[1])
-                            .error(R.drawable.icon_avatar)
-                            .into(holder.img_picture_left);
-                } else if (model.getMessage().contains(".mp4")) {
-                    Glide.with(context)
-                            .load(mess[1])
-                            .frame(500000)
-                            .error(R.drawable.icon_avatar)
-                            .into(holder.img_picture_left);
-                }
-                String urlPost = mess[1];
-                holder.img_picture_left.setOnClickListener(view -> onItemClick.onImageClick(urlPost));
-            } else {
-                if (model.getMessage().contains("https://")) {
-                    Log.e(TAG, "This is picture message");
-                    holder.tv_message_right.setVisibility(View.GONE);
-                    holder.tv_message_left.setVisibility(View.GONE);
-                    holder.cardview_right.setVisibility(View.GONE);
-                    holder.tv_emote_right.setVisibility(View.GONE);
-                    holder.cardview_left.setVisibility(View.VISIBLE);
-                    if (model.getMessage().contains(".jpg")) {
-                        Glide.with(context)
-                                .load(model.getMessage())
-                                .error(R.drawable.icon_avatar)
-                                .into(holder.img_picture_left);
-                    } else if (model.getMessage().contains(".mp4")) {
-                        Glide.with(context)
-                                .load(model.getMessage())
-                                .frame(500000)
-                                .error(R.drawable.icon_avatar)
-                                .into(holder.img_picture_left);
-                    }
-                    String urlPost = model.getMessage();
-                    holder.img_picture_left.setOnClickListener(view -> onItemClick.onImageClick(urlPost));
-                } else {
-                    holder.tv_message_right.setVisibility(View.GONE);
-                    holder.cardview_right.setVisibility(View.GONE);
-                    holder.cardview_left.setVisibility(View.GONE);
-                    holder.tv_emote_right.setVisibility(View.GONE);
-                    holder.tv_message_left.setVisibility(View.VISIBLE);
-                    holder.tv_message_left.setText(model.getMessage());
-                }
-            }
-            holder.tv_message_left.setOnLongClickListener(view -> {
-                if (!positionIsShowingEmote.isEmpty() && position != positionIsShowingEmote.get(0))
+            View.OnLongClickListener longClickListener = view -> {
+                if (!positionIsShowingEmote.isEmpty() && position != positionIsShowingEmote.get(0)) {
                     notifyItemChanged(positionIsShowingEmote.get(0));
+                }
                 positionIsShowingEmote.clear();
                 positionIsShowingEmote.add(position);
                 holder.recyclerViewEmoteLeft.setVisibility(View.VISIBLE);
@@ -273,7 +226,10 @@ public class ChatMessageAdapter extends FirestoreRecyclerAdapter<ChatMessage, Ch
                 holder.recyclerViewEmoteLeft.setLayoutManager(new LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false));
                 holder.recyclerViewEmoteLeft.setAdapter(emoteAdapter);
                 return true;
-            });
+            };
+
+            holder.tv_message_left.setOnLongClickListener(longClickListener);
+            holder.cardview_left.setOnLongClickListener(longClickListener);
         }
     }
 

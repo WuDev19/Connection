@@ -1,14 +1,14 @@
 package com.example.connection.constants;
 
 import android.content.Context;
-import android.media.MediaPlayer;
-import android.net.Uri;
 import android.util.Log;
-import java.io.IOException;
+import androidx.media3.common.MediaItem;
+import androidx.media3.common.Player;
+import androidx.media3.exoplayer.ExoPlayer;
 
 public class MediaPlayerUtil {
 
-    private MediaPlayer mediaPlayer;
+    private ExoPlayer exoPlayer;
     private static MediaPlayerUtil instance;
     private static final String TAG = "MediaPlayerUtil";
     private boolean isInGeneral = false;
@@ -21,7 +21,6 @@ public class MediaPlayerUtil {
     private boolean isCLickToPause;
 
     private MediaPlayerUtil() {
-        mediaPlayer = new MediaPlayer();
     }
 
     public static synchronized MediaPlayerUtil getInstance() {
@@ -29,6 +28,13 @@ public class MediaPlayerUtil {
             instance = new MediaPlayerUtil();
         }
         return instance;
+    }
+
+    private void ensurePlayer(Context context) {
+        if (exoPlayer == null && context != null) {
+            exoPlayer = new ExoPlayer.Builder(context.getApplicationContext()).build();
+            exoPlayer.setRepeatMode(Player.REPEAT_MODE_ALL);
+        }
     }
 
     public boolean isInChooseFrag() {
@@ -40,85 +46,85 @@ public class MediaPlayerUtil {
     }
 
     public void playMusic(Context context, String urlMusic) {
-        if (urlMusic == null) {
-            Log.e(TAG, "playMusic: url = null");
+        if (urlMusic == null || urlMusic.isEmpty()) {
             urlMusicCurrent = null;
-            if(mediaPlayer != null){
-                Log.e(TAG, "playMusic: reset khi url = null");
-                mediaPlayer.reset();
+            if (exoPlayer != null) {
+                exoPlayer.stop();
+                exoPlayer.clearMediaItems();
             }
             return;
         }
         try {
-            Log.e(TAG, "playMusic: url khac null");
-            if ((mediaPlayer != null && position == 1) || (mediaPlayer != null && isInChooseFrag)) {
-                Log.e(TAG, "playMusic: chuan bi play");
-                mediaPlayer.reset();
-                Log.e(TAG, "playMusic: sau reset");
-                mediaPlayer.setDataSource(context, Uri.parse(urlMusic));
-                Log.e(TAG, "playMusic: reset xong" + urlMusic);
-                mediaPlayer.setOnPreparedListener(mediaPlayer1 -> {
-                    Log.e(TAG, "playMusic: play o day");
-                    mediaPlayer1.start();
-                    urlMusicCurrent = urlMusic;
-                });
-                Log.e(TAG, "playMusic: prepareasync");
-                mediaPlayer.prepareAsync();
+            ensurePlayer(context);
+            if ((position == 1) || isInChooseFrag) {
+                urlMusicCurrent = urlMusic;
+                MediaItem mediaItem = MediaItem.fromUri(urlMusic);
+                exoPlayer.setMediaItem(mediaItem);
+                exoPlayer.prepare();
+                exoPlayer.play();
+                Log.e(TAG, "playMusic via Media3: " + urlMusic);
             }
         } catch (Exception e) {
-            Log.e(TAG, "playMusic: " + e.getMessage());
+            Log.e(TAG, "playMusic error: " + e.getMessage());
         }
     }
 
     public void pauseMusic() {
-        if (mediaPlayer != null && mediaPlayer.isPlaying() && urlMusicCurrent != null) {
-            mediaPlayer.pause();
+        if (exoPlayer != null && exoPlayer.isPlaying()) {
+            exoPlayer.pause();
             Log.e(TAG, "pauseMusic: pause");
         }
     }
 
     public void resumeMusic() {
-        if (mediaPlayer != null && !mediaPlayer.isPlaying() && !isInGeneral && urlMusicCurrent != null) {
+        if (exoPlayer != null && !exoPlayer.isPlaying() && !isInGeneral && urlMusicCurrent != null) {
             if (position == 1 || isInChooseFrag) {
-                mediaPlayer.start();
-                Log.e(TAG, "resume music");
+                exoPlayer.play();
+                Log.e(TAG, "resume music via Media3");
             }
         }
     }
 
     public void releaseMediaPlayer() {
-        if (mediaPlayer != null) {
-            mediaPlayer.release();
-            mediaPlayer = null;
+        if (exoPlayer != null) {
+            exoPlayer.release();
+            exoPlayer = null;
         }
     }
 
-    public void prepareMusicBeforePlaying(Context context, String urlMusic){
-        if (urlMusic == null) {
+    public void prepareMusicBeforePlaying(Context context, String urlMusic) {
+        if (urlMusic == null || urlMusic.isEmpty()) {
             urlMusicCurrent = null;
-            if(mediaPlayer != null){
-                mediaPlayer.reset();
+            if (exoPlayer != null) {
+                exoPlayer.stop();
+                exoPlayer.clearMediaItems();
             }
             return;
         }
         try {
-            if ((mediaPlayer != null)) {
-                mediaPlayer.reset();
-                mediaPlayer.setDataSource(context, Uri.parse(urlMusic));
-                mediaPlayer.setOnPreparedListener(mediaPlayer1 -> urlMusicCurrent = urlMusic);
-                mediaPlayer.prepareAsync();
-            }
+            ensurePlayer(context);
+            urlMusicCurrent = urlMusic;
+            MediaItem mediaItem = MediaItem.fromUri(urlMusic);
+            exoPlayer.setMediaItem(mediaItem);
+            exoPlayer.prepare();
         } catch (Exception e) {
-            Log.e(TAG, "playMusic: " + e.getMessage());
+            Log.e(TAG, "prepareMusic error: " + e.getMessage());
+        }
+    }
+
+    public boolean isPlaying() {
+        return exoPlayer != null && exoPlayer.isPlaying();
+    }
+
+    public void reset() {
+        if (exoPlayer != null) {
+            exoPlayer.stop();
+            exoPlayer.clearMediaItems();
         }
     }
 
     public boolean isInGeneral() {
         return isInGeneral;
-    }
-
-    public MediaPlayer getMediaPlayer() {
-        return mediaPlayer;
     }
 
     public void setIsInGeneral(boolean isInGeneral) {
@@ -138,23 +144,20 @@ public class MediaPlayerUtil {
             Log.e("FragmentShowPhoto", "resumeMusicWhenBackPress: " + urlMusic);
             if (urlMusic == null) {
                 urlMusicCurrent = null;
-                if (mediaPlayer != null) {
-                    mediaPlayer.pause();
+                if (exoPlayer != null) {
+                    exoPlayer.pause();
                 }
                 return;
             }
             try {
-                if (mediaPlayer != null) {
-                    mediaPlayer.reset();
-                    mediaPlayer.setDataSource(context, Uri.parse(urlMusic));
-                    mediaPlayer.setOnPreparedListener(mediaPlayer1 -> {
-                        mediaPlayer1.start();
-                        urlMusicCurrent = urlMusic;
-                    });
-                    mediaPlayer.prepareAsync();
-                }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+                ensurePlayer(context);
+                urlMusicCurrent = urlMusic;
+                MediaItem mediaItem = MediaItem.fromUri(urlMusic);
+                exoPlayer.setMediaItem(mediaItem);
+                exoPlayer.prepare();
+                exoPlayer.play();
+            } catch (Exception e) {
+                Log.e(TAG, "resumeMusicWhenBackPress error: " + e.getMessage());
             }
         }
     }

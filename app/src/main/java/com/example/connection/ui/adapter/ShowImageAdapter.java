@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.media.MediaPlayer;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -27,14 +26,11 @@ import com.bumptech.glide.Glide;
 import com.example.connection.R;
 import com.example.connection.model.Image;
 import com.example.connection.constants.MediaPlayerUtil;
-import com.firebase.ui.common.ChangeEventType;
-import com.firebase.ui.firestore.FirestoreRecyclerAdapter;
-import com.firebase.ui.firestore.FirestoreRecyclerOptions;
-import com.firebase.ui.firestore.ObservableSnapshotArray;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.DocumentSnapshot;
+
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -42,8 +38,9 @@ import java.util.Locale;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
-public class ShowImageAdapter extends FirestoreRecyclerAdapter<Image, ShowImageAdapter.ShowImageViewHolder> {
+public class ShowImageAdapter extends RecyclerView.Adapter<ShowImageAdapter.ShowImageViewHolder> {
 
+    private final List<Image> postList = new ArrayList<>();
     private final Context context;
     private final onItemClick click;
     private final RecyclerView recyclerView;
@@ -60,14 +57,12 @@ public class ShowImageAdapter extends FirestoreRecyclerAdapter<Image, ShowImageA
             "\uD83D\uDE22",
             "\uD83D\uDE21");
 
-    public ShowImageAdapter(@NonNull FirestoreRecyclerOptions<Image> options,
-                            Context context,
+    public ShowImageAdapter(Context context,
                             onItemClick onItemClick,
                             RecyclerView recyclerView,
                             int positionClick,
                             boolean isGeneralClick,
                             ExoPlayer exoPlayer) {
-        super(options);
         this.context = context;
         this.click = onItemClick;
         this.recyclerView = recyclerView;
@@ -91,12 +86,115 @@ public class ShowImageAdapter extends FirestoreRecyclerAdapter<Image, ShowImageA
         void showOptions(String postId, String url);
 
         void handleButton(Button btn_like);
-
     }
+
+    public Image getItem(int position) {
+        if (position >= 0 && position < postList.size()) {
+            return postList.get(position);
+        }
+        return null;
+    }
+
+    @Override
+    public int getItemCount() {
+        return postList.size();
+    }
+
+    public boolean containsPostId(String postId) {
+        if (postId == null) return false;
+        for (Image image : postList) {
+            if (postId.equals(image.getPostId())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void setInitialPosts(List<Image> initialPosts) {
+        if (initialPosts == null) return;
+        postList.clear();
+        postList.addAll(initialPosts);
+        notifyDataSetChanged();
+        checkInitialAutoPlay();
+    }
+
+    public void updateExistingPosts(List<Image> updatedPosts) {
+        if (updatedPosts == null) return;
+        for (Image updated : updatedPosts) {
+            if (updated.getPostId() == null) continue;
+            for (int i = 0; i < postList.size(); i++) {
+                if (updated.getPostId().equals(postList.get(i).getPostId())) {
+                    Image old = postList.get(i);
+                    boolean hasChanges = !old.equals(updated)
+                            || old.getNumberEmote() != updated.getNumberEmote()
+                            || old.getNumberComment() != updated.getNumberComment()
+                            || (old.getEmoteMap() != null && !old.getEmoteMap().equals(updated.getEmoteMap()));
+                    if (hasChanges) {
+                        postList.set(i, updated);
+                        notifyItemChanged(i);
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    public int insertNewPostsAtTop(List<Image> newPosts) {
+        if (newPosts == null || newPosts.isEmpty()) return 0;
+        List<Image> toAdd = new ArrayList<>();
+        for (Image post : newPosts) {
+            if (!containsPostId(post.getPostId())) {
+                toAdd.add(post);
+            }
+        }
+        if (!toAdd.isEmpty()) {
+            postList.addAll(0, toAdd);
+            notifyItemRangeInserted(0, toAdd.size());
+            return toAdd.size();
+        }
+        return 0;
+    }
+
+    public void setTopPosts(List<Image> topPosts) {
+        if (topPosts == null) return;
+        if (postList.isEmpty()) {
+            setInitialPosts(topPosts);
+            return;
+        }
+        updateExistingPosts(topPosts);
+    }
+
+    public void addOlderPosts(List<Image> olderPosts) {
+        if (olderPosts == null || olderPosts.isEmpty()) return;
+        List<Image> toAdd = new ArrayList<>();
+        for (Image post : olderPosts) {
+            boolean exists = false;
+            for (Image existing : postList) {
+                if (existing.getPostId() != null && existing.getPostId().equals(post.getPostId())) {
+                    exists = true;
+                    break;
+                }
+            }
+            if (!exists) {
+                toAdd.add(post);
+            }
+        }
+        if (!toAdd.isEmpty()) {
+            int start = postList.size();
+            postList.addAll(toAdd);
+            notifyItemRangeInserted(start, toAdd.size());
+        }
+    }
+
+    public void startListening() {}
+    public void stopListening() {}
 
     @SuppressLint("SetTextI18n")
     @Override
-    protected void onBindViewHolder(@NonNull ShowImageViewHolder holder, int position, @NonNull Image model) {
+    public void onBindViewHolder(@NonNull ShowImageViewHolder holder, int position) {
+        Image model = getItem(position);
+        if (model == null) return;
+
         Log.e("kiemtrakhixoa", "onBindViewHolder: " + position + " " + model.getUrlMusic());
         if (model.getImageUrl() != null) {
             Log.e(TAG, "onBindViewHolder: " + model.getImageUrl());
@@ -115,7 +213,6 @@ public class ShowImageAdapter extends FirestoreRecyclerAdapter<Image, ShowImageA
         }
 
         if (model.getStatus().isEmpty()) holder.tv_status.setVisibility(View.GONE);
-
         else {
             holder.tv_status.setVisibility(View.VISIBLE);
             holder.tv_status.setText(model.getStatus());
@@ -189,14 +286,13 @@ public class ShowImageAdapter extends FirestoreRecyclerAdapter<Image, ShowImageA
         });
 
         holder.btn_like.setOnClickListener(view -> {
-            click.handleButton(holder.btn_like); //vo hieu hoa nut nay den khi transaction xong
+            click.handleButton(holder.btn_like);
             long countCurrent = model.getNumberEmote();
             holder.tv_like.setVisibility(View.VISIBLE);
             if (!model.getEmoteMap().containsKey(myId)) {
                 holder.btn_like.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#A8D38D")));
                 holder.btn_like.setText("\uD83D\uDC4D" + " " + "Thích");
-                click.expressEmote("\uD83D\uDC4D",
-                        model.getPostId());
+                click.expressEmote("\uD83D\uDC4D", model.getPostId());
                 if (countCurrent > 0) {
                     holder.tv_like.setText("Bạn và " + countCurrent + " " + "người khác");
                 } else {
@@ -209,8 +305,7 @@ public class ShowImageAdapter extends FirestoreRecyclerAdapter<Image, ShowImageA
                 String emoteAndId = model.getEmoteMap().get(myId);
                 if (emoteAndId != null) {
                     String emote = emoteAndId.split("_")[1];
-                    click.expressEmote(emote,
-                            model.getPostId());
+                    click.expressEmote(emote, model.getPostId());
                 }
                 if (countCurrent > 0) {
                     holder.tv_like.setText(countCurrent + " " + "người khác");
@@ -220,24 +315,21 @@ public class ShowImageAdapter extends FirestoreRecyclerAdapter<Image, ShowImageA
             }
         });
 
-        //show cac emote
         holder.btn_like.setOnLongClickListener(view -> {
             long countCurrent = model.getNumberEmote();
             holder.recyclerEmote.setVisibility(View.VISIBLE);
             holder.tv_like.setVisibility(View.VISIBLE);
             EmoteAdapter emoteAdapter = new EmoteAdapter(context, emoteList, emote -> {
-                click.handleButton(holder.btn_like); //vo hieu hoa nut nay den khi transaction xong
-                click.expressEmote(emote,
-                        model.getPostId());
+                click.handleButton(holder.btn_like);
+                click.expressEmote(emote, model.getPostId());
                 holder.recyclerEmote.setAdapter(null);
                 holder.recyclerEmote.setVisibility(View.GONE);
                 holder.btn_like.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#A8D38D")));
                 checkReaction(emote, holder.btn_like);
                 if (countCurrent > 0) {
-                    if(model.getEmoteMap().containsKey(myId)){
+                    if (model.getEmoteMap().containsKey(myId)) {
                         holder.tv_like.setText("Bạn");
-                    }
-                    else {
+                    } else {
                         holder.tv_like.setText("Bạn và " + countCurrent + " " + "người khác");
                     }
                 } else {
@@ -249,10 +341,7 @@ public class ShowImageAdapter extends FirestoreRecyclerAdapter<Image, ShowImageA
             return true;
         });
 
-        //show frag comment
         holder.btn_comment.setOnClickListener(view -> click.showComment(model.getPostId()));
-
-        //show danh sach ai da emote
         holder.tv_like.setOnClickListener(view -> click.showEmote(model.getPostId()));
 
         if (model.getNumberEmote() > 0) {
@@ -288,7 +377,6 @@ public class ShowImageAdapter extends FirestoreRecyclerAdapter<Image, ShowImageA
         } else {
             holder.tv_comment.setVisibility(View.INVISIBLE);
         }
-
     }
 
     @NonNull
@@ -338,59 +426,49 @@ public class ShowImageAdapter extends FirestoreRecyclerAdapter<Image, ShowImageA
         }
     }
 
-    // TODO: 10/16/2025 xem lại chút logic
-    @Override
-    public void onDataChanged() {
-        super.onDataChanged();
+    public void checkInitialAutoPlay() {
         int itemCount = getItemCount();
-        Log.e(TAG, "onDataChanged: ");
-        Log.e("kiemtrakhixoa", "onDataChanged: lan dau sang show" + positionClick + " " + MediaPlayerUtil.getInstance().isFirstTimeScrollToShow());
+        Log.e(TAG, "checkInitialAutoPlay: count = " + itemCount);
         if (itemCount == 0) {
             MediaPlayerUtil.getInstance().setFirstTimeScrollToShow(false);
-            Log.e("kiemtrakhixoa", "onDataChanged: set lan dau sang show bang false");
             return;
         }
-        //khi click vao item o trong general frag
+        // Khi click vào item ở trong general frag
         if (positionClick >= 0 && positionClick < getItemCount() && isGeneralClick) {
-            Log.e("kiemtrakhixoa", "onDataChanged: general click");
             recyclerView.scrollToPosition(positionClick);
             Image image = getItem(positionClick);
-            playVideo(image);
-            if (image.getUrlMusic() == null) return;
-            MediaPlayerUtil.getInstance().playMusic(context, image.getUrlMusic());
+            if (image != null) {
+                playVideo(image);
+                if (image.getUrlMusic() != null) {
+                    MediaPlayerUtil.getInstance().playMusic(context, image.getUrlMusic());
+                }
+            }
             isGeneralClick = false;
         }
-        //khi lan dau vuot sang fragment show va co nhac
+        // Khi lần đầu vuốt sang fragment show và có nhạc
         else if (positionClick == 0 && MediaPlayerUtil.getInstance().isFirstTimeScrollToShow()) {
-            Log.e("kiemtrakhixoa", "onDataChanged: lan dau sang show" + positionClick);
             Image image = getItem(positionClick);
-            playVideo(image);
-            MediaPlayerUtil.getInstance().setFirstTimeScrollToShow(false);
-            positionClick = -1;
-            if (image.getUrlMusic() == null) return;
-            MediaPlayerUtil.getInstance().setPosition(1);
-            MediaPlayerUtil.getInstance().playMusic(context, image.getUrlMusic());
+            if (image != null) {
+                playVideo(image);
+                MediaPlayerUtil.getInstance().setFirstTimeScrollToShow(false);
+                positionClick = -1;
+                if (image.getUrlMusic() != null) {
+                    MediaPlayerUtil.getInstance().setPosition(1);
+                    MediaPlayerUtil.getInstance().playMusic(context, image.getUrlMusic());
+                }
+            }
         }
-        Log.e("kiemtrakhixoa", "onDataChanged: lan dau sang show" + positionClick + " " + MediaPlayerUtil.getInstance().isFirstTimeScrollToShow());
     }
 
     public String getTimeAgo(String time, Timestamp timestamp) {
-
         @SuppressLint("SimpleDateFormat") SimpleDateFormat format = new SimpleDateFormat("dd-MM HH:mm:ss", new Locale("vi", "VN"));
         String currentTime = format.format(new Date().getTime());
         @SuppressLint("SimpleDateFormat") SimpleDateFormat fullTime = new SimpleDateFormat("dd-MM-yyyy", new Locale("vi", "VN"));
         String full = fullTime.format(timestamp.toDate());
 
-        Log.e(TAG, currentTime);
-        Log.e(TAG, time);
-
         long now = (new Date().getTime()) / 1000;
-        Log.e(TAG, now + " s - now");
         long before = (timestamp.toDate().getTime()) / 1000;
-        Log.e(TAG, before + " s - before");
-
         long signal = now - before;
-        Log.e(TAG, signal + " s - signal");
 
         if (signal > 0 && signal < 60) return signal + "s";
         else {
@@ -409,7 +487,7 @@ public class ShowImageAdapter extends FirestoreRecyclerAdapter<Image, ShowImageA
     }
 
     public void playVideo(Image image) {
-        if (image.getVideoUrl() != null) {
+        if (image != null && image.getVideoUrl() != null) {
             MediaItem mediaItem = MediaItem.fromUri(image.getVideoUrl());
             exoPlayer.setRepeatMode(Player.REPEAT_MODE_ONE);
             exoPlayer.setMediaItem(mediaItem);
@@ -420,7 +498,6 @@ public class ShowImageAdapter extends FirestoreRecyclerAdapter<Image, ShowImageA
 
     private String addPaddingForMarquee(String text, TextView textView) {
         Paint paint = textView.getPaint();
-
         float textWidth = paint.measureText(text);
 
         int textViewWidthInDp = 150;
@@ -429,10 +506,8 @@ public class ShowImageAdapter extends FirestoreRecyclerAdapter<Image, ShowImageA
 
         if (textWidth < textViewWidthInPx) {
             StringBuilder paddedText = new StringBuilder(text);
-
             float spaceWidth = paint.measureText(" ");
             int spacesToAdd = (int) ((textViewWidthInPx - textWidth) / spaceWidth) + 5;
-
             for (int i = 0; i < spacesToAdd; i++) {
                 paddedText.append(" ");
             }
@@ -443,8 +518,7 @@ public class ShowImageAdapter extends FirestoreRecyclerAdapter<Image, ShowImageA
     }
 
     public void checkIsPlayingMusic() {
-        if (MediaPlayerUtil.getInstance().getMediaPlayer() == null) return;
-        if (MediaPlayerUtil.getInstance().getMediaPlayer().isPlaying()) {
+        if (MediaPlayerUtil.getInstance().isPlaying()) {
             MediaPlayerUtil.getInstance().pauseMusic();
             MediaPlayerUtil.getInstance().setCLickToPause(true);
         } else {
@@ -476,44 +550,4 @@ public class ShowImageAdapter extends FirestoreRecyclerAdapter<Image, ShowImageA
                 break;
         }
     }
-
-    @Override
-    public void onChildChanged(@NonNull ChangeEventType type, @NonNull DocumentSnapshot snapshot, int newIndex, int oldIndex) {
-        super.onChildChanged(type, snapshot, newIndex, oldIndex);
-        ObservableSnapshotArray<Image> snapshotArray = getSnapshots();
-        //khi xoa bai post ma item sau co nhac va video
-        if (type == ChangeEventType.REMOVED) {
-            int snapShotSize = snapshotArray.size();
-            if (oldIndex < snapShotSize) {
-                positionClick = oldIndex;
-                notifyItemChanged(positionClick);
-                Image imageNew = snapshotArray.get(positionClick);
-                MediaPlayerUtil.getInstance().playMusic(context, imageNew.getUrlMusic());
-                playVideo(imageNew);
-            } else if (snapShotSize != 0) {
-                positionClick = oldIndex - 1;
-                notifyItemChanged(positionClick);
-                Image imageNew = snapshotArray.get(positionClick);
-                MediaPlayerUtil.getInstance().playMusic(context, imageNew.getUrlMusic());
-                playVideo(imageNew);
-            }
-            else {
-                MediaPlayer mediaPlayer = MediaPlayerUtil.getInstance().getMediaPlayer();
-                if(mediaPlayer != null){
-                    Log.e("kiem tra thu tu", "onChildChanged: reset");
-                    MediaPlayerUtil.getInstance().getMediaPlayer().reset();
-                }
-            }
-        }
-        //khi luot sang fragment show ma truoc do chua co item nao, day la lan dau tien dang bai
-        else if (type == ChangeEventType.ADDED) {
-            if (snapshotArray.size() == 1 && !MediaPlayerUtil.getInstance().isInGeneral()) {
-                Log.e("kiemtrakhixoa", "onDataChanged: add" );
-                Image imageNew = snapshotArray.get(newIndex);
-                playVideo(imageNew);
-                MediaPlayerUtil.getInstance().prepareMusicBeforePlaying(context, imageNew.getUrlMusic());
-            }
-        }
-    }
-
 }

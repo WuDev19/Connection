@@ -5,12 +5,16 @@ import android.appwidget.AppWidgetManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.view.animation.AccelerateInterpolator;
+import android.view.animation.DecelerateInterpolator;
+import android.view.animation.OvershootInterpolator;
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
-import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.Player;
@@ -29,22 +33,27 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.RemoteViews;
 import android.widget.Toast;
 import com.example.connection.R;
 import com.example.connection.ui.view.activity.MainActivity;
 import com.example.connection.ui.adapter.ShowImageAdapter;
 import com.example.connection.model.Image;
+import com.example.connection.repository.PostRepository;
 import com.example.connection.ui.viewmodel.ShowPhotoViewModel;
 import com.example.connection.data.worker.WidgetProvider;
 import com.example.connection.constants.MediaPlayerUtil;
-import com.firebase.ui.firestore.FirestoreRecyclerOptions;
-import com.google.firebase.firestore.Query;
+import com.google.firebase.auth.FirebaseAuth;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class FragmentShowPhoto extends Fragment {
 
     private RecyclerView recyclerView;
     private ShowImageAdapter adapter;
+    private PostRepository postRepository;
     private final String TAG = getClass().getName();
     private int position;
     private FragmentGeneralPhoto fragmentGeneralPhoto;
@@ -56,6 +65,13 @@ public class FragmentShowPhoto extends Fragment {
     private ExoPlayer exoPlayer;
     private boolean onceScroll;
     private Button bt_like;
+    private SnapHelper snapHelper;
+    private View layoutNewPostsChip;
+    private TextView tvNewPostsCount;
+    private boolean hasNewPostsAbove = false;
+    private int newPostsCount = 0;
+    private final Handler bounceHandler = new Handler(Looper.getMainLooper());
+    private Runnable bounceRunnable;
 
     public FragmentShowPhoto() {
     }
@@ -65,6 +81,7 @@ public class FragmentShowPhoto extends Fragment {
         super.onCreate(savedInstanceState);
         Log.e(TAG, "onCreate: ");
         showPhotoViewModel = new ViewModelProvider(this).get(ShowPhotoViewModel.class);
+        postRepository = new PostRepository();
     }
 
     @Override
@@ -97,140 +114,232 @@ public class FragmentShowPhoto extends Fragment {
         });
 
         showPhotoViewModel.getExpressDone().observe(getViewLifecycleOwner(), done -> {
-            if(done){
-                if(bt_like != null){
+            if (done) {
+                if (bt_like != null) {
                     bt_like.setEnabled(true);
                 }
             }
         });
-
     }
 
     private void setUpRecyclerView() {
-        recyclerView.post(new Runnable() {
-            @Override
-            public void run() {
-                if (getArguments() != null) {
-                    position = getArguments().getInt("position_key", -1);
-                    isGeneralClick = getArguments().getBoolean("isGeneralClick", false);
-                    Log.e("TAGG", position + "show");
+        recyclerView.post(() -> {
+            if (getArguments() != null) {
+                position = getArguments().getInt("position_key", -1);
+                isGeneralClick = getArguments().getBoolean("isGeneralClick", false);
+                Log.e("TAGG", position + "show");
+            }
+
+            exoPlayer = new ExoPlayer.Builder(requireContext()).build();
+            adapter = new ShowImageAdapter(requireContext(), new ShowImageAdapter.onItemClick() {
+                @Override
+                public void generalImageClick() {
+                    if (recyclerView != null) {
+                        recyclerView.scrollToPosition(0);
+                    }
+                    MediaPlayerUtil.getInstance().setClickGeneral(true);
+                    MediaPlayerUtil.getInstance().pauseMusic();
+                    MediaPlayerUtil.getInstance().setIsInGeneral(true);
+                    MainActivity activity = (MainActivity) getActivity();
+                    if (activity != null) {
+                        activity.setClick(true);
+                        fragmentGeneralPhoto = (FragmentGeneralPhoto) requireActivity().getSupportFragmentManager().findFragmentByTag("FragmentGeneralPhoto");
+                        if (fragmentGeneralPhoto == null) {
+                            fragmentGeneralPhoto = new FragmentGeneralPhoto();
+                        }
+                        requireActivity().getSupportFragmentManager()
+                                .beginTransaction()
+                                .replace(R.id.frame_layout, fragmentGeneralPhoto, "FragmentGeneralPhoto")
+                                .addToBackStack("FragmentGeneralPhoto")
+                                .commit();
+                    }
                 }
-                showPhotoViewModel.getQueryFireStore();
-                showPhotoViewModel.getQuery().observe(getViewLifecycleOwner(), new Observer<Query>() {
-                    @Override
-                    public void onChanged(Query query) {
-                        if (query != null) {
-                            exoPlayer = new ExoPlayer.Builder(requireContext()).build();
-                            FirestoreRecyclerOptions<Image> options = new FirestoreRecyclerOptions.Builder<Image>()
-                                    .setQuery(query, Image.class)
-                                    .build();
-                            adapter = new ShowImageAdapter(options, requireContext(), new ShowImageAdapter.onItemClick() {
-                                @Override
-                                public void generalImageClick() {
-                                    if (recyclerView != null) {
-                                        recyclerView.scrollToPosition(0);
+
+                @Override
+                public void sendMessage(String message, String postUrl, String otherId, String otherUserName, String avtPoster, EditText editText) {
+                    edt_send_message = editText;
+                    showPhotoViewModel.sendMessage(message, postUrl, otherId, otherUserName, avtPoster);
+                }
+
+                @Override
+                public void expressEmote(String emote, String postId) {
+                    showPhotoViewModel.expressEmote(emote, postId);
+                }
+
+                @Override
+                public void showComment(String postId) {
+                    FragmentComment fragmentComment = new FragmentComment();
+                    Bundle bundle = new Bundle();
+                    bundle.putString("postIdComment", postId);
+                    fragmentComment.setArguments(bundle);
+                    fragmentComment.show(requireActivity().getSupportFragmentManager(), fragmentComment.getTag());
+                }
+
+                @Override
+                public void showEmote(String postId) {
+                    FragmentEmotePost fragmentEmotePost = new FragmentEmotePost();
+                    Bundle bundle = new Bundle();
+                    bundle.putString("postId", postId);
+                    fragmentEmotePost.setArguments(bundle);
+                    fragmentEmotePost.show(requireActivity().getSupportFragmentManager(), fragmentEmotePost.getTag());
+                }
+
+                @Override
+                public void showOptions(String postId, String url) {
+                    FragmentOptionsPost fragmentOptionsPost = new FragmentOptionsPost();
+                    Bundle bundle = new Bundle();
+                    bundle.putString("postIdOptions", postId);
+                    bundle.putString("postUrl", url);
+                    fragmentOptionsPost.setArguments(bundle);
+                    fragmentOptionsPost.show(requireActivity().getSupportFragmentManager(), fragmentOptionsPost.getTag());
+                }
+
+                @Override
+                public void handleButton(Button btn_like) {
+                    bt_like = btn_like;
+                    btn_like.setEnabled(false);
+                }
+            }, recyclerView, position, isGeneralClick, exoPlayer);
+
+            LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
+            recyclerView.setLayoutManager(layoutManager);
+            recyclerView.setAdapter(adapter);
+            snapHelper = new PagerSnapHelper();
+            snapHelper.attachToRecyclerView(recyclerView);
+
+            RecyclerView.ItemAnimator animator = recyclerView.getItemAnimator();
+            if (animator instanceof SimpleItemAnimator) {
+                ((SimpleItemAnimator) animator).setSupportsChangeAnimations(false);
+            }
+
+            String myId = FirebaseAuth.getInstance().getUid();
+            recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+                @Override
+                public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+                    super.onScrolled(recyclerView, dx, dy);
+                    LinearLayoutManager manager = (LinearLayoutManager) recyclerView.getLayoutManager();
+                    if (manager != null) {
+                        int firstVisible = manager.findFirstVisibleItemPosition();
+                        // Khi người dùng tự cuộn lên tới bài mới nhất (position 0), tự động ẩn chip thông báo
+                        if (firstVisible == 0 && hasNewPostsAbove) {
+                            hasNewPostsAbove = false;
+                            newPostsCount = 0;
+                            hideNewPostsChip();
+                        }
+
+                        if (myId != null) {
+                            int totalItemCount = manager.getItemCount();
+                            int lastVisible = manager.findLastVisibleItemPosition();
+                            // Tải thêm bài cũ khi còn 2 bài là chạm đáy (Endless Pagination)
+                            if (totalItemCount > 0 && lastVisible >= totalItemCount - 2) {
+                                postRepository.loadMorePosts(myId, new PostRepository.OnLoadMoreCallback() {
+                                    @Override
+                                    public void onLoaded(List<Image> olderPosts) {
+                                        if (getActivity() != null && isAdded() && olderPosts != null && !olderPosts.isEmpty()) {
+                                            adapter.addOlderPosts(olderPosts);
+                                        }
                                     }
-                                    MediaPlayerUtil.getInstance().setClickGeneral(true);
-                                    MediaPlayerUtil.getInstance().pauseMusic();
-                                    MediaPlayerUtil.getInstance().setIsInGeneral(true);
-                                    MainActivity activity = (MainActivity) getActivity();
-                                    if (activity != null) {
-                                        activity.setClick(true); // Cập nhật trạng thái
-                                        fragmentGeneralPhoto = (FragmentGeneralPhoto) requireActivity().getSupportFragmentManager().findFragmentByTag("FragmentGeneralPhoto");
-                                        if (fragmentGeneralPhoto == null)
-                                            fragmentGeneralPhoto = new FragmentGeneralPhoto();
-                                        requireActivity().getSupportFragmentManager()
-                                                .beginTransaction()
-                                                .replace(R.id.frame_layout, fragmentGeneralPhoto, "FragmentGeneralPhoto")
-                                                .addToBackStack("FragmentGeneralPhoto")
-                                                .commit();
+
+                                    @Override
+                                    public void onError(Exception e) {
+                                        Log.e(TAG, "loadMore error: " + e.getMessage());
                                     }
-                                }
+                                });
+                            }
+                        }
+                    }
+                }
 
-                                @Override
-                                public void sendMessage(String message, String postUrl, String otherId, String otherUserName, String avtPoster, EditText editText) {
-                                    edt_send_message = editText;
-                                    showPhotoViewModel.sendMessage(message, postUrl, otherId, otherUserName, avtPoster);
-                                }
+                @Override
+                public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
+                    super.onScrollStateChanged(recyclerView, newState);
+                    if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+                        LinearLayoutManager manager = (LinearLayoutManager) recyclerView.getLayoutManager();
+                        if (manager != null) {
+                            int firstVisible = manager.findFirstVisibleItemPosition();
+                            if (firstVisible == 0 && hasNewPostsAbove) {
+                                hasNewPostsAbove = false;
+                                newPostsCount = 0;
+                                hideNewPostsChip();
+                            }
+                            View snapView = snapHelper.findSnapView(manager);
+                            if (snapView != null) {
+                                handleMusic(manager, snapView);
+                            }
+                        }
+                        if (bt_like != null) {
+                            bt_like.setEnabled(true);
+                        }
+                    } else if (newState == RecyclerView.SCROLL_STATE_DRAGGING) {
+                        MediaPlayerUtil.getInstance().pauseMusic();
+                        exoPlayer.pause();
+                    }
+                }
+            });
 
-                                @Override
-                                public void expressEmote(String emote, String postId) {
-                                    showPhotoViewModel.expressEmote(emote, postId);
-                                }
+            // Bắt đầu lắng nghe Top bài đăng mới nhất theo mô hình Hybrid Realtime
+            if (myId != null) {
+                int initialLimit = (isGeneralClick && position >= 10) ? (position + 5) : 10;
+                postRepository.listenTopPosts(myId, initialLimit, topPosts -> {
+                    if (getActivity() == null || !isAdded() || topPosts == null) return;
 
-                                @Override
-                                public void showComment(String postId) {
-                                    FragmentComment fragmentComment = new FragmentComment();
-                                    Bundle bundle = new Bundle();
-                                    bundle.putString("postIdComment", postId);
-                                    fragmentComment.setArguments(bundle);
-                                    fragmentComment.show(requireActivity().getSupportFragmentManager(), fragmentComment.getTag());
-                                }
+                    if (adapter.getItemCount() == 0) {
+                        adapter.setInitialPosts(topPosts);
+                        hasNewPostsAbove = false;
+                        newPostsCount = 0;
+                        if (layoutNewPostsChip != null) {
+                            layoutNewPostsChip.setVisibility(View.GONE);
+                        }
+                        return;
+                    }
 
-                                @Override
-                                public void showEmote(String postId) {
-                                    FragmentEmotePost fragmentEmotePost = new FragmentEmotePost();
-                                    Bundle bundle = new Bundle();
-                                    bundle.putString("postId", postId);
-                                    fragmentEmotePost.setArguments(bundle);
-                                    fragmentEmotePost.show(requireActivity().getSupportFragmentManager(), fragmentEmotePost.getTag());
-                                }
+                    // 1. Cập nhật các bài đã hiển thị (likes, comments, emotes)
+                    adapter.updateExistingPosts(topPosts);
 
-                                @Override
-                                public void showOptions(String postId, String url) {
-                                    FragmentOptionsPost fragmentOptionsPost = new FragmentOptionsPost();
-                                    Bundle bundle = new Bundle();
-                                    bundle.putString("postIdOptions", postId);
-                                    bundle.putString("postUrl", url);
-                                    fragmentOptionsPost.setArguments(bundle);
-                                    fragmentOptionsPost.show(requireActivity().getSupportFragmentManager(), fragmentOptionsPost.getTag());
-                                }
+                    // 2. Lọc các bài mới tinh chưa có trong adapter
+                    List<Image> brandNewPosts = new ArrayList<>();
+                    for (Image post : topPosts) {
+                        if (post.getPostId() != null && !adapter.containsPostId(post.getPostId())) {
+                            brandNewPosts.add(post);
+                        }
+                    }
 
-                                @Override
-                                public void handleButton(Button btn_like) {
-                                    bt_like = btn_like;
-                                    btn_like.setEnabled(false);
-                                }
+                    // 3. Nếu có bài mới: Chèn vào đầu danh sách, giữ vị trí scroll hiện tại và hiển thị chip
+                    if (!brandNewPosts.isEmpty()) {
+                        LinearLayoutManager manager = (LinearLayoutManager) recyclerView.getLayoutManager();
+                        int firstPos = (manager != null) ? manager.findFirstVisibleItemPosition() : RecyclerView.NO_POSITION;
+                        View firstView = (manager != null && firstPos != RecyclerView.NO_POSITION) ? manager.findViewByPosition(firstPos) : null;
+                        int topOffset = (firstView != null) ? firstView.getTop() : 0;
 
-                            }, recyclerView, position, isGeneralClick, exoPlayer);
-
-                            recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-                            recyclerView.setAdapter(adapter);
-                            SnapHelper snapHelper = new PagerSnapHelper();
-                            snapHelper.attachToRecyclerView(recyclerView);
-
-                            RecyclerView.ItemAnimator animator = recyclerView.getItemAnimator();
-                            if (animator instanceof SimpleItemAnimator) {
-                                ((SimpleItemAnimator) animator).setSupportsChangeAnimations(false);
+                        int insertedCount = adapter.insertNewPostsAtTop(brandNewPosts);
+                        if (insertedCount > 0) {
+                            if (lastPosition != RecyclerView.NO_POSITION) {
+                                lastPosition += insertedCount;
+                            }
+                            if (manager != null && firstPos != RecyclerView.NO_POSITION) {
+                                manager.scrollToPositionWithOffset(firstPos + insertedCount, topOffset);
                             }
 
-                            recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
-                                @Override
-                                public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
-                                    super.onScrollStateChanged(recyclerView, newState);
-                                    if (newState == RecyclerView.SCROLL_STATE_IDLE) {
-                                        LinearLayoutManager manager = (LinearLayoutManager) recyclerView.getLayoutManager();
-                                        if (manager != null) {
-                                            View snapView = snapHelper.findSnapView(manager);
-                                            if (snapView != null) {
-                                                handleMusic(manager, snapView);
-                                            }
-                                        }
-                                        if(bt_like != null){
-                                            bt_like.setEnabled(true);
-                                        }
-                                    } else if (newState == RecyclerView.SCROLL_STATE_DRAGGING) {
-                                        MediaPlayerUtil.getInstance().pauseMusic();
-                                        exoPlayer.pause();
-                                    }
+                            // Đếm số bài mới KHÔNG PHẢI của chính mình
+                            int othersNewCount = 0;
+                            for (Image post : brandNewPosts) {
+                                if (post.getPosterId() != null && !post.getPosterId().equals(myId)) {
+                                    othersNewCount++;
                                 }
-                            });
-                            adapter.startListening();
-                            scrollWhenClickGeneralFrag();
+                            }
+
+                            // Chỉ hiển thị nút thông báo nếu có bài mới từ người khác
+                            if (othersNewCount > 0) {
+                                hasNewPostsAbove = true;
+                                newPostsCount += othersNewCount;
+                                showNewPostsChip(newPostsCount);
+                            }
                         }
                     }
                 });
             }
+
+            scrollWhenClickGeneralFrag();
         });
     }
 
@@ -251,14 +360,18 @@ public class FragmentShowPhoto extends Fragment {
         if (position != lastPosition) {
             lastPosition = position;
             lastImage = adapter.getItem(lastPosition);
-            MediaPlayerUtil.getInstance().playMusic(requireContext(), lastImage.getUrlMusic());
-            playVideo(lastImage);
+            if (lastImage != null) {
+                MediaPlayerUtil.getInstance().playMusic(requireContext(), lastImage.getUrlMusic());
+                playVideo(lastImage);
+            }
         } else {
             Image image1 = adapter.getItem(position);
-            if (image1.equals(lastImage)) {
-                MediaPlayerUtil.getInstance().resumeMusic();
-            } else {
-                MediaPlayerUtil.getInstance().playMusic(requireContext(), image1.getUrlMusic());
+            if (image1 != null) {
+                if (image1.equals(lastImage)) {
+                    MediaPlayerUtil.getInstance().resumeMusic();
+                } else {
+                    MediaPlayerUtil.getInstance().playMusic(requireContext(), image1.getUrlMusic());
+                }
             }
         }
     }
@@ -291,10 +404,9 @@ public class FragmentShowPhoto extends Fragment {
         if (MediaPlayerUtil.getInstance().isClickGeneral()) {
             recyclerView.setOnTouchListener((v, event) -> {
                 gestureDetector.onTouchEvent(event);
-                return false; // để recyclerview vẫn có thể scroll
+                return false;
             });
         }
-
     }
 
     private void playVideo(Image model) {
@@ -315,6 +427,137 @@ public class FragmentShowPhoto extends Fragment {
 
     private void initView(View view) {
         recyclerView = view.findViewById(R.id.recycler_view_show_photo);
+        layoutNewPostsChip = view.findViewById(R.id.layout_new_posts_chip);
+        tvNewPostsCount = view.findViewById(R.id.tv_new_posts_count);
+
+        if (layoutNewPostsChip != null) {
+            layoutNewPostsChip.setOnClickListener(v -> {
+                hasNewPostsAbove = false;
+                newPostsCount = 0;
+                hideNewPostsChip();
+                recyclerView.smoothScrollToPosition(0);
+            });
+        }
+    }
+
+    private void showNewPostsChip(int count) {
+        if (tvNewPostsCount != null) {
+            String message = count > 9 ? "Có 9+ bài mới nè! ✨" : (count > 1 ? "Có " + count + " bài mới nè! ✨" : "Có bài mới nè! ✨");
+            tvNewPostsCount.setText(message);
+        }
+        if (layoutNewPostsChip != null && layoutNewPostsChip.getVisibility() != View.VISIBLE) {
+            layoutNewPostsChip.setAlpha(0f);
+            layoutNewPostsChip.setTranslationY(-30f);
+            layoutNewPostsChip.setScaleX(0.85f);
+            layoutNewPostsChip.setScaleY(0.85f);
+            layoutNewPostsChip.setVisibility(View.VISIBLE);
+            layoutNewPostsChip.animate()
+                    .alpha(1f)
+                    .translationY(0f)
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .setInterpolator(new OvershootInterpolator(1.4f))
+                    .setDuration(350)
+                    .withEndAction(this::startCuteBounceAnimation)
+                    .start();
+        } else if (layoutNewPostsChip != null && layoutNewPostsChip.getVisibility() == View.VISIBLE) {
+            performCuteHop(layoutNewPostsChip);
+        }
+    }
+
+    private void hideNewPostsChip() {
+        stopCuteBounceAnimation();
+        if (layoutNewPostsChip != null && layoutNewPostsChip.getVisibility() == View.VISIBLE) {
+            layoutNewPostsChip.animate().cancel();
+            layoutNewPostsChip.animate()
+                    .alpha(0f)
+                    .translationY(-30f)
+                    .scaleX(0.85f)
+                    .scaleY(0.85f)
+                    .setDuration(200)
+                    .withEndAction(() -> {
+                        if (layoutNewPostsChip != null) {
+                            layoutNewPostsChip.setVisibility(View.GONE);
+                            layoutNewPostsChip.setScaleX(1f);
+                            layoutNewPostsChip.setScaleY(1f);
+                            layoutNewPostsChip.setTranslationY(0f);
+                        }
+                    })
+                    .start();
+        }
+    }
+
+    private void startCuteBounceAnimation() {
+        stopCuteBounceAnimation();
+        bounceRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (layoutNewPostsChip != null && layoutNewPostsChip.getVisibility() == View.VISIBLE) {
+                    performCuteHop(layoutNewPostsChip);
+                    bounceHandler.postDelayed(this, 3800);
+                }
+            }
+        };
+        bounceHandler.postDelayed(bounceRunnable, 1500);
+    }
+
+    private void stopCuteBounceAnimation() {
+        if (bounceRunnable != null) {
+            bounceHandler.removeCallbacks(bounceRunnable);
+            bounceRunnable = null;
+        }
+    }
+
+    private void performCuteHop(View view) {
+        if (view == null || view.getVisibility() != View.VISIBLE) return;
+        // 1. Nhún nhẹ chuẩn bị nhảy (100ms)
+        view.animate()
+                .scaleX(1.06f)
+                .scaleY(0.92f)
+                .translationY(3f)
+                .setDuration(100)
+                .setInterpolator(new AccelerateInterpolator())
+                .withEndAction(() -> {
+                    // 2. Nhảy bổng lên cao với độ giãn dài cute (180ms)
+                    view.animate()
+                            .scaleX(0.94f)
+                            .scaleY(1.08f)
+                            .translationY(-14f)
+                            .setDuration(180)
+                            .setInterpolator(new DecelerateInterpolator())
+                            .withEndAction(() -> {
+                                // 3. Tiếp đất và nảy nhẹ (140ms)
+                                view.animate()
+                                        .scaleX(1.04f)
+                                        .scaleY(0.96f)
+                                        .translationY(0f)
+                                        .setDuration(140)
+                                        .setInterpolator(new AccelerateInterpolator())
+                                        .withEndAction(() -> {
+                                            // 4. Bật nảy phụ một nhịp nhỏ (120ms)
+                                            view.animate()
+                                                    .scaleX(0.98f)
+                                                    .scaleY(1.03f)
+                                                    .translationY(-5f)
+                                                    .setDuration(120)
+                                                    .setInterpolator(new DecelerateInterpolator())
+                                                    .withEndAction(() -> {
+                                                        // 5. Trở lại trạng thái bình thường (100ms)
+                                                        view.animate()
+                                                                .scaleX(1.0f)
+                                                                .scaleY(1.0f)
+                                                                .translationY(0f)
+                                                                .setDuration(100)
+                                                                .setInterpolator(new OvershootInterpolator())
+                                                                .start();
+                                                    })
+                                                    .start();
+                                        })
+                                        .start();
+                            })
+                            .start();
+                })
+                .start();
     }
 
     private void backPress() {
@@ -344,7 +587,7 @@ public class FragmentShowPhoto extends Fragment {
         super.onStart();
         Log.e(TAG, "onStart: ");
         if (!MediaPlayerUtil.getInstance().isCLickToPause()) {
-            MediaPlayerUtil.getInstance().resumeMusic(); //khi back ve tu recent chat activity
+            MediaPlayerUtil.getInstance().resumeMusic();
         }
     }
 
@@ -352,7 +595,7 @@ public class FragmentShowPhoto extends Fragment {
     public void onStop() {
         super.onStop();
         Log.e(TAG, "onStop: ");
-        MediaPlayerUtil.getInstance().pauseMusic(); //khi out app hoac bam vao recent chat activity
+        MediaPlayerUtil.getInstance().pauseMusic();
     }
 
     @Override
@@ -369,15 +612,15 @@ public class FragmentShowPhoto extends Fragment {
             LinearLayoutManager manager = (LinearLayoutManager) recyclerView.getLayoutManager();
             if (manager != null && manager.findFirstVisibleItemPosition() != -1) {
                 Image image = adapter.getItem(manager.findFirstVisibleItemPosition());
-                if (MediaPlayerUtil.getInstance().isBackPress()) {
+                if (image != null && MediaPlayerUtil.getInstance().isBackPress()) {
                     if (MediaPlayerUtil.getInstance().isClickGeneral()) {
-                        lastPosition = 0; //khi click vao item mot xong back
+                        lastPosition = 0;
                         lastImage = image;
                         playVideo(image);
                     }
                     MediaPlayerUtil.getInstance().setClickGeneral(false);
                     Log.e(TAG, manager.findFirstVisibleItemPosition() + "");
-                    MediaPlayerUtil.getInstance().resumeMusicWhenBackPress(requireContext(), image.getUrlMusic());//khi back press tu general photo
+                    MediaPlayerUtil.getInstance().resumeMusicWhenBackPress(requireContext(), image.getUrlMusic());
                     MediaPlayerUtil.getInstance().setWhenBackPressFromGeneral(false);
                 }
             }
@@ -387,7 +630,8 @@ public class FragmentShowPhoto extends Fragment {
     @Override
     public void onPause() {
         super.onPause();
-        if (exoPlayer.isPlaying()) {
+        stopCuteBounceAnimation();
+        if (exoPlayer != null && exoPlayer.isPlaying()) {
             exoPlayer.pause();
         }
     }
@@ -396,6 +640,10 @@ public class FragmentShowPhoto extends Fragment {
     public void onDestroy() {
         super.onDestroy();
         Log.e(TAG, "onDestroy: ");
+        stopCuteBounceAnimation();
+        if (postRepository != null) {
+            postRepository.removeListener();
+        }
         if (adapter != null) {
             adapter.stopListening();
         }

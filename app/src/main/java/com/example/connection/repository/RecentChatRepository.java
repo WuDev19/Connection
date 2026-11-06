@@ -72,6 +72,15 @@ public class RecentChatRepository {
     }
 
     public void getIsNotSeen(ChatRoom model, OnSeenChatRoom onSeenChatRoom){
+        if (model == null) return;
+        String myId = FirebaseAuth.getInstance().getUid();
+        if (myId != null && model.getUnreadCounts() != null && model.getUnreadCounts().containsKey(myId)) {
+            Long unread = model.getUnreadCounts().get(myId);
+            onSeenChatRoom.onSeen(unread != null && unread > 0);
+            return;
+        }
+
+        // Fallback for legacy documents
         db.collection("chatroom").document(model.getChatRoomId())
                 .collection("chats")
                 .whereNotEqualTo("senderId", FirebaseAuth.getInstance().getUid())
@@ -79,10 +88,10 @@ public class RecentChatRepository {
                 .limit(1)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
-                    Log.e(TAG, queryDocumentSnapshots.size() + "");
                     if (!queryDocumentSnapshots.isEmpty()) {
                         onSeenChatRoom.onSeen(true);
-                        Log.e(TAG, queryDocumentSnapshots.size() + "");
+                    } else {
+                        onSeenChatRoom.onSeen(false);
                     }
                 })
                 .addOnFailureListener(e -> Log.e(TAG, Objects.requireNonNull(e.getMessage())));

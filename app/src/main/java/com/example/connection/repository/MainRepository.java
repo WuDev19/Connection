@@ -5,12 +5,11 @@ import android.content.Context;
 import android.util.Log;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
+import com.example.connection.model.ChatRoom;
 import com.example.connection.model.Image;
 import com.example.connection.model.User;
 import com.example.connection.model.WidgetModel;
 import com.example.connection.constants.SharePreUtil;
-import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -29,7 +28,6 @@ public class MainRepository {
     private ListenerRegistration chatroomListenerRealTime, notificationListenerRealtime;
     private final List<ListenerRegistration> messageListenerRealTime = new ArrayList<>();
     private final HashMap<String, Integer> countUnseenMessage = new HashMap<>();
-    private Image imageFirst;
 
     public MainRepository() {
         mAuth = FirebaseAuth.getInstance();
@@ -117,44 +115,34 @@ public class MainRepository {
             chatroomListenerRealTime.remove();
         }
 
-        for (ListenerRegistration listenerRegistration : messageListenerRealTime) {
-            listenerRegistration.remove();
-        }
-        messageListenerRealTime.clear();
-        countUnseenMessage.clear();
+        // Single snapshot listener on chatroom list instead of opening N subcollection listeners
         chatroomListenerRealTime = FirebaseFirestore.getInstance().collection("chatroom")
                 .whereArrayContains("userId", currentUserId)
                 .addSnapshotListener((value, error) -> {
-                    if(error != null){
+                    if(error != null || value == null) {
                         return;
                     }
-                    if(value == null) return;
-                    for (ListenerRegistration listenerRegistration : messageListenerRealTime) {
-                        listenerRegistration.remove();
-                    }
-                    messageListenerRealTime.clear();
                     countUnseenMessage.clear();
                     for (DocumentSnapshot documentSnapshot : value) {
                         String chatRoomId = documentSnapshot.getId();
-                        ListenerRegistration listenerRegistration = documentSnapshot.getReference()
-                                .collection("chats")
-                                .whereNotEqualTo("senderId", currentUserId)
-                                .whereEqualTo("seen", false)
-                                .addSnapshotListener((value1, error1) -> {
-                                    if (error1 != null) return;
-                                    if (value1 == null) return;
-                                    countUnseenMessage.put(chatRoomId, value1.size());
-                                    Log.e(TAG, "getRealtimeUnseenMessage: " + value1.size());
-                                    onCountMessage.onCountMessage(countUnseenMessage);
-                                });
-                        messageListenerRealTime.add(listenerRegistration);
+                        ChatRoom room = documentSnapshot.toObject(ChatRoom.class);
+                        long unread = 0;
+                        if (room != null && room.getUnreadCounts() != null && room.getUnreadCounts().containsKey(currentUserId)) {
+                            Long count = room.getUnreadCounts().get(currentUserId);
+                            if (count != null) {
+                                unread = count;
+                            }
+                        }
+                        countUnseenMessage.put(chatRoomId, (int) unread);
                     }
+                    onCountMessage.onCountMessage(countUnseenMessage);
                 });
     }
 
     public void unregisterListeningRealtime(){
         if (chatroomListenerRealTime != null) {
             chatroomListenerRealTime.remove();
+            chatroomListenerRealTime = null;
         }
         for (ListenerRegistration listenerRegistration : messageListenerRealTime) {
             listenerRegistration.remove();
@@ -163,6 +151,7 @@ public class MainRepository {
         countUnseenMessage.clear();
         if(notificationListenerRealtime != null){
             notificationListenerRealtime.remove();
+            notificationListenerRealtime = null;
         }
     }
 
@@ -174,41 +163,38 @@ public class MainRepository {
         FirebaseFirestore.getInstance().collection("post_photo")
                 .whereArrayContains("friendId", myId)
                 .orderBy("timestamp", Query.Direction.DESCENDING)
+                .limit(20)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
-                    List<Task<DocumentSnapshot>> tasks = new ArrayList<>();
-                    for (DocumentSnapshot documentSnapshot : queryDocumentSnapshots) {
-                        tasks.add(documentSnapshot.getReference().get());
-                    }
-                    Tasks.whenAllComplete(tasks).addOnCompleteListener(task -> {
-                        List<Image> list = new ArrayList<>();
-                        for (int i = 0; i < tasks.size(); i++) {
-                            if (tasks.get(i).isSuccessful()) {
-                                Image image = tasks.get(i).getResult().toObject(Image.class);
-                                if (image != null) {
-                                    if (i == 0) imageFirst = image;
-                                    List<String> seen = image.getSeen();
-                                    if (!seen.contains(myId)) {
-                                        list.add(image);
-                                    }
+                    List<Image> list = new ArrayList<>();
+                    Image imageFirst = null;
+                    for (DocumentSnapshot doc : queryDocumentSnapshots) {
+                        if (doc.exists()) {
+                            Image image = doc.toObject(Image.class);
+                            if (image != null) {
+                                if (imageFirst == null) imageFirst = image;
+                                List<String> seen = image.getSeen();
+                                if (seen != null && !seen.contains(myId)) {
+                                    list.add(image);
                                 }
                             }
                         }
-                        if (imageFirst == null) {
-                            Log.e(TAG, "Ko có dữ liệu");
-                            return;
-                        }
-                        FirebaseFirestore.getInstance().collection("users").document(imageFirst.getPosterId())
-                                .get()
-                                .addOnSuccessListener(documentSnapshot -> {
-                                    if (documentSnapshot.exists()) {
-                                        User user = documentSnapshot.toObject(User.class);
-                                        if (user != null) {
-                                            onUpdateWidget.onUpdateWidget(new WidgetModel(list, user, imageFirst));
-                                        }
+                    }
+                    if (imageFirst == null) {
+                        Log.e(TAG, "Ko có dữ liệu");
+                        return;
+                    }
+                    final Image finalImageFirst = imageFirst;
+                    FirebaseFirestore.getInstance().collection("users").document(imageFirst.getPosterId())
+                            .get()
+                            .addOnSuccessListener(documentSnapshot -> {
+                                if (documentSnapshot.exists()) {
+                                    User user = documentSnapshot.toObject(User.class);
+                                    if (user != null) {
+                                        onUpdateWidget.onUpdateWidget(new WidgetModel(list, user, finalImageFirst));
                                     }
-                                });
-                    });
+                                }
+                            });
                 });
     }
 

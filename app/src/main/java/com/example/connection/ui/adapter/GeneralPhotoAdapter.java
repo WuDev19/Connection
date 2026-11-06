@@ -19,7 +19,7 @@ public class GeneralPhotoAdapter extends FirestoreRecyclerAdapter<Image, General
     private final Context context;
     public onItemClick click;
 
-    public interface onItemClick{
+    public interface onItemClick {
         void itemClick(int position);
     }
 
@@ -31,13 +31,29 @@ public class GeneralPhotoAdapter extends FirestoreRecyclerAdapter<Image, General
 
     @Override
     protected void onBindViewHolder(@NonNull GeneralPhotoViewHolder holder, int position, @NonNull Image model) {
-        if(model.getImageUrl() != null){
-            Glide.with(context).load(model.getImageUrl()).error(R.drawable.icon_avatar).into(holder.img_post_general);
-        } else if (model.getVideoUrl() != null) {
-            Glide.with(context).load(Uri.parse(model.getVideoUrl())).frame(500000).into(holder.img_post_general);
+        if (model.getVideoUrl() != null && !model.getVideoUrl().isEmpty()) {
+            holder.img_video_badge.setVisibility(View.VISIBLE);
+            Glide.with(context)
+                    .load(Uri.parse(model.getVideoUrl()))
+                    .frame(500000)
+                    .centerCrop()
+                    .into(holder.img_post_general);
+        } else if (model.getImageUrl() != null && !model.getImageUrl().isEmpty()) {
+            holder.img_video_badge.setVisibility(View.GONE);
+            Glide.with(context)
+                    .load(model.getImageUrl())
+                    .centerCrop()
+                    .into(holder.img_post_general);
+        } else {
+            holder.img_video_badge.setVisibility(View.GONE);
+            holder.img_post_general.setImageDrawable(null);
         }
-        holder.img_post_general.setOnClickListener(view -> {
-            click.itemClick(position);
+
+        holder.itemView.setOnClickListener(view -> {
+            int pos = holder.getBindingAdapterPosition();
+            if (pos != RecyclerView.NO_POSITION && click != null) {
+                click.itemClick(pos);
+            }
         });
     }
 
@@ -51,11 +67,12 @@ public class GeneralPhotoAdapter extends FirestoreRecyclerAdapter<Image, General
     public static class GeneralPhotoViewHolder extends RecyclerView.ViewHolder {
 
         ImageView img_post_general;
+        ImageView img_video_badge;
 
         public GeneralPhotoViewHolder(@NonNull View itemView) {
             super(itemView);
             img_post_general = itemView.findViewById(R.id.img_post_general);
+            img_video_badge = itemView.findViewById(R.id.img_video_badge);
         }
     }
-
 }

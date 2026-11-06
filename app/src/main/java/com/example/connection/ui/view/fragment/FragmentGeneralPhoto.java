@@ -1,6 +1,5 @@
 package com.example.connection.ui.view.fragment;
 
-import android.annotation.SuppressLint;
 import android.os.Bundle;
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
@@ -9,12 +8,12 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import com.example.connection.R;
 import com.example.connection.ui.view.activity.MainActivity;
 import com.example.connection.ui.adapter.GeneralPhotoAdapter;
@@ -23,6 +22,7 @@ import com.example.connection.constants.MediaPlayerUtil;
 import com.firebase.ui.firestore.FirestoreRecyclerOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.Query;
 
 public class FragmentGeneralPhoto extends Fragment {
@@ -30,6 +30,8 @@ public class FragmentGeneralPhoto extends Fragment {
     private RecyclerView recyclerView;
     private GeneralPhotoAdapter adapter;
     private FirebaseFirestore db;
+    private ProgressBar progressBar;
+    private LinearLayout layoutEmpty;
     private final String TAG = "FragmentGeneralPhoto";
     private FragmentHome fragmentHome;
 
@@ -48,80 +50,82 @@ public class FragmentGeneralPhoto extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         setUpRecyclerView();
+        setupBackPress();
     }
 
     private void setUpRecyclerView() {
         String myId = FirebaseAuth.getInstance().getUid();
-        if(myId == null) return;
+        if (myId == null) return;
+
+        if (progressBar != null) {
+            progressBar.setVisibility(View.VISIBLE);
+        }
+
         Query query = db.collection("post_photo")
                 .whereArrayContains("friendId", myId)
-                .orderBy("timestamp", Query.Direction.DESCENDING);
+                .orderBy("timestamp", Query.Direction.DESCENDING)
+                .limit(100);
+
         FirestoreRecyclerOptions<Image> options = new FirestoreRecyclerOptions.Builder<Image>()
                 .setQuery(query, Image.class)
                 .build();
+
         adapter = new GeneralPhotoAdapter(options, getContext(), position -> {
             FragmentShowPhoto fragmentShowPhoto = new FragmentShowPhoto();
             Bundle bundle = new Bundle();
             bundle.putInt("position_key", position);
             bundle.putBoolean("isGeneralClick", true);
-            Log.e("Position", position+"general" );
+            Log.e("Position", position + "general");
             fragmentShowPhoto.setArguments(bundle);
             requireActivity().getSupportFragmentManager().beginTransaction()
                     .replace(R.id.frame_layout, fragmentShowPhoto, "FragmentShowPhoto")
                     .addToBackStack("FragmentShowPhoto")
                     .commit();
-        });
+        }) {
+            @Override
+            public void onDataChanged() {
+                super.onDataChanged();
+                if (progressBar != null) {
+                    progressBar.setVisibility(View.GONE);
+                }
+                if (layoutEmpty != null) {
+                    layoutEmpty.setVisibility(getItemCount() == 0 ? View.VISIBLE : View.GONE);
+                }
+            }
+
+            @Override
+            public void onError(@NonNull FirebaseFirestoreException e) {
+                super.onError(e);
+                if (progressBar != null) {
+                    progressBar.setVisibility(View.GONE);
+                }
+                Log.e(TAG, "onError: " + e.getMessage());
+            }
+        };
+
         recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 3));
         recyclerView.setAdapter(adapter);
-        adapter.startListening();
     }
 
     private void initView(View view) {
         recyclerView = view.findViewById(R.id.recycler_view_general_photo);
+        progressBar = view.findViewById(R.id.progress_general_photo);
+        layoutEmpty = view.findViewById(R.id.layout_empty_general);
         db = FirebaseFirestore.getInstance();
     }
 
-    @Override
-    public void onStart() {
-        super.onStart();
-        Log.e(TAG, "onStart: " );
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-        Log.e(TAG, "onStop: " );
-    }
-
-    @SuppressLint("NotifyDataSetChanged")
-    @Override
-    public void onResume() {
-        super.onResume();
-        if(adapter != null){
-            adapter.notifyDataSetChanged();
-        }
-        Log.e(TAG, "onResume: " );
-        onBackPress();
-    }
-
-    private void onBackPress(){
-        requireActivity().getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+    private void setupBackPress() {
+        requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
                 MainActivity mainActivity = (MainActivity) requireActivity();
                 mainActivity.setClick(false);
                 FragmentManager manager = requireActivity().getSupportFragmentManager();
                 fragmentHome = (FragmentHome) manager.findFragmentByTag("FragmentHome");
-                if(fragmentHome == null) fragmentHome = new FragmentHome();
+                if (fragmentHome == null) fragmentHome = new FragmentHome();
                 manager.beginTransaction()
                         .replace(R.id.frame_layout, fragmentHome)
                         .commit();
-                new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                    Fragment fragment = manager.findFragmentById(R.id.frame_layout);
-                    if (fragment instanceof FragmentHome) {
-                        ((FragmentHome) fragment).setCurrentPage(0);
-                    }
-                }, 100);
                 MediaPlayerUtil.getInstance().setWhenBackPressFromGeneral(true);
                 Log.e("backpress", "handleOnBackPressed: ");
             }
@@ -129,18 +133,21 @@ public class FragmentGeneralPhoto extends Fragment {
     }
 
     @Override
-    public void onDestroy() {
-        super.onDestroy();
-        Log.e(TAG, "onDestroy: ");
-        if (adapter != null){
-            adapter.stopListening();
+    public void onStart() {
+        super.onStart();
+        Log.e(TAG, "onStart: ");
+        if (adapter != null) {
+            adapter.startListening();
         }
     }
 
     @Override
-    public void onPause() {
-        super.onPause();
-        Log.e(TAG, "onPause: ");
+    public void onStop() {
+        super.onStop();
+        Log.e(TAG, "onStop: ");
+        if (adapter != null) {
+            adapter.stopListening();
+        }
     }
 
     @Override
@@ -150,4 +157,9 @@ public class FragmentGeneralPhoto extends Fragment {
         MediaPlayerUtil.getInstance().setIsInGeneral(false);
     }
 
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        Log.e(TAG, "onDestroy: ");
+    }
 }
