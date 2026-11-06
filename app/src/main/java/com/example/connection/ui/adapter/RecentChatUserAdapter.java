@@ -56,14 +56,17 @@ public class RecentChatUserAdapter extends FirestoreRecyclerAdapter<ChatRoom, Re
                     .error(R.drawable.anonymous_avt)
                     .into(holder.img_avatar);
             holder.tv_username.setText(model.getChatName() != null ? model.getChatName() : "");
-            if (model.getLastMessageSenderId() != null) {
+            String lastMsg = model.getLastMessage() != null ? model.getLastMessage() : "";
+            if ("Đoạn chat ngẫu nhiên đã được tạo".equals(lastMsg)) {
+                holder.tv_message.setText(lastMsg);
+            } else if (model.getLastMessageSenderId() != null) {
                 if (model.getLastMessageSenderId().equals(FirebaseAuth.getInstance().getUid())) {
-                    holder.tv_message.setText("Bạn: " + (model.getLastMessage() != null ? model.getLastMessage() : ""));
+                    holder.tv_message.setText("Bạn: " + lastMsg);
                 } else {
-                    holder.tv_message.setText(model.getLastMessage() != null ? model.getLastMessage() : "");
+                    holder.tv_message.setText(lastMsg);
                 }
             } else {
-                holder.tv_message.setText(model.getLastMessage() != null ? model.getLastMessage() : "");
+                holder.tv_message.setText(lastMsg);
             }
         } else {
             List<String> userIds = model.getUserId();

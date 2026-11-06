@@ -33,6 +33,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.Timestamp;
+import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -105,8 +106,10 @@ public class FragmentCreateGroupChat extends BottomSheetDialogFragment {
             }
         });
 
-        createGroupChatViewModel.getSuccessLiveData().observe(getViewLifecycleOwner(), success ->
-                Toast.makeText(requireContext(), success, Toast.LENGTH_SHORT).show());
+        createGroupChatViewModel.getSuccessLiveData().observe(getViewLifecycleOwner(), success -> {
+            Toast.makeText(requireContext(), success, Toast.LENGTH_SHORT).show();
+            dismiss();
+        });
 
         createGroupChatViewModel.getErrorLiveData().observe(getViewLifecycleOwner(), error ->
                 Toast.makeText(requireContext(), error, Toast.LENGTH_SHORT).show());
@@ -145,19 +148,22 @@ public class FragmentCreateGroupChat extends BottomSheetDialogFragment {
                 searchChat.add(user.getUserName().toLowerCase());
             }
             searchChat.add(groupName.toLowerCase());
+            String myId = FirebaseAuth.getInstance().getUid();
+            Timestamp now = Timestamp.now();
             ChatRoom chatRoom = new ChatRoom(null,
                     groupName,
                     null,
                     adapter.getUserInGroup(),
-                    null,
-                    null,
-                    null,
+                    now,
+                    myId,
+                    "Đã tạo nhóm " + groupName,
                     mapDelete,
                     avtMap,
                     aliasMap,
                     searchChat,
                     "",
                     0);
+            chatRoom.setUnreadCounts(new HashMap<>());
             createGroupChatViewModel.setChatRoomToFireStore(chatRoom);
         });
 

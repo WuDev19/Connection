@@ -135,8 +135,11 @@ public class RecentChatViewModel extends ViewModel {
             return;
         }
 
-        // Bước 1: Ưu tiên tìm những người đang online (active == true)
-        recentChatRepository.getActiveUsers(30).addOnCompleteListener(task -> {
+        // Lấy đúng số lượng người do người dùng nhập (mặc định tối thiểu 1, tối đa 50)
+        int poolSize = (number > 0) ? Math.min(number, 50) : 5;
+
+        // Bước 1: Ưu tiên tìm những người đang online (active == true) theo đúng số lượng poolSize đã chọn
+        recentChatRepository.getActiveUsers(poolSize).addOnCompleteListener(task -> {
             List<User> candidates = new ArrayList<>();
             if (task.isSuccessful() && task.getResult() != null) {
                 for (DocumentSnapshot doc : task.getResult()) {
@@ -153,9 +156,9 @@ public class RecentChatViewModel extends ViewModel {
                 User targetUser = candidates.get(0);
                 createAnonymousChat(targetUser, context, callback);
             } else {
-                // Bước 2: Không có ai online -> Sử dụng Random ID Cursor trên toàn bộ hệ thống
+                // Bước 2: Không có ai online -> Sử dụng Random ID Cursor trên toàn bộ hệ thống theo poolSize
                 String randomKey = recentChatRepository.createChatRoomId();
-                recentChatRepository.getRandomUsers(randomKey, 20).addOnCompleteListener(fallbackTask -> {
+                recentChatRepository.getRandomUsers(randomKey, poolSize).addOnCompleteListener(fallbackTask -> {
                     List<User> fallbackCandidates = new ArrayList<>();
                     if (fallbackTask.isSuccessful() && fallbackTask.getResult() != null) {
                         for (DocumentSnapshot doc : fallbackTask.getResult()) {
@@ -167,8 +170,8 @@ public class RecentChatViewModel extends ViewModel {
                     }
 
                     if (fallbackCandidates.isEmpty()) {
-                        // Quét lấy danh sách người dùng chung nếu randomKey rơi vào đuôi
-                        recentChatRepository.getNumberUser(30).addOnCompleteListener(allTask -> {
+                        // Quét lấy danh sách người dùng chung nếu randomKey rơi vào đuôi theo poolSize
+                        recentChatRepository.getNumberUser(poolSize).addOnCompleteListener(allTask -> {
                             List<User> allCandidates = new ArrayList<>();
                             if (allTask.isSuccessful() && allTask.getResult() != null) {
                                 for (DocumentSnapshot doc : allTask.getResult()) {
@@ -210,14 +213,15 @@ public class RecentChatViewModel extends ViewModel {
         Map<String, String> aliasMap = new HashMap<>();
         aliasMap.put(otherUser.getId(), "Anonymous");
         aliasMap.put(currentId, "Anonymous");
+        Timestamp now = Timestamp.now();
         ChatRoom chatRoom = new ChatRoom(
                 chatroomId,
                 "Anonymous Chat",
                 avt,
                 Arrays.asList(otherUser.getId(), currentId),
-                null,
-                null,
-                null,
+                now,
+                currentId,
+                "Đoạn chat ngẫu nhiên đã được tạo",
                 mapDelete,
                 avtMap,
                 aliasMap,
