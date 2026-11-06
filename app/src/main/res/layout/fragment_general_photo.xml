@@ -48,4 +48,41 @@
             android:textSize="13sp" />
     </LinearLayout>
 
+    <LinearLayout
+        android:id="@+id/layout_new_posts_chip_general"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|center_horizontal"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/bg_new_posts_chip"
+        android:clickable="true"
+        android:elevation="6dp"
+        android:focusable="true"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingTop="9dp"
+        android:paddingEnd="18dp"
+        android:paddingBottom="9dp"
+        android:visibility="gone">
+
+        <ImageView
+            android:id="@+id/iv_new_posts_icon_general"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_marginEnd="8dp"
+            android:contentDescription="@null"
+            android:src="@drawable/icon_arrow_up" />
+
+        <TextView
+            android:id="@+id/tv_new_posts_count_general"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:includeFontPadding="false"
+            android:text="Có bài mới nè! ✨"
+            android:textColor="#2D5A1A"
+            android:textSize="13.5sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
 </FrameLayout>

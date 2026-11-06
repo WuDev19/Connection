@@ -61,8 +61,13 @@ public class PostRepository {
                 });
     }
 
-    // Phân trang tải thêm bài cũ (truy vấn 1 lần duy nhất bằng .get())
+    // Phân trang tải thêm bài cũ (mặc định 10 bài)
     public void loadMorePosts(String userId, OnLoadMoreCallback callback) {
+        loadMorePosts(userId, 10, callback);
+    }
+
+    // Phân trang tải thêm bài cũ với số lượng chỉ định
+    public void loadMorePosts(String userId, int limit, OnLoadMoreCallback callback) {
         DocumentSnapshot cursor = lastPagingDoc != null ? lastPagingDoc : lastTopDoc;
         if (isLoading || isLastPage || cursor == null) return;
         isLoading = true;
@@ -71,7 +76,7 @@ public class PostRepository {
                 .whereArrayContains("friendId", userId)
                 .orderBy("timestamp", Query.Direction.DESCENDING)
                 .startAfter(cursor)
-                .limit(10)
+                .limit(limit)
                 .get()
                 .addOnSuccessListener(snapshots -> {
                     isLoading = false;
