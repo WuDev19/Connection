@@ -10,10 +10,12 @@ import com.example.connection.model.User;
 import com.example.connection.repository.RecentChatRepository;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QuerySnapshot;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,12 +26,38 @@ public class RecentChatViewModel extends ViewModel {
 
     private final RecentChatRepository recentChatRepository;
     private final HashMap<String, MutableLiveData<User>> chatRoomCache = new HashMap<>();
+    private final Map<String, User> userCache = new HashMap<>();
     private final MutableLiveData<ChatRoom> success = new MutableLiveData<>();
     private final String TAG = getClass().getName();
     private final String avt = "https://res.cloudinary.com/dsmw3ean4/image/upload/v1759998024/avatar/hhdyowwt0im321bzdyuu.png";
 
+    public interface OnUserInfoLoadedListener {
+        void onLoaded(User user);
+    }
+
     public RecentChatViewModel(){
         recentChatRepository = new RecentChatRepository();
+    }
+
+    public void getUserInfo(ChatRoom model, OnUserInfoLoadedListener listener) {
+        if (model == null || model.getUserId() == null || listener == null) return;
+        String otherUserId = getOtherUserId(model.getUserId());
+        if (otherUserId == null) return;
+        if (otherUserId.contains("delete")) {
+            String[] otherId = otherUserId.split("_");
+            otherUserId = otherId[0];
+        }
+        final String finalUserId = otherUserId;
+        if (userCache.containsKey(finalUserId)) {
+            listener.onLoaded(userCache.get(finalUserId));
+            return;
+        }
+        recentChatRepository.showInfo(finalUserId, user -> {
+            if (user != null) {
+                userCache.put(finalUserId, user);
+            }
+            listener.onLoaded(user);
+        });
     }
 
     public LiveData<User> getInfo(ChatRoom model){
@@ -91,22 +119,86 @@ public class RecentChatViewModel extends ViewModel {
         return listMutableLiveData;
     }
 
+    public interface OnRandomChatCallback {
+        void onSuccess(ChatRoom chatRoom);
+        void onError(String message);
+    }
+
     public void getNumberUser(int number, Context context){
-        recentChatRepository.getNumberUser(number).addOnCompleteListener(task -> {
-            if(task.isSuccessful()){
-                QuerySnapshot querySnapshot = task.getResult();
-                List<User> list = querySnapshot.toObjects(User.class);
-                Random random = new Random();
-                int randomInt = random.nextInt(list.size());
-                User user = list.get(randomInt);
-                if(user != null){
-                    createAnonymousChat(user, context);
+        startRandomMatching(number, context, null);
+    }
+
+    public void startRandomMatching(int number, Context context, OnRandomChatCallback callback) {
+        String myId = recentChatRepository.getCurrentUserId();
+        if (myId == null) {
+            if (callback != null) callback.onError("Bạn chưa đăng nhập");
+            return;
+        }
+
+        // Bước 1: Ưu tiên tìm những người đang online (active == true)
+        recentChatRepository.getActiveUsers(30).addOnCompleteListener(task -> {
+            List<User> candidates = new ArrayList<>();
+            if (task.isSuccessful() && task.getResult() != null) {
+                for (DocumentSnapshot doc : task.getResult()) {
+                    User u = doc.toObject(User.class);
+                    if (u != null && u.getId() != null && !u.getId().equals(myId)) {
+                        candidates.add(u);
+                    }
                 }
+            }
+
+            if (!candidates.isEmpty()) {
+                // Có người đang online -> Xáo trộn ngẫu nhiên và bốc 1 người
+                Collections.shuffle(candidates);
+                User targetUser = candidates.get(0);
+                createAnonymousChat(targetUser, context, callback);
+            } else {
+                // Bước 2: Không có ai online -> Sử dụng Random ID Cursor trên toàn bộ hệ thống
+                String randomKey = recentChatRepository.createChatRoomId();
+                recentChatRepository.getRandomUsers(randomKey, 20).addOnCompleteListener(fallbackTask -> {
+                    List<User> fallbackCandidates = new ArrayList<>();
+                    if (fallbackTask.isSuccessful() && fallbackTask.getResult() != null) {
+                        for (DocumentSnapshot doc : fallbackTask.getResult()) {
+                            User u = doc.toObject(User.class);
+                            if (u != null && u.getId() != null && !u.getId().equals(myId)) {
+                                fallbackCandidates.add(u);
+                            }
+                        }
+                    }
+
+                    if (fallbackCandidates.isEmpty()) {
+                        // Quét lấy danh sách người dùng chung nếu randomKey rơi vào đuôi
+                        recentChatRepository.getNumberUser(30).addOnCompleteListener(allTask -> {
+                            List<User> allCandidates = new ArrayList<>();
+                            if (allTask.isSuccessful() && allTask.getResult() != null) {
+                                for (DocumentSnapshot doc : allTask.getResult()) {
+                                    User u = doc.toObject(User.class);
+                                    if (u != null && u.getId() != null && !u.getId().equals(myId)) {
+                                        allCandidates.add(u);
+                                    }
+                                }
+                            }
+                            if (!allCandidates.isEmpty()) {
+                                Collections.shuffle(allCandidates);
+                                createAnonymousChat(allCandidates.get(0), context, callback);
+                            } else {
+                                if (callback != null) callback.onError("Hiện không tìm thấy người dùng phù hợp để ghép nối. Hãy thử lại sau!");
+                            }
+                        });
+                    } else {
+                        Collections.shuffle(fallbackCandidates);
+                        createAnonymousChat(fallbackCandidates.get(0), context, callback);
+                    }
+                });
             }
         });
     }
 
-    public void createAnonymousChat(User otherUser, Context context){
+    public void createAnonymousChat(User otherUser, Context context, OnRandomChatCallback callback){
+        if (otherUser == null) {
+            if (callback != null) callback.onError("Người dùng không hợp lệ");
+            return;
+        }
         String chatroomId = recentChatRepository.createChatRoomId();
         String currentId = recentChatRepository.getCurrentUserId();
         Map<String, Long> mapDelete = new HashMap<>();
@@ -132,16 +224,24 @@ public class RecentChatViewModel extends ViewModel {
                 new ArrayList<>(),
                 "",
                 1);
+        chatRoom.setUnreadCounts(new HashMap<>());
         recentChatRepository.createChatRoom(chatRoom).addOnCompleteListener(task -> {
             if(task.isSuccessful()){
                 success.setValue(chatRoom);
                 Log.e("deleteRandomChat", "createAnonymousChat: " + chatroomId);
                 recentChatRepository.scheduleDeleteRandomChat(context, chatroomId);
+                if (callback != null) callback.onSuccess(chatRoom);
             }
             else {
-                Log.e(TAG, "onComplete: " + Objects.requireNonNull(task.getException()).getMessage());
+                String errorMsg = task.getException() != null ? task.getException().getMessage() : "Lỗi tạo phòng chat";
+                Log.e(TAG, "onComplete: " + errorMsg);
+                if (callback != null) callback.onError(errorMsg);
             }
         });
+    }
+
+    public void createAnonymousChat(User otherUser, Context context){
+        createAnonymousChat(otherUser, context, null);
     }
 
     public LiveData<ChatRoom> getSuccess() {

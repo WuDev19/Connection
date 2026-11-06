@@ -120,6 +120,8 @@ public class FragmentShowPhoto extends Fragment {
                 }
             }
         });
+
+        backPress();
     }
 
     private void setUpRecyclerView() {
@@ -561,21 +563,37 @@ public class FragmentShowPhoto extends Fragment {
     }
 
     private void backPress() {
-        requireActivity().getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+        requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
-                MainActivity mainActivity = (MainActivity) requireActivity();
-                FragmentManager manager = mainActivity.getSupportFragmentManager();
-                fragmentGeneralPhoto = (FragmentGeneralPhoto) manager.findFragmentByTag("FragmentGeneralPhoto");
-                if (fragmentGeneralPhoto == null) fragmentGeneralPhoto = new FragmentGeneralPhoto();
-                if (mainActivity.isClick()) {
+                MainActivity mainActivity = (MainActivity) getActivity();
+                if (mainActivity == null) return;
+
+                // Nếu đây là FragmentShowPhoto được mở từ GeneralPhoto (xem chi tiết 1 ảnh)
+                if (isGeneralClick) {
                     MediaPlayerUtil.getInstance().pauseMusic();
                     MediaPlayerUtil.getInstance().setIsInGeneral(true);
+                    FragmentManager manager = mainActivity.getSupportFragmentManager();
+                    fragmentGeneralPhoto = (FragmentGeneralPhoto) manager.findFragmentByTag("FragmentGeneralPhoto");
+                    if (fragmentGeneralPhoto == null) fragmentGeneralPhoto = new FragmentGeneralPhoto();
                     manager.beginTransaction()
-                            .replace(R.id.frame_layout, fragmentGeneralPhoto)
+                            .replace(R.id.frame_layout, fragmentGeneralPhoto, "FragmentGeneralPhoto")
                             .commit();
-                } else {
-                    ViewPager2 viewPager2 = mainActivity.findViewById(R.id.view_pager);
+                    return;
+                }
+
+                // Nếu đang ở màn hình GeneralPhoto che lên màn hình (isClick == true):
+                // ShowPhoto trong ViewPager KHÔNG can thiệp, nhường quyền cho GeneralPhoto xử lý
+                if (mainActivity.isClick()) {
+                    setEnabled(false);
+                    requireActivity().getOnBackPressedDispatcher().onBackPressed();
+                    setEnabled(true);
+                    return;
+                }
+
+                // Bình thường: Vuốt về tab camera (0)
+                ViewPager2 viewPager2 = mainActivity.findViewById(R.id.view_pager);
+                if (viewPager2 != null && viewPager2.getCurrentItem() != 0) {
                     viewPager2.setCurrentItem(0);
                 }
             }
@@ -602,7 +620,6 @@ public class FragmentShowPhoto extends Fragment {
     public void onResume() {
         super.onResume();
         playMusicWhenBackPress();
-        backPress();
         Log.e("testrealtime", "onResume: ");
         showPhotoViewModel.updateSeenPost(requireContext());
     }

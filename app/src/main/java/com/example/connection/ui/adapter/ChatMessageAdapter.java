@@ -17,8 +17,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.example.connection.R;
 import com.example.connection.model.ChatMessage;
-import com.firebase.ui.firestore.FirestoreRecyclerAdapter;
-import com.firebase.ui.firestore.FirestoreRecyclerOptions;
 import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.ArrayList;
@@ -27,7 +25,7 @@ import java.util.Map;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
-public class ChatMessageAdapter extends FirestoreRecyclerAdapter<ChatMessage, ChatMessageAdapter.ChatMessageViewHolder> {
+public class ChatMessageAdapter extends RecyclerView.Adapter<ChatMessageAdapter.ChatMessageViewHolder> {
 
     private final Context context;
     private final String TAG = this.getClass().getName();
@@ -37,9 +35,9 @@ public class ChatMessageAdapter extends FirestoreRecyclerAdapter<ChatMessage, Ch
     private final List<String> emoteList;
     private final String myId = FirebaseAuth.getInstance().getUid();
     private final List<Integer> positionIsShowingEmote = new ArrayList<>();
+    private final List<ChatMessage> messageList = new ArrayList<>();
 
-    public ChatMessageAdapter(@NonNull FirestoreRecyclerOptions<ChatMessage> options, Context context, OnItemClick onItemClick, Map<String, String> avtSender, Map<String, String> aliasSender, List<String> emoteList) {
-        super(options);
+    public ChatMessageAdapter(Context context, OnItemClick onItemClick, Map<String, String> avtSender, Map<String, String> aliasSender, List<String> emoteList) {
         this.context = context;
         this.onItemClick = onItemClick;
         this.avtSender = avtSender;
@@ -104,8 +102,79 @@ public class ChatMessageAdapter extends FirestoreRecyclerAdapter<ChatMessage, Ch
         tvEmote.setOnClickListener(view -> onItemClick.onMessageClickToShowEmote(idMessage, emoteMap));
     }
 
+    @SuppressLint("NotifyDataSetChanged")
+    public void setMessages(List<ChatMessage> list) {
+        this.messageList.clear();
+        if (list != null) {
+            this.messageList.addAll(list);
+        }
+        notifyDataSetChanged();
+    }
+
+    public void addOrUpdateMessage(ChatMessage message) {
+        if (message == null || message.getIdMessage() == null) return;
+        int idx = findPositionById(message.getIdMessage());
+        if (idx != -1) {
+            messageList.set(idx, message);
+            notifyItemChanged(idx);
+        } else {
+            messageList.add(0, message);
+            notifyItemInserted(0);
+        }
+    }
+
+    public void updateMessage(ChatMessage message) {
+        if (message == null || message.getIdMessage() == null) return;
+        int idx = findPositionById(message.getIdMessage());
+        if (idx != -1) {
+            messageList.set(idx, message);
+            notifyItemChanged(idx);
+        }
+    }
+
+    public void removeMessage(String idMessage) {
+        if (idMessage == null) return;
+        int idx = findPositionById(idMessage);
+        if (idx != -1) {
+            messageList.remove(idx);
+            notifyItemRemoved(idx);
+        }
+    }
+
+    public void addOlderMessages(List<ChatMessage> olderMessages) {
+        if (olderMessages == null || olderMessages.isEmpty()) return;
+        int startPos = messageList.size();
+        messageList.addAll(olderMessages);
+        notifyItemRangeInserted(startPos, olderMessages.size());
+    }
+
+    public Long getOldestTimestamp() {
+        if (messageList.isEmpty()) return null;
+        return messageList.get(messageList.size() - 1).getTimestamp();
+    }
+
+    public int findPositionById(String idMessage) {
+        for (int i = 0; i < messageList.size(); i++) {
+            if (idMessage.equals(messageList.get(i).getIdMessage())) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    public ChatMessage getItem(int position) {
+        return (position >= 0 && position < messageList.size()) ? messageList.get(position) : null;
+    }
+
     @Override
-    protected void onBindViewHolder(@NonNull ChatMessageViewHolder holder, int position, @NonNull ChatMessage model) {
+    public int getItemCount() {
+        return messageList.size();
+    }
+
+    @Override
+    public void onBindViewHolder(@NonNull ChatMessageViewHolder holder, int position) {
+        ChatMessage model = messageList.get(position);
+        if (model == null) return;
 
         holder.recyclerViewEmoteLeft.setAdapter(null);
         holder.recyclerViewEmoteLeft.setVisibility(View.GONE);

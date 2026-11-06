@@ -14,6 +14,7 @@ import com.example.connection.data.worker.DeleteWork;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldPath;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QuerySnapshot;
@@ -114,6 +115,20 @@ public class RecentChatRepository {
                         Log.e(TAG, "searchChatRoom: loi" + Objects.requireNonNull(task.getException()).getMessage());
                     }
                 });
+    }
+
+    public Task<QuerySnapshot> getActiveUsers(int limit){
+        return db.collection("users")
+                .whereEqualTo("active", true)
+                .limit(limit)
+                .get();
+    }
+
+    public Task<QuerySnapshot> getRandomUsers(String randomKey, int limit){
+        return db.collection("users")
+                .whereGreaterThanOrEqualTo(FieldPath.documentId(), randomKey)
+                .limit(limit)
+                .get();
     }
 
     public Task<QuerySnapshot> getNumberUser(int number){

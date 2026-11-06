@@ -47,6 +47,7 @@ public class FragmentGeneralPhoto extends Fragment {
     private Runnable bounceRunnable;
     private final String TAG = "FragmentGeneralPhoto";
     private FragmentHome fragmentHome;
+    private OnBackPressedCallback generalPhotoBackCallback;
 
     public FragmentGeneralPhoto() {
     }
@@ -349,21 +350,36 @@ public class FragmentGeneralPhoto extends Fragment {
     }
 
     private void setupBackPress() {
-        requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), new OnBackPressedCallback(true) {
+        generalPhotoBackCallback = new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
-                MainActivity mainActivity = (MainActivity) requireActivity();
+                MainActivity mainActivity = (MainActivity) getActivity();
+                if (mainActivity == null) return;
                 mainActivity.setClick(false);
-                FragmentManager manager = requireActivity().getSupportFragmentManager();
+                MediaPlayerUtil.getInstance().setIsInGeneral(false);
+                MediaPlayerUtil.getInstance().setWhenBackPressFromGeneral(true);
+                FragmentManager manager = mainActivity.getSupportFragmentManager();
                 fragmentHome = (FragmentHome) manager.findFragmentByTag("FragmentHome");
                 if (fragmentHome == null) fragmentHome = new FragmentHome();
                 manager.beginTransaction()
-                        .replace(R.id.frame_layout, fragmentHome)
+                        .replace(R.id.frame_layout, fragmentHome, "FragmentHome")
                         .commit();
-                MediaPlayerUtil.getInstance().setWhenBackPressFromGeneral(true);
-                Log.e("backpress", "handleOnBackPressed: ");
+                Log.e("backpress", "handleOnBackPressed: returned to FragmentHome");
             }
-        });
+        };
+        requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), generalPhotoBackCallback);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        MainActivity mainActivity = (MainActivity) getActivity();
+        if (mainActivity != null) {
+            mainActivity.setClick(true);
+        }
+        if (generalPhotoBackCallback != null) {
+            generalPhotoBackCallback.setEnabled(true);
+        }
     }
 
     @Override

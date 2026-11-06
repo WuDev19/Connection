@@ -73,12 +73,9 @@ public class RecentChatActivity extends AppCompatActivity {
 
         recentChatViewModel.getSuccess().observe(this, chatRoom -> {
             if(chatRoom != null){
-                if(dialog.isShowing()){
+                if(dialog != null && dialog.isShowing()){
                     dialog.dismiss();
                 }
-                Intent intent = new Intent(RecentChatActivity.this, ChatActivity.class);
-                intent.putExtra("chat_room", chatRoom);
-                startActivity(intent);
             }
         });
 
@@ -119,11 +116,13 @@ public class RecentChatActivity extends AppCompatActivity {
             }
             btn_cancel.setOnClickListener(view23 -> dialog.dismiss());
             btn_start.setOnClickListener(view25 -> {
-                btn_start.setEnabled(false);
-                img_add.setEnabled(false);
-                img_sub.setEnabled(false);
-                edt_quantity.setEnabled(false);
-                int number = Integer.parseInt(edt_quantity.getText().toString());
+                int number = 5;
+                try {
+                    String text = edt_quantity.getText().toString().trim();
+                    number = text.isEmpty() ? 5 : Integer.parseInt(text);
+                } catch (Exception e) {
+                    number = 5;
+                }
                 if(number > 50){
                     Toast.makeText(RecentChatActivity.this, "Tối đa 50 người", Toast.LENGTH_LONG).show();
                     return;
@@ -131,6 +130,10 @@ public class RecentChatActivity extends AppCompatActivity {
                     Toast.makeText(RecentChatActivity.this, "Tối thiểu 1 người", Toast.LENGTH_LONG).show();
                     return;
                 }
+                btn_start.setEnabled(false);
+                img_add.setEnabled(false);
+                img_sub.setEnabled(false);
+                edt_quantity.setEnabled(false);
                 List<Integer> listAvt = Arrays.asList(R.drawable.anonymous_avt,
                         R.drawable.anonymous_avt,
                         R.drawable.anonymous_avt,
@@ -157,6 +160,8 @@ public class RecentChatActivity extends AppCompatActivity {
                         }
                         else {
                             btn_confirm.setVisibility(View.VISIBLE);
+                            btn_confirm.setEnabled(true);
+                            btn_confirm.setText("Bắt đầu chat");
                             btn_start.setEnabled(true);
                             btn_start.setVisibility(View.GONE);
                         }
@@ -164,8 +169,35 @@ public class RecentChatActivity extends AppCompatActivity {
                 };
                 handlerRandom.post(runnableRandom);
             });
-            btn_confirm.setOnClickListener(view24 ->
-                    recentChatViewModel.getNumberUser(Integer.parseInt(edt_quantity.getText().toString()), getApplicationContext()));
+            btn_confirm.setOnClickListener(view24 -> {
+                btn_confirm.setEnabled(false);
+                btn_confirm.setText("Đang ghép nối...");
+                int number = 5;
+                try {
+                    String text = edt_quantity.getText().toString().trim();
+                    number = text.isEmpty() ? 5 : Integer.parseInt(text);
+                } catch (Exception e) {
+                    number = 5;
+                }
+                recentChatViewModel.startRandomMatching(number, getApplicationContext(), new RecentChatViewModel.OnRandomChatCallback() {
+                    @Override
+                    public void onSuccess(ChatRoom chatRoom) {
+                        if (dialog != null && dialog.isShowing()) {
+                            dialog.dismiss();
+                        }
+                        Intent intent = new Intent(RecentChatActivity.this, ChatActivity.class);
+                        intent.putExtra("chat_room", chatRoom);
+                        startActivity(intent);
+                    }
+
+                    @Override
+                    public void onError(String message) {
+                        btn_confirm.setEnabled(true);
+                        btn_confirm.setText("Bắt đầu chat");
+                        Toast.makeText(RecentChatActivity.this, message, Toast.LENGTH_LONG).show();
+                    }
+                });
+            });
             img_add.setOnClickListener(view2 -> {
                 int count = Integer.parseInt(edt_quantity.getText().toString()) + 1;
                 if(count > 50) return;

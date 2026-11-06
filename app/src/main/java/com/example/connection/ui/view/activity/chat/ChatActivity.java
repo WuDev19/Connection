@@ -43,7 +43,7 @@ import com.example.connection.ui.view.fragment.FragmentChangeAlias;
 import com.example.connection.ui.view.fragment.FragmentChangeBackgroundChat;
 import com.example.connection.ui.view.fragment.FragmentChangeInfoChat;
 import com.example.connection.ui.viewmodel.ChatViewModel;
-import com.firebase.ui.firestore.FirestoreRecyclerOptions;
+import com.example.connection.repository.ChatRepository;
 import com.google.android.material.card.MaterialCardView;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
@@ -75,6 +75,8 @@ public class ChatActivity extends AppCompatActivity {
     private String urlVideo;
     private ChatRoom chatRoom;
     private String otherId;
+    private boolean isLoadingOlder = false;
+    private boolean hasMoreOlder = true;
     private final List<String> emoteList = Arrays.asList(
             "\uD83D\uDC4D",
             "\uD83D\uDE02",
@@ -230,7 +232,14 @@ public class ChatActivity extends AppCompatActivity {
         });
 
         chatViewModel.getChatRoomListeningLiveData().observe(this, chatRoomNew -> {
-            if (chatRoomNew == null || chatRoomNew.getIsRandom() == 1) return;
+            if (chatRoomNew == null) {
+                if (chatRoom != null && chatRoom.getIsRandom() == 1 && !isFinishing()) {
+                    Toast.makeText(ChatActivity.this, "Cuộc trò chuyện ẩn danh đã kết thúc sau 15 phút", Toast.LENGTH_LONG).show();
+                    finish();
+                }
+                return;
+            }
+            if (chatRoomNew.getIsRandom() == 1) return;
             Log.e(TAG, "onCreate: updateChatRoom");
             ChatActivity.this.updateChatRoomUi(chatRoomNew);
             chatRoom = chatRoomNew;
@@ -312,6 +321,7 @@ public class ChatActivity extends AppCompatActivity {
     private void showChatRoomExist(ChatRoom chatRoom) {
         chatViewModel.setChatRoomId(chatRoom.getChatRoomId());
         if (chatRoom.getIsRandom() == 1) {
+            img_info.setVisibility(View.GONE);
             tv_username.setText(chatRoom.getChatName());
             Glide.with(ChatActivity.this)
                     .load(chatRoom.getChatRoomAvt())
@@ -384,22 +394,12 @@ public class ChatActivity extends AppCompatActivity {
         }
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     private void setUpRecyclerViewMessage(ChatRoom chatRoom1) {
-        chatViewModel.createOptions(chatRoom1);
-        chatViewModel.getCreateOptions().removeObservers(this);
-        chatViewModel.getCreateOptions().observe(this, new Observer<Query>() {
-            @SuppressLint("ClickableViewAccessibility")
-            @Override
-            public void onChanged(Query query) {
-                if (query != null) {
-                    FirestoreRecyclerOptions<ChatMessage> options = new FirestoreRecyclerOptions.Builder<ChatMessage>()
-                            .setQuery(query, ChatMessage.class)
-                            .build();
-                    if (adapter != null) {
-                        adapter.stopListening();
-                        recyclerView.setAdapter(null);
-                    }
-                    adapter = new ChatMessageAdapter(options, ChatActivity.this, new ChatMessageAdapter.OnItemClick() {
+        if (adapter != null) {
+            recyclerView.setAdapter(null);
+        }
+        adapter = new ChatMessageAdapter(ChatActivity.this, new ChatMessageAdapter.OnItemClick() {
                         @Override
                         public void onImageClick(String urlPost) {
                             recyclerView.setOnTouchListener((view, motionEvent) -> true);
@@ -491,18 +491,87 @@ public class ChatActivity extends AppCompatActivity {
                             });
                         }
                     }, chatRoom1.getAvtSender(), chatRoom1.getAlias(), emoteList);
-                    manager.setReverseLayout(true);
-                    recyclerView.setLayoutManager(manager);
-                    recyclerView.setAdapter(adapter);
-                    adapter.startListening();
-                    adapter.registerAdapterDataObserver(new RecyclerView.AdapterDataObserver() {
-                        @Override
-                        public void onItemRangeInserted(int positionStart, int itemCount) {
-                            super.onItemRangeInserted(positionStart, itemCount);
-                            recyclerView.smoothScrollToPosition(0);
-                        }
-                    });
+
+        manager.setReverseLayout(true);
+        recyclerView.setLayoutManager(manager);
+        recyclerView.setAdapter(adapter);
+
+        isLoadingOlder = false;
+        hasMoreOlder = true;
+
+        chatViewModel.listenRecentMessages(chatRoom1, new ChatRepository.OnRecentMessagesListener() {
+            @Override
+            public void onInitialLoaded(List<ChatMessage> initialMessages) {
+                adapter.setMessages(initialMessages);
+                if (initialMessages.size() < 30) {
+                    hasMoreOlder = false;
                 }
+                recyclerView.scrollToPosition(0);
+            }
+
+            @Override
+            public void onMessageAdded(ChatMessage message) {
+                int firstVisiblePos = manager.findFirstVisibleItemPosition();
+                adapter.addOrUpdateMessage(message);
+                if (firstVisiblePos <= 1) {
+                    recyclerView.smoothScrollToPosition(0);
+                }
+            }
+
+            @Override
+            public void onMessageModified(ChatMessage message) {
+                adapter.updateMessage(message);
+            }
+
+            @Override
+            public void onMessageRemoved(String idMessage) {
+                adapter.removeMessage(idMessage);
+            }
+
+            @Override
+            public void onError(Exception e) {
+                Log.e(TAG, "listenRecentMessages error: " + (e != null ? e.getMessage() : ""));
+            }
+        });
+
+        recyclerView.clearOnScrollListeners();
+        recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(@NonNull RecyclerView rv, int dx, int dy) {
+                super.onScrolled(rv, dx, dy);
+                int lastVisiblePosition = manager.findLastVisibleItemPosition();
+                int totalItemCount = manager.getItemCount();
+                if (!isLoadingOlder && hasMoreOlder && totalItemCount > 0 && lastVisiblePosition >= totalItemCount - 5) {
+                    loadOlderMessages();
+                }
+            }
+        });
+    }
+
+    private void loadOlderMessages() {
+        if (isLoadingOlder || !hasMoreOlder || adapter == null) return;
+        Long oldestTimestamp = adapter.getOldestTimestamp();
+        if (oldestTimestamp == null) return;
+
+        isLoadingOlder = true;
+        chatViewModel.loadOlderMessages(oldestTimestamp, 30, new ChatRepository.OnOlderMessagesLoadedListener() {
+            @Override
+            public void onLoaded(List<ChatMessage> olderMessages) {
+                isLoadingOlder = false;
+                if (olderMessages == null || olderMessages.isEmpty()) {
+                    hasMoreOlder = false;
+                    return;
+                }
+                if (olderMessages.size() < 30) {
+                    hasMoreOlder = false;
+                }
+                adapter.addOlderMessages(olderMessages);
+            }
+
+            @Override
+            public void onError(Exception e) {
+                isLoadingOlder = false;
+                Log.e(TAG, "loadOlderMessages error: " + (e != null ? e.getMessage() : ""));
             }
         });
     }
@@ -524,14 +593,13 @@ public class ChatActivity extends AppCompatActivity {
         }
         chatViewModel.unregisterSeenMessageListening();
         chatViewModel.unregisterListeningChatRoom();
+        chatViewModel.unregisterRecentMessages();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (adapter != null) {
-            adapter.stopListening();
-        }
+        chatViewModel.unregisterRecentMessages();
         if (exoPlayer != null) {
             exoPlayer.release();
             exoPlayer = null;

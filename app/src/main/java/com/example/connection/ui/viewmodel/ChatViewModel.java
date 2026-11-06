@@ -249,4 +249,35 @@ public class ChatViewModel extends ViewModel {
         return chatRoomListeningLiveData;
     }
 
+    public void listenRecentMessages(ChatRoom room, ChatRepository.OnRecentMessagesListener listener) {
+        if (room == null || room.getChatRoomId() == null) return;
+        Long minTimestamp = 0L;
+        if (room.getDeleteChat() != null && currentUserId != null) {
+            Long deletedTime = room.getDeleteChat().get(currentUserId);
+            if (deletedTime != null) {
+                minTimestamp = deletedTime;
+            }
+        }
+        chatRepository.listenRecentMessages(room.getChatRoomId(), minTimestamp, 30, listener);
+    }
+
+    public void unregisterRecentMessages() {
+        chatRepository.unregisterRecentMessages();
+    }
+
+    public void loadOlderMessages(Long oldestTimestamp, int limit, ChatRepository.OnOlderMessagesLoadedListener callback) {
+        if (chatRoom == null || chatRoom.getChatRoomId() == null) {
+            if (callback != null) callback.onLoaded(new ArrayList<>());
+            return;
+        }
+        Long minTimestamp = 0L;
+        if (chatRoom.getDeleteChat() != null && currentUserId != null) {
+            Long deletedTime = chatRoom.getDeleteChat().get(currentUserId);
+            if (deletedTime != null) {
+                minTimestamp = deletedTime;
+            }
+        }
+        chatRepository.loadOlderMessages(chatRoom.getChatRoomId(), minTimestamp, oldestTimestamp, limit, callback);
+    }
+
 }

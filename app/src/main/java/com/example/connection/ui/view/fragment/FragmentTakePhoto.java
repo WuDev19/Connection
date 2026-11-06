@@ -19,6 +19,7 @@ import android.os.Build;
 import android.os.Bundle;
 
 import androidx.activity.OnBackPressedCallback;
+import com.example.connection.ui.view.activity.MainActivity;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
@@ -206,6 +207,20 @@ public class FragmentTakePhoto extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
+        requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                MainActivity mainActivity = (MainActivity) getActivity();
+                if (mainActivity != null && mainActivity.isClick()) {
+                    setEnabled(false);
+                    requireActivity().getOnBackPressedDispatcher().onBackPressed();
+                    setEnabled(true);
+                    return;
+                }
+                requireActivity().finish();
+            }
+        });
 
         startCamera(previewView);
 
@@ -873,12 +888,6 @@ public class FragmentTakePhoto extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        requireActivity().getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
-            @Override
-            public void handleOnBackPressed() {
-                requireActivity().finish();
-            }
-        });
         if (musicPlayer != null && !musicPlayer.isPlaying()) musicPlayer.play();
     }
 

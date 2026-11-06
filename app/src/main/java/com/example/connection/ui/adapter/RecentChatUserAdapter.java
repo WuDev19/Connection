@@ -68,12 +68,21 @@ public class RecentChatUserAdapter extends FirestoreRecyclerAdapter<ChatRoom, Re
         } else {
             List<String> userIds = model.getUserId();
             if (userIds != null && userIds.size() <= 2) {
-                recentChatViewModel.getInfo(model).observe(lifecycleOwner, otherUser -> {
+                final String currentChatRoomId = model.getChatRoomId();
+                holder.itemView.setTag(currentChatRoomId);
+                holder.img_active.setVisibility(View.GONE);
+                holder.tv_username.setText("");
+                holder.tv_message.setText("");
+                holder.img_avatar.setImageResource(R.drawable.icon_avatar);
+
+                recentChatViewModel.getUserInfo(model, otherUser -> {
+                    if (!currentChatRoomId.equals(holder.itemView.getTag())) {
+                        return;
+                    }
                     if (otherUser == null) return;
                     if (otherUser.isActive()) {
                         holder.img_active.setVisibility(View.VISIBLE);
                     } else {
-                        Log.e(TAG, "Hide");
                         holder.img_active.setVisibility(View.GONE);
                     }
                     String alias = null;
@@ -135,14 +144,18 @@ public class RecentChatUserAdapter extends FirestoreRecyclerAdapter<ChatRoom, Re
             String fullTime = formatDay.format(model.getLastMessageTimestamp().toDate());
             holder.tv_time.setText(getTimeAgo(fullTime, model.getLastMessageTimestamp()));
         }
-        recentChatViewModel.getIsNotSeen(model).observe(lifecycleOwner, isNotSeen -> {
-            if (isNotSeen != null && isNotSeen) {
-                Log.e("kiemtraseen", "onBindViewHolder: seen");
-                holder.tv_message.setTypeface(null, Typeface.BOLD);
-            } else {
-                holder.tv_message.setTypeface(null, Typeface.NORMAL);
-            }
-        });
+
+        String currentUid = FirebaseAuth.getInstance().getUid();
+        boolean isUnread = false;
+        if (currentUid != null && model.getUnreadCounts() != null && model.getUnreadCounts().containsKey(currentUid)) {
+            Long unreadCount = model.getUnreadCounts().get(currentUid);
+            isUnread = (unreadCount != null && unreadCount > 0);
+        }
+        if (isUnread) {
+            holder.tv_message.setTypeface(null, Typeface.BOLD);
+        } else {
+            holder.tv_message.setTypeface(null, Typeface.NORMAL);
+        }
         holder.relativeLayout.setOnClickListener(view -> set.clickItem(model, holder.tv_message));
     }
 

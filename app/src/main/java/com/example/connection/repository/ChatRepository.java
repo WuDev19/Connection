@@ -30,7 +30,20 @@ public class ChatRepository {
     private final String TAG = getClass().getName();
     private final String currentUserId;
     private User currentUser;
-    private ListenerRegistration seenMessageListening, chatRoomListening, reactionListening;
+    private ListenerRegistration seenMessageListening, chatRoomListening, reactionListening, recentMessagesRegistration;
+
+    public interface OnRecentMessagesListener {
+        void onInitialLoaded(List<ChatMessage> initialMessages);
+        void onMessageAdded(ChatMessage message);
+        void onMessageModified(ChatMessage message);
+        void onMessageRemoved(String idMessage);
+        void onError(Exception e);
+    }
+
+    public interface OnOlderMessagesLoadedListener {
+        void onLoaded(List<ChatMessage> olderMessages);
+        void onError(Exception e);
+    }
 
     public ChatRepository(){
         db = FirebaseFirestore.getInstance();
@@ -79,6 +92,7 @@ public class ChatRepository {
                 .collection("chats")
                 .whereNotEqualTo("senderId", currentUserId)
                 .whereEqualTo("seen", false)
+                .limit(20)
                 .addSnapshotListener((value, error) -> {
                     if(error != null || value == null || value.isEmpty()) return;
                     WriteBatch writeBatch = db.batch();
@@ -173,7 +187,12 @@ public class ChatRepository {
         chatRoomListening = db.collection("chatroom")
                 .document(chatRoom.getChatRoomId())
                 .addSnapshotListener((value, error) -> {
-                    if(value == null || error != null) return;
+                    if(error != null) return;
+                    if(value != null && !value.exists()){
+                        updateChatRoom.onUpdate(null);
+                        return;
+                    }
+                    if(value == null) return;
                     ChatRoom chatRoom1 = value.toObject(ChatRoom.class);
                     if(chatRoom1 != null){
                         updateChatRoom.onUpdate(chatRoom1);
@@ -280,20 +299,22 @@ public class ChatRepository {
 
         if(reactionListening != null){
             reactionListening.remove();
+            reactionListening = null;
         }
-        
-        reactionListening = getChatroomMessageReference(chatRoom.getChatRoomId()).addSnapshotListener((value, error) -> {
-            if(value == null || error != null) return;
-            for(DocumentChange documentChange : value.getDocumentChanges()){
-                if(documentChange.getType() == DocumentChange.Type.MODIFIED){
-                    ChatMessage chatMessage = documentChange.getDocument().toObject(ChatMessage.class);
-                    if(chatMessage.getIdMessage().equals(idMess)){
+        if (chatRoom == null || chatRoom.getChatRoomId() == null || idMess == null) {
+            return mapMutableLiveData;
+        }
+
+        reactionListening = getChatroomMessageReference(chatRoom.getChatRoomId())
+                .document(idMess)
+                .addSnapshotListener((snapshot, error) -> {
+                    if (error != null || snapshot == null || !snapshot.exists()) return;
+                    ChatMessage chatMessage = snapshot.toObject(ChatMessage.class);
+                    if (chatMessage != null && chatMessage.getEmote() != null) {
                         mapMutableLiveData.setValue(chatMessage.getEmote());
-                        Log.e(TAG, "onEvent: modify");
+                        Log.d(TAG, "listeningReaction updated for: " + idMess);
                     }
-                }
-            }
-        });
+                });
         return mapMutableLiveData;
     }
 
@@ -301,7 +322,98 @@ public class ChatRepository {
         if(reactionListening != null){
             Log.e("ChatActivity", "unregisterListeningReaction: ");
             reactionListening.remove();
+            reactionListening = null;
         }
+    }
+
+    public ListenerRegistration listenRecentMessages(String chatRoomId, Long minTimestamp, int limit, OnRecentMessagesListener listener) {
+        if (recentMessagesRegistration != null) {
+            recentMessagesRegistration.remove();
+            recentMessagesRegistration = null;
+        }
+        if (chatRoomId == null || listener == null) return null;
+        long filterTimestamp = (minTimestamp != null) ? minTimestamp : 0L;
+
+        Query query = db.collection("chatroom").document(chatRoomId)
+                .collection("chats")
+                .whereGreaterThanOrEqualTo("timestamp", filterTimestamp)
+                .orderBy("timestamp", Query.Direction.DESCENDING)
+                .limit(limit);
+
+        final boolean[] isInitial = {true};
+
+        recentMessagesRegistration = query.addSnapshotListener((snapshots, error) -> {
+            if (error != null) {
+                listener.onError(error);
+                return;
+            }
+            if (snapshots == null) return;
+
+            if (isInitial[0]) {
+                isInitial[0] = false;
+                List<ChatMessage> list = new ArrayList<>();
+                for (DocumentSnapshot doc : snapshots.getDocuments()) {
+                    ChatMessage msg = doc.toObject(ChatMessage.class);
+                    if (msg != null) {
+                        list.add(msg);
+                    }
+                }
+                listener.onInitialLoaded(list);
+            } else {
+                for (DocumentChange dc : snapshots.getDocumentChanges()) {
+                    ChatMessage msg = dc.getDocument().toObject(ChatMessage.class);
+                    if (msg == null) continue;
+                    switch (dc.getType()) {
+                        case ADDED:
+                            listener.onMessageAdded(msg);
+                            break;
+                        case MODIFIED:
+                            listener.onMessageModified(msg);
+                            break;
+                        case REMOVED:
+                            listener.onMessageRemoved(msg.getIdMessage());
+                            break;
+                    }
+                }
+            }
+        });
+        return recentMessagesRegistration;
+    }
+
+    public void unregisterRecentMessages() {
+        if (recentMessagesRegistration != null) {
+            recentMessagesRegistration.remove();
+            recentMessagesRegistration = null;
+        }
+    }
+
+    public void loadOlderMessages(String chatRoomId, Long minTimestamp, Long oldestTimestamp, int limit, OnOlderMessagesLoadedListener callback) {
+        if (chatRoomId == null || oldestTimestamp == null || callback == null) {
+            if (callback != null) callback.onLoaded(new ArrayList<>());
+            return;
+        }
+        long filterTimestamp = (minTimestamp != null) ? minTimestamp : 0L;
+
+        db.collection("chatroom").document(chatRoomId)
+                .collection("chats")
+                .whereGreaterThanOrEqualTo("timestamp", filterTimestamp)
+                .whereLessThan("timestamp", oldestTimestamp)
+                .orderBy("timestamp", Query.Direction.DESCENDING)
+                .limit(limit)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<ChatMessage> olderMessages = new ArrayList<>();
+                    if (queryDocumentSnapshots != null && !queryDocumentSnapshots.isEmpty()) {
+                        for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                            ChatMessage msg = doc.toObject(ChatMessage.class);
+                            if (msg != null) {
+                                olderMessages.add(msg);
+                            }
+                        }
+                    }
+                    callback.onLoaded(olderMessages);
+                })
+                .addOnFailureListener(callback::onError);
     }
 
 }
