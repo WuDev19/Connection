@@ -6,7 +6,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
-import com.example.connection.data.local.UserDao;
+import com.example.connection.data.local.MusicDao;
 import com.example.connection.data.local.MusicDatabase;
 import com.example.connection.data.local.MyMusic;
 import com.google.android.gms.tasks.Tasks;
@@ -28,7 +28,7 @@ public class FetchMusicFireStore extends Worker {
     public Result doWork() {
         Log.e(TAG, "doWorkRunning");
         MusicDatabase musicDatabase = MusicDatabase.getInstance(getApplicationContext());
-        UserDao userDao = musicDatabase.userDao();
+        MusicDao musicDao = musicDatabase.musicDao();
         SharedPreferences sharedPreferences = getApplicationContext().getSharedPreferences("app_preferences", Context.MODE_PRIVATE);
         int num = sharedPreferences.getInt("num", 0);
 
@@ -43,7 +43,7 @@ public class FetchMusicFireStore extends Worker {
                     if (documentSnapshot.exists()) {
                         MyMusic myMusic = documentSnapshot.toObject(MyMusic.class);
                         if (myMusic != null) {
-                            userDao.insert(myMusic);
+                            musicDao.insert(myMusic);
                             Log.e(TAG, "fetchMusic: insert " + myMusic.getMusicName());
                         }
                     }

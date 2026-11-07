@@ -1,7 +1,7 @@
 package com.example.connection.repository;
 
 import android.app.Application;
-import com.example.connection.data.local.UserDao;
+import com.example.connection.data.local.MusicDao;
 import com.example.connection.data.local.MusicDatabase;
 import com.example.connection.data.local.MyMusic;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -11,7 +11,7 @@ import java.util.concurrent.Executors;
 
 public class ChooseMusicRepository {
 
-    private final UserDao userDao;
+    private final MusicDao musicDao;
     private final ExecutorService queryRoomService = Executors.newSingleThreadExecutor();
 
     public interface OnGetInitListMusic{
@@ -23,7 +23,7 @@ public class ChooseMusicRepository {
     }
 
     public ChooseMusicRepository(Application application){
-        userDao = MusicDatabase.getInstance(application).userDao();
+        musicDao = MusicDatabase.getInstance(application).musicDao();
     }
 
     public void getInitListMusic(OnGetInitListMusic onGetInitListMusic) {
@@ -39,7 +39,7 @@ public class ChooseMusicRepository {
     }
 
     public void searchMusic(String name, OnSearchMusic onSearchMusic){
-        queryRoomService.execute(() -> onSearchMusic.getListMusic(userDao.getListMusic(name)));
+        queryRoomService.execute(() -> onSearchMusic.getListMusic(musicDao.getListMusic(name)));
     }
 
     public void shutdownExecutor(){

@@ -3,58 +3,14 @@ package com.example.connection.ui.view.fragment;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.graphics.Matrix;
-import android.graphics.Paint;
-
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
-
-import androidx.activity.OnBackPressedCallback;
-import androidx.viewpager2.widget.ViewPager2;
-import com.example.connection.ui.view.activity.MainActivity;
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.camera.core.Camera;
-import androidx.camera.core.CameraControl;
-import androidx.camera.core.CameraSelector;
-import androidx.camera.core.ImageCapture;
-import androidx.camera.core.ImageCaptureException;
-import androidx.camera.core.ImageProxy;
-import androidx.camera.core.Preview;
-import androidx.camera.lifecycle.ProcessCameraProvider;
-import androidx.camera.video.FileOutputOptions;
-import androidx.camera.video.Quality;
-import androidx.camera.video.QualitySelector;
-import androidx.camera.video.Recorder;
-import androidx.camera.video.Recording;
-import androidx.camera.video.VideoCapture;
-import androidx.camera.video.VideoRecordEvent;
-import androidx.camera.view.PreviewView;
-import androidx.cardview.widget.CardView;
-import androidx.core.content.ContextCompat;
-import androidx.fragment.app.Fragment;
-import androidx.lifecycle.ViewModelProvider;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-import androidx.media3.common.MediaItem;
-import androidx.media3.common.Player;
-import androidx.media3.exoplayer.ExoPlayer;
-import androidx.media3.ui.PlayerView;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
 import android.os.Handler;
-import android.os.Message;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.GestureDetector;
@@ -62,128 +18,57 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.FrameLayout;
-import android.widget.ImageButton;
-import android.widget.ImageView;
-import android.widget.ProgressBar;
-import android.widget.TextView;
 import android.widget.Toast;
 
-import com.airbnb.lottie.LottieAnimationView;
-import com.denzcoskun.imageslider.ImageSlider;
+import androidx.activity.OnBackPressedCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
+import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.viewpager2.widget.ViewPager2;
+
 import com.denzcoskun.imageslider.constants.ScaleTypes;
 import com.denzcoskun.imageslider.models.SlideModel;
 import com.example.connection.R;
-import com.example.connection.ui.adapter.ChooseFriendToPostAdapter;
-import com.example.connection.model.Image;
-import com.example.connection.model.SelectionFriendModel;
 import com.example.connection.constants.MediaPlayerUtil;
+import com.example.connection.databinding.FragmentTakePhotoBinding;
+import com.example.connection.model.Image;
+import com.example.connection.ui.camera.CameraManager;
+import com.example.connection.ui.camera.MediaPreviewHandler;
+import com.example.connection.ui.view.activity.MainActivity;
+import com.example.connection.ui.viewmodel.MainViewModel;
 import com.example.connection.ui.viewmodel.TakePhotoViewModel;
-import com.google.android.material.slider.Slider;
-import com.google.android.material.textfield.TextInputEditText;
-import com.google.common.util.concurrent.ListenableFuture;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class FragmentTakePhoto extends Fragment {
 
-    private ImageButton btn_gallery, btn_cancel, btn_rotate, btn_download, btn_take_photo, btn_start_video, btn_red_dot;
-    private LottieAnimationView btn_success;
-    private TextInputEditText edt_status;
-    private ImageView imgFromGallery, img_music;
-    private TextView tv_number_post, tv_music_name, tv_singer;
-    private ProgressBar progressBar;
-    private PreviewView previewView;
-    private PlayerView playerViewVideo;
-    private Preview preview;
-    private Slider slider_zoom;
-    private View view1, view2;
-    private FrameLayout frame_photo_video, frame_slider;
-    private ImageSlider imageSlider;
-    private CardView cardViewSlider;
-    private RecyclerView recycler_view_choose_friend_to_post;
-    private ActivityResultLauncher<Intent> resultLauncher;
-    private ImageCapture imageCapture;
-    private VideoCapture<Recorder> videoCapture;
-    private Recording recording;
-    private ExecutorService cameraExecutor;
-    private CameraControl cameraControl;
-    private ListenableFuture<ProcessCameraProvider> listenableFuture;
-    private CameraSelector.Builder cameraSelector;
-    private ProcessCameraProvider cameraProvider;
-    private boolean checkLancing = true; //cam sau
-    private final String TAG = "FragmentTakePhoto";
-    private Bitmap photo;
-    private ExoPlayer musicPlayer;
+    private static final String TAG = "FragmentTakePhoto";
 
-    private void ensureMusicPlayer() {
-        if (musicPlayer == null && getContext() != null) {
-            musicPlayer = new ExoPlayer.Builder(requireContext().getApplicationContext()).build();
-            musicPlayer.setRepeatMode(Player.REPEAT_MODE_ALL);
-        }
-    }
-    private String urlMusic, musicName, singerName;
-    private ActivityResultLauncher<String> permissionLauncher;
+    private FragmentTakePhotoBinding binding;
+    private CameraManager cameraManager;
+    private MediaPreviewHandler mediaPreviewHandler;
     private TakePhotoViewModel takePhotoViewModel;
-    private final Handler handlerVideo = new Handler();
-    private Runnable runnableVideo, runnableProcess;
-    private ExoPlayer exoPlayer;
-    private File file = null;
-    private boolean isVideo = false;
-    private boolean isStop = false;
-    private long firstTouch, lastTouch;
-    private List<String> listFriendId;
-    private final List<String> tmpFriendList = new ArrayList<>();
-    private List<SelectionFriendModel> selectionFriendList = new ArrayList<>();
-    private ChooseFriendToPostAdapter adapter;
-    private final List<SlideModel> slideModels = new ArrayList<>();
-    private final BroadcastReceiver receiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if ("click_when_take_playing".equals(intent.getAction())) {
-                if (musicPlayer != null && musicPlayer.isPlaying()) {
-                    musicPlayer.pause();
-                }
-            }
-            if ("back_press_when_playing".equals(intent.getAction())) {
-                if (musicPlayer != null && !musicPlayer.isPlaying() && MediaPlayerUtil.getInstance().getPosition() == 0) {
-                    musicPlayer.play();
-                }
-            }
-        }
-    };
+    private MainViewModel mainViewModel;
 
-    private final Handler handler = new Handler(new Handler.Callback() {
-        @Override
-        public boolean handleMessage(@NonNull Message message) {
-            if (message.what == 1) {
-                previewView.setVisibility(View.GONE);
-                photo = (Bitmap) message.obj;
-                if (!checkLancing) {
-                    photo = flipBitmap(photo);
-                }
-                imgFromGallery.setVisibility(View.VISIBLE);
-                imgFromGallery.setImageBitmap(photo);
-                btn_success.setVisibility(View.VISIBLE);
-                btn_success.playAnimation();
-                btn_cancel.setVisibility(View.VISIBLE);
-                edt_status.setVisibility(View.VISIBLE);
-                btn_download.setVisibility(View.VISIBLE);
-                img_music.setVisibility(View.VISIBLE);
-                frame_photo_video.setVisibility(View.GONE);
-                btn_gallery.setVisibility(View.GONE);
-                btn_rotate.setVisibility(View.GONE);
-            }
-            return false;
-        }
-    });
+    private ActivityResultLauncher<Intent> galleryLauncher;
+    private ActivityResultLauncher<String> storagePermissionLauncher;
+
+    private final Handler handlerVideo = new Handler();
+    private Runnable runnableVideo;
+    private Runnable runnableProcess;
+    private long firstTouch;
+    private boolean isRecordingVideo = false;
+
+    private final List<SlideModel> slideModels = new ArrayList<>();
+    private List<String> listFriendId = new ArrayList<>();
 
     public FragmentTakePhoto() {
     }
@@ -192,16 +77,17 @@ public class FragmentTakePhoto extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         takePhotoViewModel = new ViewModelProvider(this).get(TakePhotoViewModel.class);
-        registerResult();
-        registerPermission();
+        mainViewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
+        cameraManager = new CameraManager();
+
+        registerLaunchers();
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_take_photo, container, false);
-        initView(view);
-        return view;
+        binding = FragmentTakePhotoBinding.inflate(inflater, container, false);
+        return binding.getRoot();
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -209,6 +95,93 @@ public class FragmentTakePhoto extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        initMediaPreviewHandler();
+        setupBackPress();
+        setupGestures();
+        setupSliderZoom();
+        setupRotateCamera();
+        setupGalleryButton();
+        setupObservers();
+
+        cameraManager.startCamera(
+                requireContext(),
+                getViewLifecycleOwner(),
+                binding.imgTakePhoto,
+                requireActivity().getWindowManager().getDefaultDisplay().getRotation(),
+                null
+        );
+    }
+
+    private void registerLaunchers() {
+        galleryLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
+                        Uri uri = result.getData().getData();
+                        if (uri != null) {
+                            try {
+                                Bitmap bitmap = MediaStore.Images.Media.getBitmap(requireContext().getContentResolver(), uri);
+                                mediaPreviewHandler.showGalleryPhotoPreview(uri, bitmap);
+                            } catch (IOException e) {
+                                Log.e(TAG, "Error reading image from gallery: " + e.getMessage(), e);
+                            }
+                        }
+                    }
+                }
+        );
+
+        storagePermissionLauncher = registerForActivityResult(
+                new ActivityResultContracts.RequestPermission(),
+                isGranted -> {
+                    if (isGranted) {
+                        mediaPreviewHandler.performDownload();
+                    } else {
+                        Toast.makeText(requireContext(), "Lưu không thành công: Cần cấp quyền bộ nhớ", Toast.LENGTH_LONG).show();
+                    }
+                }
+        );
+    }
+
+    private void initMediaPreviewHandler() {
+        mediaPreviewHandler = new MediaPreviewHandler(
+                binding,
+                requireContext(),
+                requireActivity().getSupportFragmentManager(),
+                takePhotoViewModel
+        );
+
+        mediaPreviewHandler.setupListeners(
+                (photo, videoFile, urlMusic, musicName, singerName, status, isVideo, friendIds) -> {
+                    List<String> targetFriends = friendIds.isEmpty() ? listFriendId : friendIds;
+                    takePhotoViewModel.uploadPost(
+                            photo,
+                            videoFile,
+                            urlMusic,
+                            musicName,
+                            singerName,
+                            status,
+                            requireContext().getApplicationContext(),
+                            isVideo,
+                            targetFriends
+                    );
+                },
+                () -> {
+                    if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                            != PackageManager.PERMISSION_GRANTED) {
+                        storagePermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+                    } else {
+                        mediaPreviewHandler.performDownload();
+                    }
+                }
+        );
+
+        binding.frameSlider.setScaleX(0.13f);
+        binding.frameSlider.setScaleY(0.35f);
+        binding.sliderZoom.setEnabled(false);
+        binding.viewSwipe1.setBackgroundResource(R.drawable.button_corner_black);
+    }
+
+    private void setupBackPress() {
         requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
@@ -226,70 +199,55 @@ public class FragmentTakePhoto extends Fragment {
                     return;
                 }
 
-                if (btn_cancel != null && btn_cancel.getVisibility() == View.VISIBLE) {
-                    btn_cancel.performClick();
+                if (mediaPreviewHandler != null && mediaPreviewHandler.isEditingOrPreviewing()) {
+                    mediaPreviewHandler.cancel();
                     return;
                 }
 
                 requireActivity().finish();
             }
         });
+    }
 
-        startCamera(previewView);
-
-        showGallery();
-
-        rotateCamera();
-
-        downloadPost();
-
-        cancelSendPhoto();
-
-        sendPhotoToFirebaseFireStore();
-
+    @SuppressLint("ClickableViewAccessibility")
+    private void setupGestures() {
+        // Chụp ảnh: Chạm 1 lần để chụp, vuốt ngang để đổi sang chế độ quay video
         GestureDetector gestureDetectorPhoto = new GestureDetector(requireContext(), new GestureDetector.SimpleOnGestureListener() {
             @Override
             public boolean onSingleTapUp(@NonNull MotionEvent e) {
-                frame_slider.animate()
-                        .scaleX(0.13f)
-                        .scaleY(0.35f)
-                        .withEndAction(() -> {
-                            frame_slider.setBackgroundTintList(ColorStateList.valueOf(Color.WHITE));
-                            slider_zoom.setEnabled(false);
-                            frame_slider.setVisibility(View.GONE);
-                        })
-                        .start();
+                collapseZoomSlider();
                 takePhoto();
                 return true;
             }
 
             @Override
             public boolean onScroll(@Nullable MotionEvent e1, @NonNull MotionEvent e2, float distanceX, float distanceY) {
-                btn_take_photo.animate()
+                binding.buttonTakePhoto.animate()
                         .rotationYBy(180f)
                         .setDuration(500)
                         .withEndAction(() -> {
-                            btn_start_video.setVisibility(View.VISIBLE);
-                            btn_take_photo.setVisibility(View.GONE);
-                            view1.setBackgroundResource(R.drawable.button_corner);
-                            view2.setBackgroundResource(R.drawable.button_corner_black);
+                            binding.buttonStartVideo.setVisibility(View.VISIBLE);
+                            binding.buttonTakePhoto.setVisibility(View.GONE);
+                            binding.viewSwipe1.setBackgroundResource(R.drawable.button_corner);
+                            binding.viewSwipe2.setBackgroundResource(R.drawable.button_corner_black);
                         })
                         .start();
                 return true;
             }
         });
 
-        btn_take_photo.setOnTouchListener((view3, motionEvent) -> {
-            if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
-                view3.getParent().requestDisallowInterceptTouchEvent(true);
+        binding.buttonTakePhoto.setOnTouchListener((v, event) -> {
+            if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                v.getParent().requestDisallowInterceptTouchEvent(true);
             }
-            if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
-                view3.getParent().requestDisallowInterceptTouchEvent(false);
+            if (event.getAction() == MotionEvent.ACTION_UP) {
+                v.getParent().requestDisallowInterceptTouchEvent(false);
             }
-            gestureDetectorPhoto.onTouchEvent(motionEvent);
+            gestureDetectorPhoto.onTouchEvent(event);
             return true;
         });
 
+        // Quay video: Chạm để nhắc, giữ lâu để quay, vuốt ngang để đổi về chụp ảnh
         GestureDetector gestureDetectorVideo = new GestureDetector(requireContext(), new GestureDetector.SimpleOnGestureListener() {
             @Override
             public boolean onSingleTapUp(@NonNull MotionEvent e) {
@@ -299,626 +257,236 @@ public class FragmentTakePhoto extends Fragment {
 
             @Override
             public void onLongPress(@NonNull MotionEvent e) {
-                firstTouch = System.currentTimeMillis();
-                btn_start_video.animate()
-                        .alpha(0f)
-                        .withEndAction(() -> {
-                            btn_start_video.setVisibility(View.GONE);
-                            btn_red_dot.setVisibility(View.VISIBLE);
-                            progressBar.setVisibility(View.VISIBLE);
-                            progressBar.setMax(100);
-                        })
-                        .start();
                 startVideo();
             }
 
             @Override
             public boolean onScroll(@Nullable MotionEvent e1, @NonNull MotionEvent e2, float distanceX, float distanceY) {
-                btn_start_video.animate()
+                binding.buttonStartVideo.animate()
                         .rotationYBy(180f)
                         .setDuration(500)
                         .withEndAction(() -> {
-                            btn_take_photo.setVisibility(View.VISIBLE);
-                            btn_start_video.setVisibility(View.GONE);
-                            view1.setBackgroundResource(R.drawable.button_corner_black);
-                            view2.setBackgroundResource(R.drawable.button_corner);
+                            binding.buttonTakePhoto.setVisibility(View.VISIBLE);
+                            binding.buttonStartVideo.setVisibility(View.GONE);
+                            binding.viewSwipe1.setBackgroundResource(R.drawable.button_corner_black);
+                            binding.viewSwipe2.setBackgroundResource(R.drawable.button_corner);
                         })
                         .start();
                 return true;
             }
         });
 
-        btn_start_video.setOnTouchListener((view33, motionEvent) -> {
-            if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
-                view33.getParent().requestDisallowInterceptTouchEvent(true);
-            }
-            if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
-                lastTouch = System.currentTimeMillis();
-                Log.e("thoi gian giu", "onCreateView: " + (lastTouch - firstTouch));
-                view33.getParent().requestDisallowInterceptTouchEvent(false);
-                isStop = true;
+        binding.buttonStartVideo.setOnTouchListener((v, event) -> {
+            if (event.getAction() == MotionEvent.ACTION_UP && isRecordingVideo) {
                 stopVideo();
             }
-            gestureDetectorVideo.onTouchEvent(motionEvent);
+            gestureDetectorVideo.onTouchEvent(event);
             return true;
         });
-
-        frame_slider.setOnClickListener(view32 -> {
-            frame_slider.setBackgroundTintList(ColorStateList.valueOf(Color.TRANSPARENT));
-            frame_slider.animate()
-                    .scaleX(1f)
-                    .scaleY(1f)
-                    .setDuration(500)
-                    .withEndAction(() -> slider_zoom.setEnabled(true))
-                    .start();
-        });
-
-        previewView.setOnClickListener(view34 ->
-                frame_slider.animate()
-                        .scaleX(0.13f)
-                        .scaleY(0.35f)
-                        .withEndAction(() -> {
-                            frame_slider.setBackgroundTintList(ColorStateList.valueOf(Color.WHITE));
-                            slider_zoom.setEnabled(false);
-                        })
-                        .start());
-
-        slider_zoom.addOnChangeListener((slider, value, fromUser) -> cameraControl.setLinearZoom(value));
-
-        takePhotoViewModel.getSuccessLiveData().observe(getViewLifecycleOwner(), success -> {
-            Toast.makeText(FragmentTakePhoto.this.requireContext(), success, Toast.LENGTH_SHORT).show();
-            if (!tmpFriendList.isEmpty()) {
-                tmpFriendList.clear();
-            }
-            if (isVideo) {
-                if (file != null && file.delete()) Log.e(TAG, "onChanged: xoa cache");
-            }
-        });
-
-        takePhotoViewModel.getFailureLiveData().observe(getViewLifecycleOwner(), error -> {
-            Toast.makeText(requireContext(), error, Toast.LENGTH_SHORT).show();
-            if (!tmpFriendList.isEmpty()) {
-                tmpFriendList.clear();
-            }
-            if (isVideo) {
-                if (file != null && file.delete()) Log.e(TAG, "onChanged: xoa cache");
-            }
-        });
-
-        takePhotoViewModel.getNumberOfNewPost().observe(getViewLifecycleOwner(), unseenImage -> {
-            FragmentTakePhoto.this.updatePostCountUI(unseenImage.size());
-            slideModels.clear();
-            for (Image image : unseenImage) {
-                if (image.getImageUrl() != null) {
-                    SlideModel slideModel = new SlideModel(image.getImageUrl(), ScaleTypes.CENTER_CROP);
-                    slideModels.add(slideModel);
-                }
-            }
-            imageSlider.setImageList(slideModels);
-        });
-
-        takePhotoViewModel.getListFriendLiveData().observe(getViewLifecycleOwner(), list -> {
-            if (list != null) {
-                listFriendId = list;
-            } else listFriendId = new ArrayList<>();
-        });
-
-        takePhotoViewModel.getSelectionFriendLiveData().observe(getViewLifecycleOwner(), selectionFriendModels ->
-                selectionFriendList = selectionFriendModels);
-
-        adapter = new ChooseFriendToPostAdapter(requireContext(), selectionFriendList, model -> {
-            if (model.isSelected()) {
-                tmpFriendList.add(model.getId());
-            } else {
-                tmpFriendList.remove(model.getId());
-            }
-        });
-        recycler_view_choose_friend_to_post.setAdapter(adapter);
-        recycler_view_choose_friend_to_post.setLayoutManager(new LinearLayoutManager(
-                requireContext(),
-                LinearLayoutManager.HORIZONTAL,
-                false));
-        recycler_view_choose_friend_to_post.setItemAnimator(null);
-    }
-
-    private void cancelSendPhoto() {
-        btn_cancel.setOnClickListener(view -> {
-            if (isVideo) {
-                if (file != null && file.delete())
-                    Log.e(TAG, "cancelSendPhoto: xoa cache thanh cong");
-                playerViewVideo.setVisibility(View.GONE);
-                btn_start_video.setAlpha(1f);
-                file = null;
-                isVideo = false;
-            } else {
-                imgFromGallery.setVisibility(View.GONE);
-                isVideo = true;
-            }
-            btn_cancel.setVisibility(View.GONE);
-            btn_success.setVisibility(View.GONE);
-            btn_download.setVisibility(View.GONE);
-            edt_status.setVisibility(View.GONE);
-            edt_status.setText("");
-            img_music.setVisibility(View.GONE);
-            tv_music_name.setVisibility(View.GONE);
-            tv_singer.setVisibility(View.GONE);
-            previewView.setVisibility(View.VISIBLE);
-            frame_photo_video.setVisibility(View.VISIBLE);
-            btn_gallery.setVisibility(View.VISIBLE);
-            btn_rotate.setVisibility(View.VISIBLE);
-            frame_slider.setVisibility(View.VISIBLE);
-            recycler_view_choose_friend_to_post.setAdapter(null);
-            recycler_view_choose_friend_to_post.setVisibility(View.GONE);
-            tmpFriendList.clear();
-            if (musicPlayer != null) {
-                musicPlayer.stop();
-                musicPlayer.clearMediaItems();
-            }
-        });
-    }
-
-    private void sendPhotoToFirebaseFireStore() {
-        img_music.setOnClickListener(view -> {
-            FragmentChooseMusic fragmentChooseMusic = new FragmentChooseMusic(new FragmentChooseMusic.onSelectedMusic() {
-                @Override
-                public void onSelected(String name, String singer, String url, int position) {
-                    urlMusic = url;
-                    musicName = name;
-                    singerName = singer;
-                    tv_music_name.setVisibility(View.VISIBLE);
-                    name = addPaddingForMarquee(name, tv_music_name);
-                    tv_music_name.setText(name);
-                    tv_music_name.setSelected(true);
-                    tv_singer.setVisibility(View.VISIBLE);
-                    tv_singer.setText(singer);
-                    ensureMusicPlayer();
-                    if (musicPlayer != null) {
-                        musicPlayer.setMediaItem(MediaItem.fromUri(url));
-                        musicPlayer.prepare();
-                        musicPlayer.play();
-                    }
-                }
-
-                @Override
-                public void onShow() {
-                    if (musicPlayer != null) {
-                        musicPlayer.pause();
-                    }
-                }
-
-                @Override
-                public void onHide() {
-                    if (musicPlayer != null) {
-                        musicPlayer.play();
-                    }
-                }
-            });
-            fragmentChooseMusic.show(requireActivity().getSupportFragmentManager(), fragmentChooseMusic.getTag());
-        });
-        btn_success.setOnClickListener(view -> {
-            String status = Objects.requireNonNull(edt_status.getText()).toString().trim();
-            if (!tmpFriendList.isEmpty()) {
-                String currentId = takePhotoViewModel.getCurrentUserId();
-                if (!tmpFriendList.contains(currentId)) {
-                    tmpFriendList.add(currentId);
-                }
-                listFriendId = tmpFriendList;
-            }
-            takePhotoViewModel.uploadPost(photo, file, urlMusic, musicName, singerName, status, requireContext().getApplicationContext(), isVideo, listFriendId);
-            if (isVideo) {
-                playerViewVideo.setVisibility(View.GONE);
-                btn_start_video.setAlpha(1f);
-                isVideo = false;
-            } else {
-                imgFromGallery.setVisibility(View.GONE);
-                isVideo = true;
-            }
-            btn_success.setVisibility(View.GONE);
-            btn_cancel.setVisibility(View.GONE);
-            btn_download.setVisibility(View.GONE);
-            img_music.setVisibility(View.GONE);
-            edt_status.setVisibility(View.GONE);
-            edt_status.setText("");
-            tv_music_name.setVisibility(View.GONE);
-            tv_singer.setVisibility(View.GONE);
-            previewView.setVisibility(View.VISIBLE);
-            frame_photo_video.setVisibility(View.VISIBLE);
-            btn_gallery.setVisibility(View.VISIBLE);
-            btn_rotate.setVisibility(View.VISIBLE);
-            frame_slider.setVisibility(View.VISIBLE);
-            recycler_view_choose_friend_to_post.setAdapter(null);
-            recycler_view_choose_friend_to_post.setVisibility(View.GONE);
-            Toast.makeText(requireContext(), "Vui lòng chờ xử lý", Toast.LENGTH_LONG).show();
-            if (musicPlayer != null) {
-                musicPlayer.stop();
-                musicPlayer.clearMediaItems();
-            }
-        });
-    }
-
-    private String addPaddingForMarquee(String text, TextView textView) {
-        Paint paint = textView.getPaint();
-        float textWidth = paint.measureText(text);
-        int textViewWidthInDp = 150;
-        float density = getResources().getDisplayMetrics().density;
-        int textViewWidthInPx = (int) (textViewWidthInDp * density);
-        if (textWidth < textViewWidthInPx) {
-            StringBuilder paddedText = new StringBuilder(text);
-            float spaceWidth = paint.measureText(" ");
-            int spacesToAdd = (int) ((textViewWidthInPx - textWidth) / spaceWidth) + 5;
-            for (int i = 0; i < spacesToAdd; i++) {
-                paddedText.append(" ");
-            }
-            return paddedText.toString();
-        } else {
-            return text;
-        }
-    }
-
-    private void updatePostCountUI(int unseenCount) {
-        if (unseenCount == 0) {
-            tv_number_post.setVisibility(View.GONE);
-            cardViewSlider.setVisibility(View.GONE);
-        } else {
-            tv_number_post.setVisibility(View.VISIBLE);
-            cardViewSlider.setVisibility(View.VISIBLE);
-            if (unseenCount > 9) {
-                tv_number_post.setText("9+");
-            } else {
-                tv_number_post.setText(String.valueOf(unseenCount));
-            }
-        }
-    }
-
-    private void downloadPost() {
-        btn_download.setOnClickListener(view -> {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-                requestFilePermission();
-            } else {
-                if (isVideo) {
-                    takePhotoViewModel.downloadVideo(file, requireContext().getApplicationContext());
-                } else {
-                    takePhotoViewModel.downloadPhoto(photo, requireContext().getApplicationContext());
-                }
-            }
-        });
-    }
-
-    private void rotateCamera() {
-        btn_rotate.setOnClickListener(view -> {
-            if (checkLancing) {
-                startCamera(previewView);
-                checkLancing = false;
-                btn_rotate.animate().rotationYBy(180f).setDuration(500).start();
-            } else {
-                startCamera(previewView);
-                checkLancing = true;
-                btn_rotate.animate().rotationYBy(-180f).setDuration(500).start();
-            }
-        });
-    }
-
-    private void registerPermission() {
-        permissionLauncher = registerForActivityResult(
-                new ActivityResultContracts.RequestPermission(),
-                isGranted -> {
-                    if (isGranted) {
-                        if (isVideo) {
-                            Log.e("download", "registerPermission: ");
-                            takePhotoViewModel.downloadVideo(file, requireContext().getApplicationContext());
-                        } else
-                            takePhotoViewModel.createFolderConnectionExternalStorage(photo, requireContext().getApplicationContext());
-                    } else {
-                        if (isVideo)
-                            Toast.makeText(requireContext(), "Lưu video không thành công", Toast.LENGTH_LONG).show();
-                        else
-                            Toast.makeText(requireContext(), "Lưu ảnh không thành công", Toast.LENGTH_LONG).show();
-                    }
-                }
-        );
-    }
-
-    private void requestFilePermission() {
-        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                != PackageManager.PERMISSION_GRANTED) {
-            permissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE);
-        } else {
-            if (isVideo) {
-                Log.e("download", "registerPermission: ");
-                takePhotoViewModel.downloadVideo(file, requireContext().getApplicationContext());
-            } else
-                takePhotoViewModel.createFolderConnectionExternalStorage(photo, requireContext().getApplicationContext());
-        }
-    }
-
-    private void registerResult() {
-        resultLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
-            if (result.getResultCode() == Activity.RESULT_OK) {
-                Intent intent = result.getData();
-                if (intent == null) {
-                    return;
-                }
-                isVideo = false;
-                Uri uri = intent.getData();
-                previewView.setVisibility(View.GONE);
-                frame_photo_video.setVisibility(View.GONE);
-                btn_gallery.setVisibility(View.GONE);
-                btn_rotate.setVisibility(View.GONE);
-                imgFromGallery.setVisibility(View.VISIBLE);
-                imgFromGallery.setImageURI(uri);
-                btn_success.setVisibility(View.VISIBLE);
-                btn_success.playAnimation();
-                btn_cancel.setVisibility(View.VISIBLE);
-                btn_download.setVisibility(View.VISIBLE);
-                edt_status.setVisibility(View.VISIBLE);
-                img_music.setVisibility(View.VISIBLE);
-                try {
-                    photo = MediaStore.Images.Media.getBitmap(requireContext().getContentResolver(), uri);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        });
-    }
-
-    private void showGallery() {
-        btn_gallery.setOnClickListener(view -> {
-            Intent intent = new Intent();
-            intent.setType("image/*");
-            intent.setAction(Intent.ACTION_GET_CONTENT);
-            resultLauncher.launch(Intent.createChooser(intent, "Select Image"));
-        });
-    }
-
-    private void initView(View view) {
-        previewView = view.findViewById(R.id.img_take_photo);
-        btn_gallery = view.findViewById(R.id.btn_gallery);
-        imgFromGallery = view.findViewById(R.id.img_picture_from_gallery);
-        cameraExecutor = Executors.newSingleThreadExecutor();
-        btn_success = view.findViewById(R.id.button_success);
-        btn_cancel = view.findViewById(R.id.button_cancel);
-        btn_rotate = view.findViewById(R.id.button_rotate);
-        edt_status = view.findViewById(R.id.edt_status);
-        btn_download = view.findViewById(R.id.button_download);
-        tv_number_post = view.findViewById(R.id.tv_number_post);
-        img_music = view.findViewById(R.id.img_music);
-        tv_music_name = view.findViewById(R.id.tv_music_name);
-        tv_singer = view.findViewById(R.id.tv_singer_take_photo);
-        playerViewVideo = view.findViewById(R.id.player_view_video);
-        view1 = view.findViewById(R.id.view_swipe1);
-        view2 = view.findViewById(R.id.view_swipe2);
-        frame_photo_video = view.findViewById(R.id.frame_photo_video);
-        btn_take_photo = view.findViewById(R.id.button_take_photo);
-        btn_start_video = view.findViewById(R.id.button_start_video);
-        btn_red_dot = view.findViewById(R.id.button_red_dot);
-        progressBar = view.findViewById(R.id.progress_bar9);
-        imageSlider = view.findViewById(R.id.unseen_image_slider);
-        cardViewSlider = view.findViewById(R.id.card_view_slider);
-        slider_zoom = view.findViewById(R.id.slider_zoom);
-        recycler_view_choose_friend_to_post = view.findViewById(R.id.recycler_view_choose_to_post);
-        frame_slider = view.findViewById(R.id.frame_slider);
-        frame_slider.setScaleX(0.13f);
-        frame_slider.setScaleY(0.35f);
-        slider_zoom.setEnabled(false);
-        exoPlayer = new ExoPlayer.Builder(requireContext()).build();
-        playerViewVideo.setPlayer(exoPlayer);
-        view1.setBackgroundResource(R.drawable.button_corner_black);
-    }
-
-    private void startCamera(View view) {
-        listenableFuture = ProcessCameraProvider.getInstance(requireContext());
-        Log.e(TAG, "startCamera: " + listenableFuture + " " + requireActivity());
-        listenableFuture.addListener(() -> {
-            try {
-                Log.e(TAG, "startCamera: ");
-                cameraProvider = listenableFuture.get();
-                preview = new Preview.Builder()
-                        .build();
-                preview.setSurfaceProvider(previewView.getSurfaceProvider());
-                imageCapture = new ImageCapture.Builder()
-                        .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
-                        .setTargetRotation(view.getDisplay().getRotation())
-                        .setFlashMode(ImageCapture.FLASH_MODE_AUTO)
-                        .build();
-                Recorder recorder = new Recorder.Builder()
-                        .setQualitySelector(QualitySelector.from(Quality.SD))
-                        .build();
-                videoCapture = VideoCapture.withOutput(recorder);
-                cameraSelector = new CameraSelector.Builder();
-                if (checkLancing) {
-                    cameraSelector.requireLensFacing(CameraSelector.LENS_FACING_BACK);
-                } else {
-                    cameraSelector.requireLensFacing(CameraSelector.LENS_FACING_FRONT);
-                }
-                cameraProvider.unbindAll();
-                Camera camera = cameraProvider.bindToLifecycle(FragmentTakePhoto.this,
-                        cameraSelector.build(),
-                        preview,
-                        imageCapture,
-                        videoCapture);
-                cameraControl = camera.getCameraControl();
-                Log.e(TAG, "startCamera: 2");
-            } catch (Exception e) {
-                Log.e(TAG, "startCamera: " + e.getMessage());
-            }
-        }, ContextCompat.getMainExecutor(requireContext()));
     }
 
     private void takePhoto() {
-        recycler_view_choose_friend_to_post.setVisibility(View.VISIBLE);
-        adapter.setData(selectionFriendList);
-        recycler_view_choose_friend_to_post.setAdapter(adapter);
-        isVideo = false;
-        btn_take_photo.animate()
+        binding.buttonTakePhoto.animate()
                 .rotation(180f)
                 .scaleX(1.2f)
                 .scaleY(1.2f)
                 .setDuration(260)
-                .withEndAction(() -> btn_take_photo.animate()
+                .withEndAction(() -> binding.buttonTakePhoto.animate()
                         .rotation(-180f)
                         .scaleX(1f)
                         .scaleY(1f)
                         .setDuration(260)
                         .start())
                 .start();
-        imageCapture.takePicture(cameraExecutor, new ImageCapture.OnImageCapturedCallback() {
+
+        cameraManager.takePhoto(new CameraManager.OnPhotoCapturedListener() {
             @Override
-            public void onCaptureSuccess(@NonNull ImageProxy image) {
-                super.onCaptureSuccess(image);
-                photo = image.toBitmap();
-                Message message = new Message();
-                message.obj = photo;
-                message.what = 1;
-                message.setTarget(handler);
-                message.sendToTarget();
-                image.close();
+            public void onSuccess(Bitmap photo) {
+                requireActivity().runOnUiThread(() -> mediaPreviewHandler.showPhotoPreview(photo));
             }
 
             @Override
-            public void onError(@NonNull ImageCaptureException exception) {
-                super.onError(exception);
+            public void onError(Exception exception) {
+                Log.e(TAG, "takePhoto error: " + exception.getMessage(), exception);
             }
         });
     }
 
     private void startVideo() {
-        isVideo = true;
-        isStop = false;
-        file = new File(requireContext().getCacheDir(), UUID.randomUUID() + "_tmp_video.mp4");
-        FileOutputOptions options = new FileOutputOptions.Builder(file).build();
-        recording = videoCapture
-                .getOutput()
-                .prepareRecording(requireContext(), options)
-                .start(cameraExecutor, videoRecordEvent -> {
-                    if (videoRecordEvent instanceof VideoRecordEvent.Finalize) {
-                        requireActivity().runOnUiThread(() -> {
-                            showVideo();
-                            playVideo();
-                        });
-                    }
-                });
-        if (runnableVideo != null) {
-            handlerVideo.removeCallbacks(runnableVideo);
-        }
-        if (runnableProcess != null) {
-            handlerVideo.removeCallbacks(runnableProcess);
-        }
+        isRecordingVideo = true;
+        firstTouch = System.currentTimeMillis();
+
+        binding.buttonStartVideo.animate()
+                .alpha(0f)
+                .withEndAction(() -> {
+                    binding.buttonStartVideo.setVisibility(View.GONE);
+                    binding.buttonRedDot.setVisibility(View.VISIBLE);
+                    binding.progressBar9.setVisibility(View.VISIBLE);
+                    binding.progressBar9.setMax(100);
+                })
+                .start();
+
+        File tempVideoFile = new File(requireContext().getCacheDir(), UUID.randomUUID() + "_tmp_video.mp4");
+        cameraManager.startVideoRecording(requireContext(), tempVideoFile, new CameraManager.OnVideoFinalizedListener() {
+            @Override
+            public void onFinalized(File videoFile) {
+                requireActivity().runOnUiThread(() -> mediaPreviewHandler.showVideoPreview(videoFile));
+            }
+
+            @Override
+            public void onError(Exception exception) {
+                Log.e(TAG, "video recording error: " + exception.getMessage(), exception);
+            }
+        });
+
+        // Thanh tiến trình quay 5 giây
         runnableProcess = new Runnable() {
             @Override
             public void run() {
                 long elapsed = System.currentTimeMillis() - firstTouch;
                 long progress = (elapsed * 100 / 5000);
-                progressBar.setProgress((int) progress);
+                binding.progressBar9.setProgress((int) progress);
                 if (elapsed < 5000) {
                     handlerVideo.postDelayed(this, 16);
                 }
             }
         };
         handlerVideo.post(runnableProcess);
-        runnableVideo = () -> {
-            if (!isStop) {
-                lastTouch = System.currentTimeMillis();
-                FragmentTakePhoto.this.stopVideo();
-            }
-        };
+
+        runnableVideo = this::stopVideo;
         handlerVideo.postDelayed(runnableVideo, 5000);
     }
 
     private void stopVideo() {
-        if (recording != null) {
-            recording.stop();
-            recording = null;
-        }
+        if (!isRecordingVideo) return;
+        isRecordingVideo = false;
+
+        cameraManager.stopVideoRecording();
+
         if (runnableVideo != null) handlerVideo.removeCallbacks(runnableVideo);
         if (runnableProcess != null) handlerVideo.removeCallbacks(runnableProcess);
-        btn_red_dot.setVisibility(View.GONE);
-        progressBar.setVisibility(View.GONE);
-        btn_start_video.setVisibility(View.VISIBLE);
+
+        binding.buttonRedDot.setVisibility(View.GONE);
+        binding.progressBar9.setVisibility(View.GONE);
+        binding.buttonStartVideo.setVisibility(View.VISIBLE);
     }
 
-    private void playVideo() {
-        Uri uriFile = Uri.fromFile(file);
-        MediaItem mediaItem = MediaItem.fromUri(uriFile);
-        exoPlayer.setRepeatMode(Player.REPEAT_MODE_ONE);
-        exoPlayer.setMediaItem(mediaItem);
-        exoPlayer.prepare();
-        exoPlayer.play();
+    private void setupSliderZoom() {
+        binding.frameSlider.setOnClickListener(v -> {
+            binding.frameSlider.setBackgroundTintList(ColorStateList.valueOf(Color.TRANSPARENT));
+            binding.frameSlider.animate()
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .setDuration(500)
+                    .withEndAction(() -> binding.sliderZoom.setEnabled(true))
+                    .start();
+        });
+
+        binding.imgTakePhoto.setOnClickListener(v -> collapseZoomSlider());
+        binding.sliderZoom.addOnChangeListener((slider, value, fromUser) -> cameraManager.setLinearZoom(value));
     }
 
-    private void showVideo() {
-        playerViewVideo.setVisibility(View.VISIBLE);
-        btn_success.setVisibility(View.VISIBLE);
-        btn_success.playAnimation();
-        btn_cancel.setVisibility(View.VISIBLE);
-        edt_status.setVisibility(View.VISIBLE);
-        btn_download.setVisibility(View.VISIBLE);
-        img_music.setVisibility(View.VISIBLE);
-        recycler_view_choose_friend_to_post.setVisibility(View.VISIBLE);
-        adapter.setData(selectionFriendList);
-        recycler_view_choose_friend_to_post.setAdapter(adapter);
-        frame_photo_video.setVisibility(View.GONE);
-        btn_gallery.setVisibility(View.GONE);
-        btn_rotate.setVisibility(View.GONE);
-        previewView.setVisibility(View.GONE);
-        frame_slider.animate()
+    private void collapseZoomSlider() {
+        binding.frameSlider.animate()
                 .scaleX(0.13f)
                 .scaleY(0.35f)
                 .withEndAction(() -> {
-                    frame_slider.setBackgroundTintList(ColorStateList.valueOf(Color.WHITE));
-                    slider_zoom.setEnabled(false);
-                    frame_slider.setVisibility(View.GONE);
+                    binding.frameSlider.setBackgroundTintList(ColorStateList.valueOf(Color.WHITE));
+                    binding.sliderZoom.setEnabled(false);
                 })
                 .start();
     }
 
-    private Bitmap flipBitmap(Bitmap bitmap) {
-        Matrix matrix = new Matrix();
-        matrix.preScale(-1, 1);
-        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+    private void setupRotateCamera() {
+        binding.buttonRotate.setOnClickListener(v -> {
+            cameraManager.flipCamera(
+                    requireContext(),
+                    getViewLifecycleOwner(),
+                    binding.imgTakePhoto,
+                    requireActivity().getWindowManager().getDefaultDisplay().getRotation()
+            );
+            float rotationDeg = cameraManager.isBackFacing() ? -180f : 180f;
+            binding.buttonRotate.animate().rotationYBy(rotationDeg).setDuration(500).start();
+        });
     }
 
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        cameraExecutor.shutdown();
-        if (musicPlayer != null) {
-            musicPlayer.release();
-            musicPlayer = null;
-            Log.e(TAG, "onDestroy: musicPlayer released");
-        }
-        if (exoPlayer != null) {
-            exoPlayer.release();
-            exoPlayer = null;
-        }
-        if (runnableProcess != null) {
-            handlerVideo.removeCallbacks(runnableProcess);
-        }
-        if (runnableVideo != null) {
-            handlerVideo.removeCallbacks(runnableVideo);
+    private void setupGalleryButton() {
+        binding.btnGallery.setOnClickListener(v -> {
+            Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+            intent.setType("image/*");
+            galleryLauncher.launch(Intent.createChooser(intent, "Select Image"));
+        });
+    }
+
+    private void setupObservers() {
+        takePhotoViewModel.getSuccessLiveData().observe(getViewLifecycleOwner(), success ->
+                Toast.makeText(requireContext(), success, Toast.LENGTH_SHORT).show());
+
+        takePhotoViewModel.getFailureLiveData().observe(getViewLifecycleOwner(), error ->
+                Toast.makeText(requireContext(), error, Toast.LENGTH_SHORT).show());
+
+        takePhotoViewModel.getNumberOfNewPost().observe(getViewLifecycleOwner(), unseenImages -> {
+            updatePostCountUI(unseenImages.size());
+            slideModels.clear();
+            for (Image image : unseenImages) {
+                if (image.getImageUrl() != null) {
+                    slideModels.add(new SlideModel(image.getImageUrl(), ScaleTypes.CENTER_CROP));
+                }
+            }
+            binding.unseenImageSlider.setImageList(slideModels);
+        });
+
+        takePhotoViewModel.getListFriendLiveData().observe(getViewLifecycleOwner(), list ->
+                listFriendId = list != null ? list : new ArrayList<>());
+
+        takePhotoViewModel.getSelectionFriendLiveData().observe(getViewLifecycleOwner(), friends -> {
+            if (mediaPreviewHandler != null) {
+                mediaPreviewHandler.updateFriendsList(friends);
+            }
+        });
+
+        // Thay thế LocalBroadcastManager bằng MainViewModel LiveData
+        mainViewModel.getCameraMusicPlaying().observe(getViewLifecycleOwner(), playing -> {
+            if (Boolean.TRUE.equals(playing)) {
+                if (MediaPlayerUtil.getInstance().getPosition() == 0) {
+                    mediaPreviewHandler.onResume();
+                }
+            } else if (Boolean.FALSE.equals(playing)) {
+                mediaPreviewHandler.onPause();
+            }
+        });
+    }
+
+    private void updatePostCountUI(int unseenCount) {
+        if (unseenCount == 0) {
+            binding.tvNumberPost.setVisibility(View.GONE);
+            binding.cardViewSlider.setVisibility(View.GONE);
+        } else {
+            binding.tvNumberPost.setVisibility(View.VISIBLE);
+            binding.cardViewSlider.setVisibility(View.VISIBLE);
+            binding.tvNumberPost.setText(unseenCount > 9 ? "9+" : String.valueOf(unseenCount));
         }
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        if (musicPlayer != null && !musicPlayer.isPlaying()) musicPlayer.play();
+        if (mediaPreviewHandler != null) {
+            mediaPreviewHandler.onResume();
+        }
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        Log.e(TAG, "onPause: ");
-        if (musicPlayer != null) {
-            musicPlayer.pause();
+        if (mediaPreviewHandler != null) {
+            mediaPreviewHandler.onPause();
         }
     }
 
     @Override
     public void onStart() {
         super.onStart();
-        Log.e(TAG, "onStart: ");
-        LocalBroadcastManager.getInstance(requireContext()).registerReceiver(receiver, new IntentFilter("click_when_take_playing"));
-        LocalBroadcastManager.getInstance(requireContext()).registerReceiver(receiver, new IntentFilter("back_press_when_playing"));
         takePhotoViewModel.listenForNewPosts();
         takePhotoViewModel.getUserInfoFromFirebase();
     }
@@ -926,9 +494,23 @@ public class FragmentTakePhoto extends Fragment {
     @Override
     public void onStop() {
         super.onStop();
-        Log.e(TAG, "onStop: ");
         takePhotoViewModel.unregisterListening();
-        LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(receiver);
     }
 
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (runnableProcess != null) handlerVideo.removeCallbacks(runnableProcess);
+        if (runnableVideo != null) handlerVideo.removeCallbacks(runnableVideo);
+        if (mediaPreviewHandler != null) mediaPreviewHandler.onDestroy();
+        binding = null;
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if (cameraManager != null) {
+            cameraManager.shutdown();
+        }
+    }
 }

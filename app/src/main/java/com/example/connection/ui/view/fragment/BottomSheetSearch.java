@@ -21,7 +21,7 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.connection.R;
-import com.example.connection.constants.SendBroadToFragTakeUtil;
+import com.example.connection.ui.viewmodel.MainViewModel;
 import com.example.connection.ui.view.activity.chat.ChatActivity;
 import com.example.connection.ui.adapter.ShowFriendAdapter;
 import com.example.connection.ui.adapter.UserSearchAdapter;
@@ -204,7 +204,10 @@ public class BottomSheetSearch extends BottomSheetDialogFragment {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        SendBroadToFragTakeUtil.broadcastWhenBackNotification(requireContext());
+        if (getActivity() != null) {
+            MainViewModel mainViewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
+            mainViewModel.setCameraMusicPlaying(true);
+        }
     }
 
     @NonNull

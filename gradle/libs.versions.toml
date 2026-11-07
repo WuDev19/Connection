@@ -3,11 +3,10 @@ agp = "8.6.0"
 cameraVideo = "1.4.2"
 circleimageview = "3.1.0"
 cloudinaryAndroid = "3.0.2"
+concurrentFutures = "1.2.0"
 firebaseBom = "33.10.0"
 firebaseUiFirestore = "8.0.2"
 glide = "4.16.0"
-gson = "2.13.1"
-guava = "32.1.2-jre"
 imagepicker = "2.1"
 imageslideshow = "0.1.2"
 junit = "4.13.2"
@@ -20,32 +19,26 @@ activity = "1.10.0"
 constraintlayout = "2.2.0"
 media3ExoplayerDash = "1.8.0"
 media3ExoplayerVersion = "1.8.0"
-pagingRuntime = "3.3.6"
-retrofit = "3.0.0"
 roomRuntimeVersion = "2.7.2"
 workRuntimeVersion = "2.10.1"
-legacySupportV4 = "1.0.0"
 lifecycleLivedataKtx = "2.9.3"
 lifecycleViewmodelKtx = "2.9.3"
 
 [libraries]
 androidx-camera-video = { module = "androidx.camera:camera-video", version.ref = "cameraVideo" }
+androidx-concurrent-futures = { module = "androidx.concurrent:concurrent-futures", version.ref = "concurrentFutures" }
 androidx-media3-exoplayer-dash = { module = "androidx.media3:media3-exoplayer-dash", version.ref = "media3ExoplayerDash" }
 androidx-media3-ui = { module = "androidx.media3:media3-ui", version.ref = "media3ExoplayerDash" }
-androidx-paging-runtime = { module = "androidx.paging:paging-runtime", version.ref = "pagingRuntime" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomRuntimeVersion" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomRuntimeVersion" }
 circleimageview = { module = "de.hdodenhof:circleimageview", version.ref = "circleimageview" }
 cloudinary-android = { module = "com.cloudinary:cloudinary-android", version.ref = "cloudinaryAndroid" }
-converter-gson = { module = "com.squareup.retrofit2:converter-gson" }
 firebase-auth = { module = "com.google.firebase:firebase-auth" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
 firebase-firestore = { module = "com.google.firebase:firebase-firestore" }
 firebase-storage = { module = "com.google.firebase:firebase-storage" }
 firebase-ui-firestore = { module = "com.firebaseui:firebase-ui-firestore", version.ref = "firebaseUiFirestore" }
 glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
-gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
-guava = { module = "com.google.guava:guava", version.ref = "guava" }
 imagepicker = { module = "com.github.dhaval2404:imagepicker", version.ref = "imagepicker" }
 imageslideshow = { module = "com.github.denzcoskun:ImageSlideshow", version.ref = "imageslideshow" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -61,10 +54,7 @@ androidx-camera-lifecycle = { module = "androidx.camera:camera-lifecycle", versi
 androidx-camera-view = { module = "androidx.camera:camera-view", version = "1.4.2" }
 androidx-camera-camera2 = { module = "androidx.camera:camera-camera2", version = "1.4.2" }
 media3-exoplayer = { module = "androidx.media3:media3-exoplayer", version.ref = "media3ExoplayerVersion" }
-retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
-retrofit2-converter-gson = { module = "com.squareup.retrofit2:converter-gson" , version.ref = "retrofit"}
 work-runtime = { module = "androidx.work:work-runtime", version.ref = "workRuntimeVersion" }
-androidx-legacy-support-v4 = { group = "androidx.legacy", name = "legacy-support-v4", version.ref = "legacySupportV4" }
 androidx-lifecycle-livedata-ktx = { group = "androidx.lifecycle", name = "lifecycle-livedata-ktx", version.ref = "lifecycleLivedataKtx" }
 androidx-lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "lifecycleViewmodelKtx" }
 

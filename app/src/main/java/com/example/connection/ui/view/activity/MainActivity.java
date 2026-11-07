@@ -39,7 +39,6 @@ import com.example.connection.ui.view.fragment.FragmentHome;
 import com.example.connection.ui.view.fragment.FragmentNotification;
 import com.example.connection.data.worker.WidgetProvider;
 import com.example.connection.constants.MediaPlayerUtil;
-import com.example.connection.constants.SendBroadToFragTakeUtil;
 import com.example.connection.ui.viewmodel.MainViewModel;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
@@ -92,7 +91,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         tv_search.setOnClickListener(view -> {
-            SendBroadToFragTakeUtil.sendBroadToFragmentTakePhoto(this);
+            mainViewModel.setCameraMusicPlaying(false);
             MediaPlayerUtil.getInstance().pauseMusic();
             BottomSheetSearch bottomSheetSearch = new BottomSheetSearch();
             Log.e(TAG, "search");
@@ -100,7 +99,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         fab.setOnClickListener(view -> {
-            SendBroadToFragTakeUtil.sendBroadToFragmentTakePhoto(this);
+            mainViewModel.setCameraMusicPlaying(false);
             Bundle bundle = new Bundle();
             bundle.putStringArrayList("confirm_friend", (ArrayList<String>) friendConfirm);
             bundle.putInt("number", numberOfNotification);

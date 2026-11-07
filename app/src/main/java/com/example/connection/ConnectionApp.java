@@ -1,12 +1,11 @@
-package com.example.connection.constants;
+package com.example.connection;
 
 import android.app.Application;
 import com.cloudinary.android.MediaManager;
-import com.example.connection.BuildConfig;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Cloudinary extends Application {
+public class ConnectionApp extends Application {
 
     @Override
     public void onCreate() {

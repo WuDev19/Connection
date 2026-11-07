@@ -30,6 +30,7 @@ android {
     }
 
     buildFeatures {
+        viewBinding = true
         buildConfig = true
     }
 
@@ -53,7 +54,6 @@ dependencies {
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.activity)
-    implementation(libs.androidx.legacy.support.v4)
     implementation(libs.androidx.lifecycle.livedata.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     testImplementation(libs.junit)
@@ -64,15 +64,11 @@ dependencies {
     implementation(libs.androidx.camera.view)
     implementation(libs.androidx.camera.camera2)
     implementation(libs.androidx.camera.video)
-    implementation(libs.guava)
+    implementation(libs.androidx.concurrent.futures)
     implementation(libs.constraintlayout)
     implementation(libs.glide)
     implementation(libs.cloudinary.android)
-    implementation(libs.androidx.paging.runtime)
     implementation(libs.work.runtime)
-    implementation(libs.retrofit)
-    implementation(libs.gson)
-    implementation(libs.retrofit2.converter.gson)
     implementation(libs.androidx.room.runtime)
     annotationProcessor(libs.androidx.room.compiler)
     implementation(libs.media3.exoplayer)

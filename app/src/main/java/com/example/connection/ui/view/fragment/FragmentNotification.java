@@ -18,9 +18,10 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+import androidx.lifecycle.ViewModelProvider;
 import com.example.connection.R;
 import com.example.connection.ui.adapter.NotificationAdapter;
-import com.example.connection.constants.SendBroadToFragTakeUtil;
+import com.example.connection.ui.viewmodel.MainViewModel;
 import com.example.connection.ui.viewmodel.NotificationViewModel;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import java.util.List;
@@ -130,7 +131,8 @@ public class FragmentNotification extends Fragment {
                 manager.beginTransaction()
                         .replace(R.id.frame_layout, fragmentHome)
                         .commit();
-                SendBroadToFragTakeUtil.broadcastWhenBackNotification(requireContext());
+                MainViewModel mainViewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
+                mainViewModel.setCameraMusicPlaying(true);
             }
         });
     }

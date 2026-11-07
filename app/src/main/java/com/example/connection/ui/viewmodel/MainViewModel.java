@@ -19,6 +19,7 @@ public class MainViewModel extends ViewModel {
     private final MutableLiveData<List<String>> listFriendConfirmLiveData = new MutableLiveData<>();
     private final MutableLiveData<HashMap<String, Integer>> countMessageLiveData = new MutableLiveData<>();
     private final MutableLiveData<WidgetModel> widgetLiveData = new MutableLiveData<>();
+    private final MutableLiveData<Boolean> cameraMusicPlaying = new MutableLiveData<>();
 
     public MainViewModel(){
         mainRepository = new MainRepository();
@@ -66,6 +67,14 @@ public class MainViewModel extends ViewModel {
 
     public LiveData<Boolean> getFirstUse(Context context){
         return mainRepository.getFirstUse(context);
+    }
+
+    public LiveData<Boolean> getCameraMusicPlaying() {
+        return cameraMusicPlaying;
+    }
+
+    public void setCameraMusicPlaying(boolean playing) {
+        cameraMusicPlaying.setValue(playing);
     }
 
 }

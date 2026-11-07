@@ -18,6 +18,6 @@ public abstract class MusicDatabase extends RoomDatabase {
         return musicDatabase;
     }
 
-    public abstract UserDao userDao();
+    public abstract MusicDao musicDao();
 
 }

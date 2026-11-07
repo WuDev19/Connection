@@ -1,13 +1,14 @@
 package com.example.connection.data.local;
 
+import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
 
 import java.util.List;
 
-@androidx.room.Dao
-public interface UserDao {
+@Dao
+public interface MusicDao {
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     void insert(MyMusic myMusic);
