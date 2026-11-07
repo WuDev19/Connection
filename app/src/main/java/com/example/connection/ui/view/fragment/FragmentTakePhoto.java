@@ -19,6 +19,7 @@ import android.os.Build;
 import android.os.Bundle;
 
 import androidx.activity.OnBackPressedCallback;
+import androidx.viewpager2.widget.ViewPager2;
 import com.example.connection.ui.view.activity.MainActivity;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -218,6 +219,18 @@ public class FragmentTakePhoto extends Fragment {
                     setEnabled(true);
                     return;
                 }
+
+                ViewPager2 viewPager2 = mainActivity != null ? mainActivity.findViewById(R.id.view_pager) : null;
+                if (viewPager2 != null && viewPager2.getCurrentItem() != 0) {
+                    viewPager2.setCurrentItem(0, true);
+                    return;
+                }
+
+                if (btn_cancel != null && btn_cancel.getVisibility() == View.VISIBLE) {
+                    btn_cancel.performClick();
+                    return;
+                }
+
                 requireActivity().finish();
             }
         });

@@ -80,6 +80,11 @@ public class FragmentShowPhoto extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.e(TAG, "onCreate: ");
+        if (getArguments() != null) {
+            position = getArguments().getInt("position_key", -1);
+            isGeneralClick = getArguments().getBoolean("isGeneralClick", false);
+            Log.e(TAG, "onCreate: position=" + position + ", isGeneralClick=" + isGeneralClick);
+        }
         showPhotoViewModel = new ViewModelProvider(this).get(ShowPhotoViewModel.class);
         postRepository = new PostRepository();
     }
@@ -97,6 +102,11 @@ public class FragmentShowPhoto extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
+        if (getArguments() != null) {
+            position = getArguments().getInt("position_key", position);
+            isGeneralClick = getArguments().getBoolean("isGeneralClick", isGeneralClick);
+        }
 
         setUpRecyclerView();
 
@@ -127,8 +137,8 @@ public class FragmentShowPhoto extends Fragment {
     private void setUpRecyclerView() {
         recyclerView.post(() -> {
             if (getArguments() != null) {
-                position = getArguments().getInt("position_key", -1);
-                isGeneralClick = getArguments().getBoolean("isGeneralClick", false);
+                position = getArguments().getInt("position_key", position);
+                isGeneralClick = getArguments().getBoolean("isGeneralClick", isGeneralClick);
                 Log.e("TAGG", position + "show");
             }
 
@@ -563,6 +573,9 @@ public class FragmentShowPhoto extends Fragment {
     }
 
     private void backPress() {
+        if (!isGeneralClick) {
+            return;
+        }
         requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
@@ -570,32 +583,15 @@ public class FragmentShowPhoto extends Fragment {
                 if (mainActivity == null) return;
 
                 // Nếu đây là FragmentShowPhoto được mở từ GeneralPhoto (xem chi tiết 1 ảnh)
-                if (isGeneralClick) {
-                    MediaPlayerUtil.getInstance().pauseMusic();
-                    MediaPlayerUtil.getInstance().setIsInGeneral(true);
-                    FragmentManager manager = mainActivity.getSupportFragmentManager();
-                    fragmentGeneralPhoto = (FragmentGeneralPhoto) manager.findFragmentByTag("FragmentGeneralPhoto");
-                    if (fragmentGeneralPhoto == null) fragmentGeneralPhoto = new FragmentGeneralPhoto();
-                    manager.beginTransaction()
-                            .replace(R.id.frame_layout, fragmentGeneralPhoto, "FragmentGeneralPhoto")
-                            .commit();
-                    return;
-                }
-
-                // Nếu đang ở màn hình GeneralPhoto che lên màn hình (isClick == true):
-                // ShowPhoto trong ViewPager KHÔNG can thiệp, nhường quyền cho GeneralPhoto xử lý
-                if (mainActivity.isClick()) {
-                    setEnabled(false);
-                    requireActivity().getOnBackPressedDispatcher().onBackPressed();
-                    setEnabled(true);
-                    return;
-                }
-
-                // Bình thường: Vuốt về tab camera (0)
-                ViewPager2 viewPager2 = mainActivity.findViewById(R.id.view_pager);
-                if (viewPager2 != null && viewPager2.getCurrentItem() != 0) {
-                    viewPager2.setCurrentItem(0);
-                }
+                MediaPlayerUtil.getInstance().pauseMusic();
+                MediaPlayerUtil.getInstance().setIsInGeneral(true);
+                mainActivity.setClick(true);
+                FragmentManager manager = mainActivity.getSupportFragmentManager();
+                fragmentGeneralPhoto = (FragmentGeneralPhoto) manager.findFragmentByTag("FragmentGeneralPhoto");
+                if (fragmentGeneralPhoto == null) fragmentGeneralPhoto = new FragmentGeneralPhoto();
+                manager.beginTransaction()
+                        .replace(R.id.frame_layout, fragmentGeneralPhoto, "FragmentGeneralPhoto")
+                        .commit();
             }
         });
     }
@@ -619,6 +615,12 @@ public class FragmentShowPhoto extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        if (isGeneralClick) {
+            MainActivity mainActivity = (MainActivity) getActivity();
+            if (mainActivity != null) {
+                mainActivity.setClick(true);
+            }
+        }
         playMusicWhenBackPress();
         Log.e("testrealtime", "onResume: ");
         showPhotoViewModel.updateSeenPost(requireContext());

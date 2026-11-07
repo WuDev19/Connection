@@ -393,7 +393,6 @@ public class FragmentGeneralPhoto extends Fragment {
         super.onDestroyView();
         Log.e(TAG, "onDestroyView: ");
         stopCuteBounceAnimation();
-        MediaPlayerUtil.getInstance().setIsInGeneral(false);
     }
 
     @Override
