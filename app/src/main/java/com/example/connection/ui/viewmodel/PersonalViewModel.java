@@ -6,17 +6,17 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 import com.example.connection.ui.state.OnStateListener;
 import com.example.connection.model.User;
-import com.example.connection.repository.PersonalRepository;
+import com.example.connection.repository.UserRepository;
 
 public class PersonalViewModel extends ViewModel implements OnStateListener {
 
-    private final PersonalRepository personalRepository;
+    private final UserRepository personalRepository;
     private final MutableLiveData<User> userLiveData = new MutableLiveData<>();
     private final MutableLiveData<String> successLiveData = new MutableLiveData<>();
     private final MutableLiveData<String> errorLiveData = new MutableLiveData<>();
 
     public PersonalViewModel (){
-        personalRepository = new PersonalRepository(this);
+        personalRepository = new UserRepository(this);
     }
 
     public void showUserFromFirebase(){

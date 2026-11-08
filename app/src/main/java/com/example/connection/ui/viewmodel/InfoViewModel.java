@@ -8,11 +8,11 @@ import androidx.lifecycle.ViewModel;
 
 import com.example.connection.ui.state.OnStateListener;
 import com.example.connection.model.User;
-import com.example.connection.repository.InfoRepository;
+import com.example.connection.repository.UserRepository;
 
 public class InfoViewModel extends ViewModel implements OnStateListener {
 
-    private final InfoRepository infoRepository;
+    private final UserRepository infoRepository;
     private User user;
     private final MutableLiveData<String> successLiveData = new MutableLiveData<>();
     private final MutableLiveData<String> errorLiveData = new MutableLiveData<>();
@@ -20,7 +20,7 @@ public class InfoViewModel extends ViewModel implements OnStateListener {
     private final MutableLiveData<User> userLiveData = new MutableLiveData<>();
 
     public InfoViewModel() {
-        infoRepository = new InfoRepository(this);
+        infoRepository = new UserRepository(this);
     }
 
     public void upload_avt(Uri uri, String username) {

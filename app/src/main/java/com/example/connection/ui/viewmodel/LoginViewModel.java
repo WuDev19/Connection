@@ -4,11 +4,11 @@ import android.app.Activity;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
-import com.example.connection.repository.LoginRepository;
+import com.example.connection.repository.AuthRepository;
 
 public class LoginViewModel extends ViewModel {
 
-    private final LoginRepository loginRepository;
+    private final AuthRepository loginRepository;
     private final MutableLiveData<Boolean> checkPhoneLiveData = new MutableLiveData<>();
     private final MutableLiveData<String> errorLiveData = new MutableLiveData<>();
     private final MutableLiveData<Boolean> validateSms = new MutableLiveData<>();
@@ -17,11 +17,11 @@ public class LoginViewModel extends ViewModel {
     private final MutableLiveData<String> sdtLiveData = new MutableLiveData<>();
 
     public LoginViewModel (){
-        loginRepository = new LoginRepository(signInSuccess::setValue);
+        loginRepository = new AuthRepository(signInSuccess::setValue);
     }
 
     public void senOtp(String sdt, Activity activity){
-        loginRepository.sendOTP(sdt, activity, new LoginRepository.OnSendOtp() {
+        loginRepository.sendOTP(sdt, activity, new AuthRepository.OnSendOtp() {
             @Override
             public void onCheckPhone(boolean checkPhone) {
                 checkPhoneLiveData.setValue(checkPhone);

@@ -3,17 +3,17 @@ package com.example.connection.ui.viewmodel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
-import com.example.connection.repository.SignUpRepository;
+import com.example.connection.repository.AuthRepository;
 
 public class SignUpViewModel extends ViewModel {
 
-    private final SignUpRepository signUpRepository;
+    private final AuthRepository signUpRepository;
     private final MutableLiveData<Boolean> successLiveData = new MutableLiveData<>();
     private final MutableLiveData<String> getEmailAndPassword = new MutableLiveData<>();
     private final MutableLiveData<String> confirmInfoLiveData = new MutableLiveData<>();
 
     public SignUpViewModel(){
-        signUpRepository = new SignUpRepository();
+        signUpRepository = new AuthRepository();
     }
 
     public void signUp(String email, String password, String passwordConfirm, String username){
@@ -26,7 +26,7 @@ public class SignUpViewModel extends ViewModel {
             return;
         }
         confirmInfoLiveData.setValue("confirm");
-        signUpRepository.signUp(email, passwordConfirm, username, new SignUpRepository.OnSignUpListener() {
+        signUpRepository.signUp(email, passwordConfirm, username, new AuthRepository.OnSignUpListener() {
             @Override
             public void onSuccess(boolean success) {
                 successLiveData.setValue(success);

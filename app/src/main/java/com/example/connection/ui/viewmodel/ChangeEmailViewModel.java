@@ -5,18 +5,18 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 import com.example.connection.ui.state.OnStateListener;
-import com.example.connection.repository.ChangeEmailRepository;
+import com.example.connection.repository.UserRepository;
 import com.google.firebase.auth.FirebaseUser;
 
 public class ChangeEmailViewModel extends ViewModel implements OnStateListener {
 
-    private final ChangeEmailRepository changeEmailRepository;
+    private final UserRepository changeEmailRepository;
     private final MutableLiveData<String> verifySuccess = new MutableLiveData<>();
     private final MutableLiveData<String> errorLiveData = new MutableLiveData<>();
     private final MutableLiveData<String> checkPassWordLiveData = new MutableLiveData<>();
 
     public ChangeEmailViewModel() {
-        changeEmailRepository = new ChangeEmailRepository(this);
+        changeEmailRepository = new UserRepository(this);
     }
 
     public void verifyChange(String newEmail){

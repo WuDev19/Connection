@@ -2,18 +2,18 @@ package com.example.connection.ui.viewmodel;
 
 import androidx.lifecycle.ViewModel;
 
-import com.example.connection.repository.EmotePostRepository;
+import com.example.connection.repository.PostRepository;
 import com.google.firebase.firestore.Query;
 
 public class FragmentEmotePostViewModel extends ViewModel {
-    private final EmotePostRepository emotePostRepository;
+    private final PostRepository emotePostRepository;
 
     public FragmentEmotePostViewModel(){
-        emotePostRepository = new EmotePostRepository();
+        emotePostRepository = new PostRepository();
     }
 
     public Query getQuery(String postId){
-        return emotePostRepository.getQuery(postId);
+        return emotePostRepository.getEmoteQuery(postId);
     }
 
 }

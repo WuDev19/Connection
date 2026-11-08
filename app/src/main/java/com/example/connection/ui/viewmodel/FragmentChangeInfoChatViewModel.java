@@ -7,7 +7,7 @@ import androidx.lifecycle.ViewModel;
 import com.example.connection.ui.state.OnStateListener;
 import com.example.connection.model.ChatRoom;
 import com.example.connection.model.User;
-import com.example.connection.repository.FragmentChangeInfoChatRepository;
+import com.example.connection.repository.ChatRepository;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import java.util.List;
@@ -15,14 +15,14 @@ import java.util.Map;
 
 public class FragmentChangeInfoChatViewModel extends ViewModel implements OnStateListener {
     private ChatRoom chatRoom;
-    private final FragmentChangeInfoChatRepository fragmentChangeInfoChatRepository;
+    private final ChatRepository fragmentChangeInfoChatRepository;
     private final MutableLiveData<String> successLiveData = new MutableLiveData<>();
     private final MutableLiveData<String> errorLiveData = new MutableLiveData<>();
     private final MutableLiveData<String> notifyAlreadyExistInGroup = new MutableLiveData<>();
     private final MutableLiveData<ChatRoom> chatRoomListeningLiveData = new MutableLiveData<>();
 
     public FragmentChangeInfoChatViewModel(){
-        fragmentChangeInfoChatRepository = new FragmentChangeInfoChatRepository(this);
+        fragmentChangeInfoChatRepository = new ChatRepository();
     }
 
     public void setChatRoom(ChatRoom chatRoom){
@@ -44,7 +44,7 @@ public class FragmentChangeInfoChatViewModel extends ViewModel implements OnStat
     }
 
     public void updateChatRoomAvatar(Uri uri){
-        fragmentChangeInfoChatRepository.upload_avt(uri, chatRoom);
+        fragmentChangeInfoChatRepository.upload_avt(uri, chatRoom, this);
     }
 
     public void addMemberToGroup(List<String> userIds, List<User> avtList){

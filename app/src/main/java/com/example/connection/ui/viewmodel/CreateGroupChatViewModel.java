@@ -7,12 +7,12 @@ import androidx.lifecycle.ViewModel;
 import com.example.connection.ui.state.OnStateListener;
 import com.example.connection.model.ChatRoom;
 import com.example.connection.model.User;
-import com.example.connection.repository.CreateGroupChatRepository;
+import com.example.connection.repository.ChatRepository;
 import java.util.List;
 
 public class CreateGroupChatViewModel extends ViewModel {
 
-    private final CreateGroupChatRepository createGroupChatRepository;
+    private final ChatRepository createGroupChatRepository;
     private final MutableLiveData<List<String>> listFriendLiveData = new MutableLiveData<>();
     private final MutableLiveData<User> userFriendLiveData = new MutableLiveData<>();
     private final MutableLiveData<String> successLiveData = new MutableLiveData<>();
@@ -20,7 +20,7 @@ public class CreateGroupChatViewModel extends ViewModel {
     private final MutableLiveData<User> currentUserLiveData = new MutableLiveData<>();
 
     public CreateGroupChatViewModel(){
-        createGroupChatRepository = new CreateGroupChatRepository();
+        createGroupChatRepository = new ChatRepository();
     }
 
     public void getListFriend(){

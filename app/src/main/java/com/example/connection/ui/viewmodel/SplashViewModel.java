@@ -5,17 +5,17 @@ import android.util.Log;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
-import com.example.connection.repository.SplashRepository;
+import com.example.connection.repository.AuthRepository;
 import com.google.firebase.auth.FirebaseUser;
 
 public class SplashViewModel extends AndroidViewModel {
 
-    private final SplashRepository splashRepository;
+    private final AuthRepository splashRepository;
     private final String TAG = getClass().getName();
 
     public SplashViewModel(Application application) {
         super(application);
-        splashRepository = new SplashRepository(application);
+        splashRepository = new AuthRepository(application);
     }
 
     public LiveData<FirebaseUser> checkUser() {

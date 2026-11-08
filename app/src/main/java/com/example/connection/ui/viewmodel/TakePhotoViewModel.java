@@ -9,13 +9,13 @@ import androidx.lifecycle.ViewModel;
 import com.example.connection.ui.state.OnStateListener;
 import com.example.connection.model.Image;
 import com.example.connection.model.SelectionFriendModel;
-import com.example.connection.repository.TakePhotoRepository;
+import com.example.connection.repository.PostRepository;
 import java.io.File;
 import java.util.List;
 
 public class TakePhotoViewModel extends ViewModel implements OnStateListener {
 
-    private final TakePhotoRepository takePhotoRepository;
+    private final PostRepository takePhotoRepository;
     private final MutableLiveData<String> successLiveData = new MutableLiveData<>();
     private final MutableLiveData<String> failureLiveData = new MutableLiveData<>();
     private final MutableLiveData<List<Image>> numberOfNewPost = new MutableLiveData<>();
@@ -23,11 +23,11 @@ public class TakePhotoViewModel extends ViewModel implements OnStateListener {
     private final MutableLiveData<List<SelectionFriendModel>> selectionFriendLiveData = new MutableLiveData<>();
 
     public TakePhotoViewModel (){
-        takePhotoRepository = new TakePhotoRepository(this);
+        takePhotoRepository = new PostRepository(this);
     }
 
     public void getUserInfoFromFirebase(){
-        takePhotoRepository.getUserInfoFromFirebase(new TakePhotoRepository.OnGetListFriendCallback() {
+        takePhotoRepository.getUserInfoFromFirebase(new PostRepository.OnGetListFriendCallback() {
             @Override
             public void getListFriend(List<SelectionFriendModel> friends) {
                 selectionFriendLiveData.setValue(friends);

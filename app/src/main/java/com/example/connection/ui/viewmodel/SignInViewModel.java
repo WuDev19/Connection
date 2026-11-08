@@ -5,17 +5,17 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 import com.example.connection.ui.state.OnStateListener;
-import com.example.connection.repository.SignInRepository;
+import com.example.connection.repository.AuthRepository;
 
 public class SignInViewModel extends ViewModel implements OnStateListener {
 
-    private final SignInRepository signInRepository;
+    private final AuthRepository signInRepository;
     private final MutableLiveData<String> successLiveData = new MutableLiveData<>();
     private final MutableLiveData<String> errorLiveData = new MutableLiveData<>();
     private final MutableLiveData<Boolean> isEmptyInfo = new MutableLiveData<>();
 
     public SignInViewModel() {
-        signInRepository = new SignInRepository(this);
+        signInRepository = new AuthRepository(this);
     }
 
     public void getSignInWithEmailAndPassword(String email, String password, Activity activity) {

@@ -5,18 +5,18 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 import com.example.connection.ui.state.OnStateListener;
 import com.example.connection.model.User;
-import com.example.connection.repository.UsernameRepository;
+import com.example.connection.repository.UserRepository;
 
 public class UsernameViewModel extends ViewModel {
 
-    private final UsernameRepository usernameRepository;
+    private final UserRepository usernameRepository;
     private User user;
     private final MutableLiveData<String> username = new MutableLiveData<>();
     private final MutableLiveData<String> successLiveData = new MutableLiveData<>();
     private final MutableLiveData<String> errorLiveData = new MutableLiveData<>();
 
     public UsernameViewModel() {
-        usernameRepository = new UsernameRepository();
+        usernameRepository = new UserRepository();
     }
 
     public LiveData<String> getSuccessLiveData() {

@@ -5,13 +5,13 @@ import android.util.Log;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
-import com.example.connection.repository.ShowPhotoRepository;
+import com.example.connection.repository.PostRepository;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.Query;
 
-public class ShowPhotoViewModel extends ViewModel implements ShowPhotoRepository.OnSendMessage {
+public class ShowPhotoViewModel extends ViewModel implements PostRepository.OnSendMessage {
 
-    private final ShowPhotoRepository showPhotoRepository;
+    private final PostRepository showPhotoRepository;
     private final MutableLiveData<Boolean> updateWidget = new MutableLiveData<>();
     private final MutableLiveData<Boolean> sendMessageSuccess = new MutableLiveData<>();
     private final MutableLiveData<Query> query = new MutableLiveData<>();
@@ -19,7 +19,7 @@ public class ShowPhotoViewModel extends ViewModel implements ShowPhotoRepository
     private final String TAG = getClass().getName();
 
     public ShowPhotoViewModel() {
-        showPhotoRepository = new ShowPhotoRepository(this);
+        showPhotoRepository = new PostRepository(this);
     }
 
     public void updateSeenPost(Context context) {

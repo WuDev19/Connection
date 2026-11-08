@@ -5,17 +5,17 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 import com.example.connection.model.ChatRoom;
-import com.example.connection.repository.FragmentChangeAliasRepository;
+import com.example.connection.repository.ChatRepository;
 import java.util.Map;
 import java.util.Objects;
 
 public class FragmentChangeAliasViewModel extends ViewModel {
-    private final FragmentChangeAliasRepository fragmentChangeAliasRepository;
+    private final ChatRepository fragmentChangeAliasRepository;
     private final String TAG = getClass().getName();
     private final MutableLiveData<ChatRoom> chatRoomListeningLiveData = new MutableLiveData<>();
 
     public FragmentChangeAliasViewModel() {
-        fragmentChangeAliasRepository = new FragmentChangeAliasRepository();
+        fragmentChangeAliasRepository = new ChatRepository();
     }
 
     public void updateAlias(ChatRoom chatRoom, String id, String alias, Map<String, String> aliasMap) {

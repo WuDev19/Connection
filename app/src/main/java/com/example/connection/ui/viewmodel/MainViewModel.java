@@ -8,21 +8,21 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 import com.example.connection.model.WidgetModel;
-import com.example.connection.repository.MainRepository;
+import com.example.connection.repository.UserRepository;
 
 import java.util.HashMap;
 import java.util.List;
 
 public class MainViewModel extends ViewModel {
 
-    private final MainRepository mainRepository;
+    private final UserRepository mainRepository;
     private final MutableLiveData<List<String>> listFriendConfirmLiveData = new MutableLiveData<>();
     private final MutableLiveData<HashMap<String, Integer>> countMessageLiveData = new MutableLiveData<>();
     private final MutableLiveData<WidgetModel> widgetLiveData = new MutableLiveData<>();
     private final MutableLiveData<Boolean> cameraMusicPlaying = new MutableLiveData<>();
 
     public MainViewModel(){
-        mainRepository = new MainRepository();
+        mainRepository = new UserRepository();
     }
 
     public void setFirstUse(Activity activity){

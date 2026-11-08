@@ -13,7 +13,7 @@ import androidx.media3.exoplayer.ExoPlayer;
 
 import com.example.connection.constants.MediaPlayerUtil;
 import com.example.connection.data.local.MyMusic;
-import com.example.connection.repository.ChooseMusicRepository;
+import com.example.connection.repository.MusicRepository;
 
 import java.util.HashSet;
 import java.util.List;
@@ -30,12 +30,12 @@ public class ChooseMusicViewModel extends AndroidViewModel {
     private final MutableLiveData<Boolean> hideTvCancel = new MutableLiveData<>();
     private final MutableLiveData<List<MyMusic>> listInitListMusic = new MutableLiveData<>();
     private final MutableLiveData<List<MyMusic>> myMusicListLiveData = new MutableLiveData<>();
-    private final ChooseMusicRepository chooseMusicRepository;
+    private final MusicRepository chooseMusicRepository;
     private ExoPlayer exoPlayer;
 
     public ChooseMusicViewModel(@NonNull Application application) {
         super(application);
-        chooseMusicRepository = new ChooseMusicRepository(application);
+        chooseMusicRepository = new MusicRepository(application);
     }
 
     private void ensurePlayer() {

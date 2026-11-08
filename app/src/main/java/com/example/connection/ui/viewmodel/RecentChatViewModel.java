@@ -7,7 +7,7 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 import com.example.connection.model.ChatRoom;
 import com.example.connection.model.User;
-import com.example.connection.repository.RecentChatRepository;
+import com.example.connection.repository.ChatRepository;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -24,7 +24,7 @@ import java.util.Random;
 
 public class RecentChatViewModel extends ViewModel {
 
-    private final RecentChatRepository recentChatRepository;
+    private final ChatRepository recentChatRepository;
     private final HashMap<String, MutableLiveData<User>> chatRoomCache = new HashMap<>();
     private final Map<String, User> userCache = new HashMap<>();
     private final MutableLiveData<ChatRoom> success = new MutableLiveData<>();
@@ -36,7 +36,7 @@ public class RecentChatViewModel extends ViewModel {
     }
 
     public RecentChatViewModel(){
-        recentChatRepository = new RecentChatRepository();
+        recentChatRepository = new ChatRepository();
     }
 
     public void getUserInfo(ChatRoom model, OnUserInfoLoadedListener listener) {

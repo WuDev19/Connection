@@ -5,20 +5,20 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 import com.example.connection.model.Comment;
-import com.example.connection.repository.CommentRepository;
+import com.example.connection.repository.PostRepository;
 import com.google.firebase.firestore.Query;
 
 public class CommentViewModel extends ViewModel {
-    private final CommentRepository commentRepository;
+    private final PostRepository commentRepository;
     private final MutableLiveData<String> error = new MutableLiveData<>();
     private final String TAG = getClass().getName();
 
     public CommentViewModel() {
-        commentRepository = new CommentRepository();
+        commentRepository = new PostRepository();
     }
 
     public Query getQuery(String postId) {
-        return commentRepository.getQuery(postId);
+        return commentRepository.getCommentQuery(postId);
     }
 
     public void setComment(String postId, String comment) {

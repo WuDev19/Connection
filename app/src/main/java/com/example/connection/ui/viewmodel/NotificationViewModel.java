@@ -6,7 +6,7 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.SavedStateHandle;
 import androidx.lifecycle.ViewModel;
 import com.example.connection.model.User;
-import com.example.connection.repository.NotificationRepository;
+import com.example.connection.repository.UserRepository;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,7 +15,7 @@ public class NotificationViewModel extends ViewModel {
 
     private final List<String> listFriendConfirm;
     private List<String> friendCurrentUser;
-    private final NotificationRepository notificationRepository;
+    private final UserRepository notificationRepository;
     private User user;
     private final String currentUserId;
     private final MutableLiveData<String> errorLiveData = new MutableLiveData<>();
@@ -26,7 +26,7 @@ public class NotificationViewModel extends ViewModel {
     public NotificationViewModel(SavedStateHandle handle) {
         listFriendConfirm = handle.get("confirm_friend");
         Log.e("CHECKK", "NotificationViewModel: " + listFriendConfirm);
-        notificationRepository = new NotificationRepository();
+        notificationRepository = new UserRepository();
         currentUserId = notificationRepository.getUserId();
     }
 
@@ -51,7 +51,7 @@ public class NotificationViewModel extends ViewModel {
             user.setFriend(friendCurrentUser);
             user.setFriendConfirm(listFriendConfirm);
             Log.e("kiemtrasuccess", "onAccept: success");
-            notificationRepository.acceptFriend(otherUserId, currentUserId, user, new NotificationRepository.HandleFriendNotification() {
+            notificationRepository.acceptFriend(otherUserId, currentUserId, user, new UserRepository.HandleFriendNotification() {
                 @Override
                 public void onSuccess(String success) {
                     successLiveData.setValue(success);
@@ -70,7 +70,7 @@ public class NotificationViewModel extends ViewModel {
         listFriendConfirm.remove(position);
         setAdapter.setValue(listFriendConfirm);
         user.setFriendConfirm(listFriendConfirm);
-        notificationRepository.declineFriend(currentUserId, user, new NotificationRepository.HandleFriendNotification() {
+        notificationRepository.declineFriend(currentUserId, user, new UserRepository.HandleFriendNotification() {
             @Override
             public void onSuccess(String success) {
             }

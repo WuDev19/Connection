@@ -9,20 +9,20 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class ChooseMusicRepository {
+public class MusicRepository {
 
     private final MusicDao musicDao;
     private final ExecutorService queryRoomService = Executors.newSingleThreadExecutor();
 
-    public interface OnGetInitListMusic{
+    public interface OnGetInitListMusic {
         void getInitListMusic(List<MyMusic> listInitListMusic);
     }
 
-    public interface OnSearchMusic{
+    public interface OnSearchMusic {
         void getListMusic(List<MyMusic> myMusicList);
     }
 
-    public ChooseMusicRepository(Application application){
+    public MusicRepository(Application application) {
         musicDao = MusicDatabase.getInstance(application).musicDao();
     }
 
@@ -38,11 +38,11 @@ public class ChooseMusicRepository {
                 });
     }
 
-    public void searchMusic(String name, OnSearchMusic onSearchMusic){
+    public void searchMusic(String name, OnSearchMusic onSearchMusic) {
         queryRoomService.execute(() -> onSearchMusic.getListMusic(musicDao.getListMusic(name)));
     }
 
-    public void shutdownExecutor(){
+    public void shutdownExecutor() {
         queryRoomService.shutdown();
     }
 
