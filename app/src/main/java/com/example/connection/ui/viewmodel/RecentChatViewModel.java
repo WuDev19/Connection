@@ -24,7 +24,6 @@ import java.util.Map;
 public class RecentChatViewModel extends ViewModel {
 
     private final ChatRepository recentChatRepository;
-    private final HashMap<String, MutableLiveData<User>> chatRoomCache = new HashMap<>();
     private final Map<String, User> userCache = new HashMap<>();
     private final MutableLiveData<ChatRoom> success = new MutableLiveData<>();
     private final String TAG = getClass().getName();
@@ -59,32 +58,8 @@ public class RecentChatViewModel extends ViewModel {
         });
     }
 
-    public LiveData<User> getInfo(ChatRoom model){
-        if(chatRoomCache.containsKey(model.getChatRoomId())){
-            return chatRoomCache.get(model.getChatRoomId());
-        }
-        String currentUserId = recentChatRepository.getCurrentUserId();
-        MutableLiveData<User> getInfo = new MutableLiveData<>();
-        chatRoomCache.put(model.getChatRoomId(), getInfo);
-        if (currentUserId == null) return null;
-        String otherUserId = getOtherUserId(model.getUserId());
-        if (otherUserId == null) return null;
-        if (otherUserId.contains("delete")) {
-            String[] otherId = otherUserId.split("_");
-            otherUserId = otherId[0];
-        }
-        recentChatRepository.showInfo(otherUserId, getInfo::setValue);
-        return getInfo;
-    }
-
     public LiveData<Query> getQuery(){
         return recentChatRepository.getQuery();
-    }
-
-    public LiveData<Boolean> getIsNotSeen(ChatRoom model){
-        MutableLiveData<Boolean> isNotSeen = new MutableLiveData<>();
-        recentChatRepository.getIsNotSeen(model, isNotSeen::setValue);
-        return isNotSeen;
     }
 
     private String getOtherUserId(List<String> list) {
@@ -220,7 +195,7 @@ public class RecentChatViewModel extends ViewModel {
                 Arrays.asList(otherUser.getId(), currentId),
                 now,
                 currentId,
-                "Đoạn chat ngẫu nhiên đã được tạo",
+                "Hãy nhập gì đó để lan tỏa yêu thương :))",
                 mapDelete,
                 avtMap,
                 aliasMap,
@@ -241,10 +216,6 @@ public class RecentChatViewModel extends ViewModel {
                 if (callback != null) callback.onError(errorMsg);
             }
         });
-    }
-
-    public void createAnonymousChat(User otherUser, Context context){
-        createAnonymousChat(otherUser, context, null);
     }
 
     public LiveData<ChatRoom> getSuccess() {

@@ -10,9 +10,7 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.activity.result.ActivityResultLauncher;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.fragment.app.FragmentManager;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.Player;
@@ -350,17 +348,5 @@ public class MediaPreviewHandler {
             videoPlayer.release();
             videoPlayer = null;
         }
-    }
-
-    public boolean isVideo() {
-        return isVideo;
-    }
-
-    public File getVideoFile() {
-        return videoFile;
-    }
-
-    public Bitmap getPhoto() {
-        return photo;
     }
 }

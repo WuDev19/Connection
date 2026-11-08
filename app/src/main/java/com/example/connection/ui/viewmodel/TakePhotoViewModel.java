@@ -65,10 +65,6 @@ public class TakePhotoViewModel extends ViewModel implements OnStateListener {
         }
     }
 
-    public void createFolderConnectionExternalStorage(Bitmap photo, Context context){
-        takePhotoRepository.createFolderConnectionExternalStorage(photo, context);
-    }
-
     public void listenForNewPosts(){
         takePhotoRepository.listenForNewPosts(numberOfNewPost::setValue);
     }

@@ -62,8 +62,6 @@ public interface PostRepository {
     void uploadBitmap(Bitmap bitmap, String urlMusic, String name, String singer, String status, List<String> mList, Context context, OnStateListener listener);
     void uploadVideo(File file, String urlMusic, String name, String singer, String status, List<String> mList);
     void uploadVideo(File file, String urlMusic, String name, String singer, String status, List<String> mList, OnStateListener listener);
-    void createFolderConnectionExternalStorage(Bitmap photo, Context context);
-    void createFolderConnectionExternalStorage(Bitmap photo, Context context, OnStateListener listener);
     void listenForNewPosts(NewPostCallBack newPostCallBack);
     void downloadPhoto(Bitmap photo, Context context);
     void downloadPhoto(Bitmap photo, Context context, OnStateListener listener);
@@ -73,7 +71,6 @@ public interface PostRepository {
 
     // ==================== ShowPhoto logic ====================
     void updateSeenPostPhoto(Context context, OnUpdateWidget onUpdateWidget);
-    Query getQuery();
     void sendMessage(String chatRoomId, String otherId, String otherUserName, String avtPoster, String mess);
     void sendMessage(String chatRoomId, String otherId, String otherUserName, String avtPoster, String mess, OnSendMessage callback);
     String getIdEmote(String postId);

@@ -2,6 +2,13 @@ package com.example.connection.ui.view.fragment;
 
 import android.annotation.SuppressLint;
 import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.FrameLayout;
+import android.widget.TextView;
+import android.widget.Toast;
+
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -12,18 +19,13 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.FrameLayout;
-import android.widget.TextView;
-import android.widget.Toast;
-import androidx.lifecycle.ViewModelProvider;
+
 import com.example.connection.R;
 import com.example.connection.ui.adapter.NotificationAdapter;
 import com.example.connection.ui.viewmodel.MainViewModel;
 import com.example.connection.ui.viewmodel.NotificationViewModel;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+
 import java.util.List;
 
 public class FragmentNotification extends Fragment {

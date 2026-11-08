@@ -59,8 +59,4 @@ public class FragmentHome extends Fragment {
 
     }
 
-    public void setCurrentPage(int position) {
-        viewPager2.setCurrentItem(position, true);
-    }
-
 }

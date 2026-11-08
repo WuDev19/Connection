@@ -32,7 +32,6 @@ public class ChatViewModel extends ViewModel {
     private final MutableLiveData<ChatRoom> chatRoomLiveData = new MutableLiveData<>();
     private final MutableLiveData<ChatRoom> createNewChat = new MutableLiveData<>();
     private final MutableLiveData<Boolean> send = new MutableLiveData<>();
-    private final MutableLiveData<Query> createOptions = new MutableLiveData<>();
     private final MutableLiveData<ChatRoom> chatRoomListeningLiveData = new MutableLiveData<>();
 
     public ChatViewModel() {
@@ -156,11 +155,6 @@ public class ChatViewModel extends ViewModel {
         return otherUserExistLiveData;
     }
 
-    public void createOptions(ChatRoom chatRoom1) {
-        Query query = chatRepository.getOptions(chatRoom1, chatRoomId);
-        createOptions.setValue(query);
-    }
-
     private String getChatroomId(String userId1, String userId2) {
         if (userId1.hashCode() < userId2.hashCode()) {
             return userId1 + "_" + userId2;
@@ -240,10 +234,6 @@ public class ChatViewModel extends ViewModel {
 
     public LiveData<ChatRoom> getCreateNewChat() {
         return createNewChat;
-    }
-
-    public LiveData<Query> getCreateOptions() {
-        return createOptions;
     }
 
     public LiveData<ChatRoom> getChatRoomListeningLiveData() {

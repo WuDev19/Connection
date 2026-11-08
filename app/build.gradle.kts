@@ -27,6 +27,8 @@ android {
         }
         val cloudinaryName = localProps.getProperty("CLOUDINARY_CLOUD_NAME", "dsmw3ean4")
         buildConfigField("String", "CLOUDINARY_NAME", "\"$cloudinaryName\"")
+        val expectedCertSha = localProps.getProperty("EXPECTED_CERT_SHA256", "")
+        buildConfigField("String", "EXPECTED_CERT_SHA256", "\"$expectedCertSha\"")
     }
 
     buildFeatures {

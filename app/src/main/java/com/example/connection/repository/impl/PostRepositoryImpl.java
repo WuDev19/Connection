@@ -412,48 +412,6 @@ public class PostRepositoryImpl implements PostRepository {
     }
 
     @Override
-    public void createFolderConnectionExternalStorage(Bitmap photo, Context context) {
-        createFolderConnectionExternalStorage(photo, context, this.onStateListener);
-    }
-
-    @Override
-    public void createFolderConnectionExternalStorage(Bitmap photo, Context context, OnStateListener listener) {
-        downloadExecutor.execute(() -> {
-            try {
-                File folderConnection = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "Connection");
-                if (!folderConnection.exists()) {
-                    boolean init = folderConnection.mkdirs();
-                    if (init) {
-                        Log.e(TAG, "Tạo folder thành công");
-                    } else {
-                        Log.e(TAG, "Tạo folder không thành công");
-                    }
-                } else {
-                    Log.e(TAG, "Folder đã tồn tại");
-                }
-                String uID = UUID.randomUUID().toString();
-                File file = new File(folderConnection, uID + ".jpg");
-                Log.e(TAG, file.getAbsolutePath());
-                FileOutputStream fileOutputStream;
-                try {
-                    fileOutputStream = new FileOutputStream(file);
-                    photo.compress(Bitmap.CompressFormat.JPEG, 100, fileOutputStream);
-                    fileOutputStream.flush();
-                    fileOutputStream.close();
-                    Intent intent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
-                    intent.setData(Uri.fromFile(file));
-                    context.sendBroadcast(intent);
-                    if (listener != null) listener.onSuccess("Lưu ảnh thành công");
-                } catch (IOException e) {
-                    if (listener != null) listener.onFailure(e.getMessage());
-                }
-            } catch (Exception e) {
-                if (listener != null) listener.onFailure(e.getMessage());
-            }
-        });
-    }
-
-    @Override
     public void listenForNewPosts(NewPostCallBack newPostCallBack) {
         if (currentUserId == null || newPostCallBack == null) return;
 
@@ -616,15 +574,6 @@ public class PostRepositoryImpl implements PostRepository {
                     }
                 })
                 .addOnFailureListener(e -> Log.e(TAG, "onFailure: " + e.getMessage()));
-    }
-
-    @Override
-    public Query getQuery() {
-        if (currentUserId == null) return null;
-        return db.collection("post_photo")
-                .whereArrayContains("friendId", currentUserId)
-                .orderBy("timestamp", Query.Direction.DESCENDING)
-                .limit(10);
     }
 
     @Override

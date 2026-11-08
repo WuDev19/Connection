@@ -37,10 +37,6 @@ public class MediaPlayerUtil {
         }
     }
 
-    public boolean isInChooseFrag() {
-        return isInChooseFrag;
-    }
-
     public void setInChooseFrag(boolean inChooseFrag) {
         isInChooseFrag = inChooseFrag;
     }
@@ -92,39 +88,8 @@ public class MediaPlayerUtil {
         }
     }
 
-    public void prepareMusicBeforePlaying(Context context, String urlMusic) {
-        if (urlMusic == null || urlMusic.isEmpty()) {
-            urlMusicCurrent = null;
-            if (exoPlayer != null) {
-                exoPlayer.stop();
-                exoPlayer.clearMediaItems();
-            }
-            return;
-        }
-        try {
-            ensurePlayer(context);
-            urlMusicCurrent = urlMusic;
-            MediaItem mediaItem = MediaItem.fromUri(urlMusic);
-            exoPlayer.setMediaItem(mediaItem);
-            exoPlayer.prepare();
-        } catch (Exception e) {
-            Log.e(TAG, "prepareMusic error: " + e.getMessage());
-        }
-    }
-
     public boolean isPlaying() {
         return exoPlayer != null && exoPlayer.isPlaying();
-    }
-
-    public void reset() {
-        if (exoPlayer != null) {
-            exoPlayer.stop();
-            exoPlayer.clearMediaItems();
-        }
-    }
-
-    public boolean isInGeneral() {
-        return isInGeneral;
     }
 
     public void setIsInGeneral(boolean isInGeneral) {

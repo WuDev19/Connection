@@ -49,10 +49,6 @@ public interface ChatRepository {
         void onSearch(List<ChatRoom> roomList);
     }
 
-    interface OnSeenChatRoom {
-        void onSeen(boolean seen);
-    }
-
     String getCurrentUserId();
 
     User getCurrentUser();
@@ -77,8 +73,6 @@ public interface ChatRepository {
 
     Task<Void> deleteEmote(ChatRoom chatRoom, String idMessage, String idUser);
 
-    Query getOptions(ChatRoom chatRoom1, String chatRoomId);
-
     void listeningChatRoom(ChatRoom chatRoom, OnUpdateChatRoom updateChatRoom);
 
     void unregisterListeningChatRoom();
@@ -100,8 +94,6 @@ public interface ChatRepository {
     LiveData<Query> getQuery();
 
     void showInfo(String otherUserId, OnShowInfo onShowInfo);
-
-    void getIsNotSeen(ChatRoom model, OnSeenChatRoom onSeenChatRoom);
 
     void searchChatRoom(OnSearchChatRoom onSearchChatRoom);
 

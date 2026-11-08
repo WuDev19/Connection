@@ -211,18 +211,6 @@ public class ChatRepositoryImpl implements ChatRepository {
     }
 
     @Override
-    public Query getOptions(ChatRoom chatRoom1, String chatRoomId) {
-        if (currentUserId == null || chatRoom1 == null || chatRoom1.getDeleteChat() == null) return null;
-        Long timestamp = chatRoom1.getDeleteChat().get(currentUserId);
-        if (timestamp == null) return null;
-        return db.collection("chatroom")
-                .document(chatRoomId)
-                .collection("chats")
-                .whereGreaterThanOrEqualTo("timestamp", timestamp)
-                .orderBy("timestamp", Query.Direction.DESCENDING);
-    }
-
-    @Override
     public void listeningChatRoom(ChatRoom chatRoom, OnUpdateChatRoom updateChatRoom) {
         if (chatRoomListening != null) {
             chatRoomListening.remove();
@@ -498,32 +486,6 @@ public class ChatRepositoryImpl implements ChatRepository {
             Log.e(TAG, otherUser.toString());
             onShowInfo.onShow(otherUser);
         });
-    }
-
-    @Override
-    public void getIsNotSeen(ChatRoom model, OnSeenChatRoom onSeenChatRoom) {
-        if (model == null || onSeenChatRoom == null) return;
-        String myId = FirebaseAuth.getInstance().getUid();
-        if (myId != null && model.getUnreadCounts() != null && model.getUnreadCounts().containsKey(myId)) {
-            Long unread = model.getUnreadCounts().get(myId);
-            onSeenChatRoom.onSeen(unread != null && unread > 0);
-            return;
-        }
-
-        db.collection("chatroom").document(model.getChatRoomId())
-                .collection("chats")
-                .whereNotEqualTo("senderId", FirebaseAuth.getInstance().getUid())
-                .whereEqualTo("seen", false)
-                .limit(1)
-                .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    if (!queryDocumentSnapshots.isEmpty()) {
-                        onSeenChatRoom.onSeen(true);
-                    } else {
-                        onSeenChatRoom.onSeen(false);
-                    }
-                })
-                .addOnFailureListener(e -> Log.e(TAG, Objects.requireNonNull(e.getMessage())));
     }
 
     @Override

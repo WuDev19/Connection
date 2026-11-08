@@ -13,7 +13,6 @@ public class ChangePasswordViewModel extends ViewModel implements OnStateListene
 
     private final UserRepository changePasswordRepository;
     private final MutableLiveData<String> errorLiveData = new MutableLiveData<>();
-    private final MutableLiveData<String> passwordConfirmLiveData = new MutableLiveData<>();
     private final MutableLiveData<String> successLiveData = new MutableLiveData<>();
 
     public ChangePasswordViewModel (){
@@ -40,20 +39,8 @@ public class ChangePasswordViewModel extends ViewModel implements OnStateListene
         changePasswordRepository.updatePassword(user, oldPassword, newPasswordConfirm);
     }
 
-    public void setPassword(Context context, String newPassword){
-        // No-op: Plaintext passwords are no longer saved to SharedPreferences.
-    }
-
-    public void updatePassword(String newPasswordConfirm){
-        // Deprecated: Handled in checkPasswordConfirm with reauthentication.
-    }
-
     public LiveData<String> getError() {
         return errorLiveData;
-    }
-
-    public LiveData<String> getPasswordConfirmLiveData() {
-        return passwordConfirmLiveData;
     }
 
     public LiveData<String> getSuccess() {

@@ -29,7 +29,7 @@ public class CustomSplashActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_custom_splash);
 
-        if (!BuildConfig.DEBUG && SecurityCheckUtil.isDeviceCompromised()) {
+        if (!BuildConfig.DEBUG && (SecurityCheckUtil.isDeviceCompromised() || SecurityCheckUtil.isTampered(this, BuildConfig.EXPECTED_CERT_SHA256))) {
             Toast.makeText(this, "Phát hiện môi trường không an toàn. Ứng dụng sẽ đóng để bảo vệ dữ liệu.", Toast.LENGTH_LONG).show();
             finishAffinity();
             return;

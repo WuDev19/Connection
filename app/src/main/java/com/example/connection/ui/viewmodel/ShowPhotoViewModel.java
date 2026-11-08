@@ -15,7 +15,6 @@ public class ShowPhotoViewModel extends ViewModel implements PostRepository.OnSe
     private final PostRepository showPhotoRepository;
     private final MutableLiveData<Boolean> updateWidget = new MutableLiveData<>();
     private final MutableLiveData<Boolean> sendMessageSuccess = new MutableLiveData<>();
-    private final MutableLiveData<Query> query = new MutableLiveData<>();
     private final MutableLiveData<Boolean> expressDone = new MutableLiveData<>();
     private final String TAG = getClass().getName();
 
@@ -25,11 +24,6 @@ public class ShowPhotoViewModel extends ViewModel implements PostRepository.OnSe
 
     public void updateSeenPost(Context context) {
         showPhotoRepository.updateSeenPostPhoto(context, updateWidget::setValue);
-    }
-
-    public void getQueryFireStore() {
-        Query query1 = showPhotoRepository.getQuery();
-        query.setValue(query1);
     }
 
     public void sendMessage(String message, String postUrl, String otherId, String otherUserName, String avtPoster) {
@@ -67,10 +61,6 @@ public class ShowPhotoViewModel extends ViewModel implements PostRepository.OnSe
 
     public LiveData<Boolean> getSendMessageSuccess() {
         return sendMessageSuccess;
-    }
-
-    public LiveData<Query> getQuery() {
-        return query;
     }
 
     public LiveData<Boolean> getExpressDone() {
