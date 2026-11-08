@@ -15,6 +15,7 @@ public class User {
     private List<String> friend;
     private List<String> friendConfirm;
     private boolean active;
+    private String fcmToken;
 
     public User() {
     }
@@ -101,6 +102,14 @@ public class User {
 
     public void setActive(boolean active) {
         this.active = active;
+    }
+
+    public String getFcmToken() {
+        return fcmToken;
+    }
+
+    public void setFcmToken(String fcmToken) {
+        this.fcmToken = fcmToken;
     }
 
     @NonNull

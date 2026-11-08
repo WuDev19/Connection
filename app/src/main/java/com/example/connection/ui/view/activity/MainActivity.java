@@ -74,6 +74,8 @@ public class MainActivity extends AppCompatActivity {
         initView();
 
         checkPermission();
+        checkNotificationPermission();
+        syncFcmToken();
 
         mainViewModel.checkActive();
 
@@ -288,6 +290,20 @@ public class MainActivity extends AppCompatActivity {
             requestPermissions(permissions, 10);
             Log.e(TAG, "checkPermission: ");
         }
+    }
+
+    private void checkNotificationPermission() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 101);
+            }
+        }
+    }
+
+    private void syncFcmToken() {
+        com.google.firebase.messaging.FirebaseMessaging.getInstance().getToken()
+                .addOnSuccessListener(com.example.connection.service.ConnectionFirebaseMessagingService::updateTokenToFirestore)
+                .addOnFailureListener(e -> Log.e(TAG, "Lỗi lấy FCM token: " + e.getMessage()));
     }
 
     @Override

@@ -165,6 +165,18 @@ public class FragmentCreateGroupChat extends BottomSheetDialogFragment {
                     0);
             chatRoom.setUnreadCounts(new HashMap<>());
             createGroupChatViewModel.setChatRoomToFireStore(chatRoom);
+
+            // Bắn thông báo mời vào nhóm cho các thành viên qua Backend Go
+            Map<String, String> data = new HashMap<>();
+            data.put("type", "GROUP_INVITE");
+            String creatorName = aliasMap.get(myId);
+            if (creatorName == null) creatorName = "Ai đó";
+            com.example.connection.data.api.NotificationHelper.sendNotificationToUsers(
+                    adapter.getUserInGroup(),
+                    "Nhóm chat mới",
+                    creatorName + " đã thêm bạn vào nhóm " + groupName,
+                    data
+            );
         });
 
         edt_search_user_to_add.addTextChangedListener(new TextWatcher() {

@@ -310,10 +310,29 @@ public class ChatActivity extends AppCompatActivity {
     private void getDataIntent() {
         Intent intent = getIntent();
         chatRoom = intent.getParcelableExtra("chat_room");
-        if (chatRoom == null) {
-            createChatRoom(intent);
-        } else {
+        if (chatRoom != null) {
             showChatRoomExist(chatRoom);
+        } else if (intent.hasExtra("chat_room_id")) {
+            String roomId = intent.getStringExtra("chat_room_id");
+            if (roomId != null && !roomId.isEmpty()) {
+                com.google.firebase.firestore.FirebaseFirestore.getInstance().collection("chatroom").document(roomId).get()
+                        .addOnSuccessListener(snapshot -> {
+                            if (snapshot.exists()) {
+                                ChatRoom room = snapshot.toObject(ChatRoom.class);
+                                if (room != null) {
+                                    chatRoom = room;
+                                    showChatRoomExist(chatRoom);
+                                    return;
+                                }
+                            }
+                            createChatRoom(intent);
+                        })
+                        .addOnFailureListener(e -> createChatRoom(intent));
+            } else {
+                createChatRoom(intent);
+            }
+        } else {
+            createChatRoom(intent);
         }
     }
 

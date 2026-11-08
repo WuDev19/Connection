@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModel;
 
 import com.example.connection.model.ChatRoom;
 import com.example.connection.model.User;
+import com.example.connection.data.api.NotificationHelper;
 import com.example.connection.repository.base.ChatRepository;
 import com.example.connection.repository.impl.ChatRepositoryImpl;
 import com.google.firebase.Timestamp;
@@ -112,6 +113,24 @@ public class ChatViewModel extends ViewModel {
             chatRoom.setLastMessage(message);
         }
         chatRepository.sendMessage(message, chatRoomId, chatRoom);
+
+        // Bắn thông báo đẩy cho các thành viên khác qua Backend Go
+        String senderName = "Ai đó";
+        if (chatRepository.getCurrentUser() != null && chatRepository.getCurrentUser().getUserName() != null) {
+            senderName = chatRepository.getCurrentUser().getUserName();
+        }
+        String notificationTitle = (userIds.size() >= 3 && chatRoom.getChatName() != null && !chatRoom.getChatName().isEmpty())
+                ? chatRoom.getChatName()
+                : senderName;
+        String notificationBody = (userIds.size() >= 3)
+                ? senderName + ": " + message
+                : message;
+
+        Map<String, String> data = new HashMap<>();
+        data.put("chatRoomId", chatRoomId);
+        data.put("type", "CHAT");
+
+        NotificationHelper.sendNotificationToUsers(userIds, notificationTitle, notificationBody, data);
     }
 
     public void createNewChatRoom() {

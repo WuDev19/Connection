@@ -23,6 +23,8 @@ roomRuntimeVersion = "2.7.2"
 workRuntimeVersion = "2.10.1"
 lifecycleLivedataKtx = "2.9.3"
 lifecycleViewmodelKtx = "2.9.3"
+retrofit = "2.11.0"
+converterGson = "2.11.0"
 
 [libraries]
 androidx-camera-video = { module = "androidx.camera:camera-video", version.ref = "cameraVideo" }
@@ -37,6 +39,7 @@ firebase-auth = { module = "com.google.firebase:firebase-auth" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
 firebase-firestore = { module = "com.google.firebase:firebase-firestore" }
 firebase-storage = { module = "com.google.firebase:firebase-storage" }
+firebase-messaging = { module = "com.google.firebase:firebase-messaging" }
 firebase-ui-firestore = { module = "com.firebaseui:firebase-ui-firestore", version.ref = "firebaseUiFirestore" }
 glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
 imagepicker = { module = "com.github.dhaval2404:imagepicker", version.ref = "imagepicker" }
@@ -57,6 +60,8 @@ media3-exoplayer = { module = "androidx.media3:media3-exoplayer", version.ref = 
 work-runtime = { module = "androidx.work:work-runtime", version.ref = "workRuntimeVersion" }
 androidx-lifecycle-livedata-ktx = { group = "androidx.lifecycle", name = "lifecycle-livedata-ktx", version.ref = "lifecycleLivedataKtx" }
 androidx-lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "lifecycleViewmodelKtx" }
+retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
+retrofit-converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "converterGson" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

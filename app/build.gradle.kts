@@ -82,7 +82,10 @@ dependencies {
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.storage)
+    implementation(libs.firebase.messaging)
     implementation(libs.firebase.ui.firestore)
     implementation(libs.circleimageview)
     implementation(libs.imagepicker)
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.converter.gson)
 }

@@ -18,6 +18,7 @@ import com.example.connection.model.User;
 import com.example.connection.model.WidgetModel;
 import com.example.connection.repository.base.UserRepository;
 import com.example.connection.ui.state.OnStateListener;
+import com.example.connection.data.api.NotificationHelper;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.auth.AuthCredential;
@@ -548,6 +549,20 @@ public class UserRepositoryImpl implements UserRepository {
                             .set(otherUser).addOnCompleteListener(task1 -> {
                                 if (task1.isSuccessful()) {
                                     if (listener != null) listener.onSuccess("Đã gửi lời mời kết bạn thành công");
+                                    Map<String, String> data = new HashMap<>();
+                                    data.put("type", "FRIEND_REQUEST");
+                                    collectionUser.document(currentUserId).get().addOnSuccessListener(currentSnap -> {
+                                        String senderName = "Ai đó";
+                                        if (currentSnap.exists()) {
+                                            User cur = currentSnap.toObject(User.class);
+                                            if (cur != null && cur.getUserName() != null) {
+                                                senderName = cur.getUserName();
+                                            }
+                                        }
+                                        NotificationHelper.sendNotificationToUser(otherUserId, "Lời mời kết bạn", senderName + " đã gửi cho bạn lời mời kết bạn", data);
+                                    }).addOnFailureListener(e -> {
+                                        NotificationHelper.sendNotificationToUser(otherUserId, "Lời mời kết bạn", "Bạn có lời mời kết bạn mới", data);
+                                    });
                                 } else {
                                     Exception exception = task1.getException();
                                     if (exception != null && listener != null) {
@@ -637,6 +652,10 @@ public class UserRepositoryImpl implements UserRepository {
                     if (task1.isSuccessful()) {
                         Log.e(TAG, "onComplete: accept thanh cong");
                         if (handleFriend != null) handleFriend.onSuccess("Kết bạn thành công");
+                        Map<String, String> data = new HashMap<>();
+                        data.put("type", "FRIEND_ACCEPT");
+                        String senderName = (user != null && user.getUserName() != null) ? user.getUserName() : "Ai đó";
+                        NotificationHelper.sendNotificationToUser(otherUserId, "Kết bạn thành công", senderName + " đã đồng ý lời mời kết bạn của bạn", data);
                     } else {
                         Exception exception = task1.getException();
                         if (exception != null && handleFriend != null) {

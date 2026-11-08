@@ -76,4 +76,25 @@ public class ModelValidationTest {
         assertFalse(com.example.connection.constants.SecurityCheckUtil.isTampered(null, ""));
         assertFalse(com.example.connection.constants.SecurityCheckUtil.isTampered(null, "   "));
     }
+
+    @Test
+    public void testUserFcmToken() {
+        User user = new User();
+        user.setFcmToken("test_fcm_token_123");
+        assertEquals("test_fcm_token_123", user.getFcmToken());
+    }
+
+    @Test
+    public void testNotificationRequestModel() {
+        List<String> tokens = Arrays.asList("tok1", "tok2");
+        Map<String, String> data = new HashMap<>();
+        data.put("chatRoomId", "room_abc");
+        com.example.connection.model.notification.NotificationRequest req =
+                new com.example.connection.model.notification.NotificationRequest(tokens, "Test Title", "Test Body", data);
+
+        assertEquals(2, req.getTokens().size());
+        assertEquals("Test Title", req.getTitle());
+        assertEquals("Test Body", req.getBody());
+        assertEquals("room_abc", req.getData().get("chatRoomId"));
+    }
 }
