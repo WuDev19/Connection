@@ -98,10 +98,6 @@ public class RecentChatViewModel extends ViewModel {
         void onError(String message);
     }
 
-    public void getNumberUser(int number, Context context){
-        startRandomMatching(number, context, null);
-    }
-
     public void startRandomMatching(int number, Context context, OnRandomChatCallback callback) {
         String myId = recentChatRepository.getCurrentUserId();
         if (myId == null) {
