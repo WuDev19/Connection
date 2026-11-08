@@ -102,7 +102,7 @@ public class CameraManager {
                 .build();
 
         QualitySelector qualitySelector = QualitySelector.fromOrderedList(
-                Arrays.asList(Quality.FHD, Quality.HD, Quality.SD),
+                Arrays.asList(Quality.HD, Quality.SD),
                 FallbackStrategy.lowerQualityOrHigherThan(Quality.SD)
         );
         Recorder recorder = new Recorder.Builder()
