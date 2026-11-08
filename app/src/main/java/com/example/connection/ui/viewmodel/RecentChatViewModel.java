@@ -194,7 +194,7 @@ public class RecentChatViewModel extends ViewModel {
                 avt,
                 Arrays.asList(otherUser.getId(), currentId),
                 now,
-                currentId,
+                "",
                 "Hãy nhập gì đó để lan tỏa yêu thương :))",
                 mapDelete,
                 avtMap,

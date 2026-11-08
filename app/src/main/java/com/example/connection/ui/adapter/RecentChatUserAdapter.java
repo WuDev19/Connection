@@ -57,14 +57,13 @@ public class RecentChatUserAdapter extends FirestoreRecyclerAdapter<ChatRoom, Re
                     .into(holder.img_avatar);
             holder.tv_username.setText(model.getChatName() != null ? model.getChatName() : "");
             String lastMsg = model.getLastMessage() != null ? model.getLastMessage() : "";
-            if ("Đoạn chat ngẫu nhiên đã được tạo".equals(lastMsg)) {
+            if (model.getLastMessageSenderId() == null
+                    || model.getLastMessageSenderId().isEmpty()
+                    || "Hãy nhập gì đó để lan tỏa yêu thương :))".equals(lastMsg)
+                    || "Đoạn chat ngẫu nhiên đã được tạo".equals(lastMsg)) {
                 holder.tv_message.setText(lastMsg);
-            } else if (model.getLastMessageSenderId() != null) {
-                if (model.getLastMessageSenderId().equals(FirebaseAuth.getInstance().getUid())) {
-                    holder.tv_message.setText("Bạn: " + lastMsg);
-                } else {
-                    holder.tv_message.setText(lastMsg);
-                }
+            } else if (model.getLastMessageSenderId().equals(FirebaseAuth.getInstance().getUid())) {
+                holder.tv_message.setText("Bạn: " + lastMsg);
             } else {
                 holder.tv_message.setText(lastMsg);
             }
@@ -135,7 +134,24 @@ public class RecentChatUserAdapter extends FirestoreRecyclerAdapter<ChatRoom, Re
                             holder.tv_message.setText("Bạn: " + msg);
                         }
                     } else {
-                        holder.tv_message.setText(model.getLastMessage());
+                        String msg = model.getLastMessage();
+                        if (msg.contains(": ")) {
+                            holder.tv_message.setText(msg);
+                        } else {
+                            String senderId = model.getLastMessageSenderId();
+                            String senderName = null;
+                            if (model.getAlias() != null && senderId != null) {
+                                senderName = model.getAlias().get(senderId);
+                            }
+                            if (senderName != null && !senderName.isEmpty()) {
+                                if (senderName.contains("_")) {
+                                    senderName = senderName.split("_")[1];
+                                }
+                                holder.tv_message.setText(senderName + ": " + msg);
+                            } else {
+                                holder.tv_message.setText(msg);
+                            }
+                        }
                     }
                 } else {
                     holder.tv_message.setText(model.getLastMessage() != null ? model.getLastMessage() : "");

@@ -297,6 +297,23 @@ public class RecentChatActivity extends AppCompatActivity {
                     RecentChatActivity.this.startActivity(intent);
                     tv_message.setTypeface(null, Typeface.NORMAL);
                 }, recentChatViewModel, this);
+                adapter.registerAdapterDataObserver(new RecyclerView.AdapterDataObserver() {
+                    @Override
+                    public void onItemRangeInserted(int positionStart, int itemCount) {
+                        super.onItemRangeInserted(positionStart, itemCount);
+                        if (positionStart == 0) {
+                            recyclerViewRecentChat.scrollToPosition(0);
+                        }
+                    }
+
+                    @Override
+                    public void onItemRangeMoved(int fromPosition, int toPosition, int itemCount) {
+                        super.onItemRangeMoved(fromPosition, toPosition, itemCount);
+                        if (toPosition == 0) {
+                            recyclerViewRecentChat.scrollToPosition(0);
+                        }
+                    }
+                });
                 recyclerViewRecentChat.setLayoutManager(new LinearLayoutManager(RecentChatActivity.this));
                 recyclerViewRecentChat.setAdapter(adapter);
                 adapter.startListening();
