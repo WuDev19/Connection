@@ -61,15 +61,20 @@ public class SecurityCheckUtil {
 
     /**
      * Kiểm tra chữ ký số của ứng dụng so với giá trị băm SHA-256 mong đợi.
+     * Hỗ trợ cả 2 định dạng:
+     * 1. Định dạng HEX (từ `keytool` hoặc `.\gradlew signingReport`), ví dụ: "A1:B2:C3:..." hoặc "a1b2c3..."
+     * 2. Định dạng Base64, ví dụ: "AbCd123...="
      *
      * @param context            Context ứng dụng
-     * @param expectedCertSha256 Chuỗi SHA-256 Base64 của chứng chỉ phát hành chính thức
+     * @param expectedCertSha256 Chuỗi SHA-256 mong đợi (HEX hoặc Base64)
      * @return true nếu chữ ký bị sửa đổi hoặc lỗi trích xuất, false nếu chữ ký khớp chính xác.
      */
     public static boolean isTampered(Context context, String expectedCertSha256) {
-        if (expectedCertSha256 == null || expectedCertSha256.isEmpty()) {
+        if (expectedCertSha256 == null || expectedCertSha256.trim().isEmpty()) {
             return false;
         }
+        String cleanExpected = expectedCertSha256.replace(":", "").trim();
+
         try {
             PackageManager pm = context.getPackageManager();
             String packageName = context.getPackageName();
@@ -90,8 +95,16 @@ public class SecurityCheckUtil {
             for (Signature sig : signatures) {
                 MessageDigest md = MessageDigest.getInstance("SHA-256");
                 byte[] digest = md.digest(sig.toByteArray());
-                String currentHash = Base64.encodeToString(digest, Base64.NO_WRAP);
-                if (currentHash.equals(expectedCertSha256)) {
+
+                // 1. So khớp định dạng HEX (không phân biệt hoa thường và bỏ dấu hai chấm ':')
+                String hexHash = bytesToHex(digest);
+                if (hexHash.equalsIgnoreCase(cleanExpected)) {
+                    return false;
+                }
+
+                // 2. So khớp định dạng Base64
+                String base64Hash = Base64.encodeToString(digest, Base64.NO_WRAP);
+                if (base64Hash.equals(expectedCertSha256.trim())) {
                     return false;
                 }
             }
@@ -101,5 +114,13 @@ public class SecurityCheckUtil {
             Log.e(TAG, "Failed to verify signature", e);
             return true;
         }
+    }
+
+    private static String bytesToHex(byte[] bytes) {
+        StringBuilder sb = new StringBuilder(bytes.length * 2);
+        for (byte b : bytes) {
+            sb.append(String.format("%02x", b));
+        }
+        return sb.toString();
     }
 }

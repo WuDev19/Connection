@@ -68,4 +68,12 @@ public class ModelValidationTest {
 
         assertEquals("Room ID must be identical regardless of user parameter order", roomId1, roomId2);
     }
+
+    @Test
+    public void testSecurityCheckEmptyShaDoesNotBlock() {
+        // When expected SHA-256 is empty or null, it should safely return false without crashing
+        assertFalse(com.example.connection.constants.SecurityCheckUtil.isTampered(null, null));
+        assertFalse(com.example.connection.constants.SecurityCheckUtil.isTampered(null, ""));
+        assertFalse(com.example.connection.constants.SecurityCheckUtil.isTampered(null, "   "));
+    }
 }
