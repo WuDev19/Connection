@@ -186,8 +186,16 @@ public class MediaPreviewHandler {
     }
 
     public void cancel() {
+        resetMediaPreview(true);
+    }
+
+    public void resetAfterUpload() {
+        resetMediaPreview(false);
+    }
+
+    private void resetMediaPreview(boolean shouldDeleteVideo) {
         if (isVideo) {
-            if (videoFile != null && videoFile.delete()) {
+            if (shouldDeleteVideo && videoFile != null && videoFile.delete()) {
                 Log.e(TAG, "cancel: deleted video cache file");
             }
             if (videoPlayer != null) {
@@ -290,7 +298,7 @@ public class MediaPreviewHandler {
 
             uploadListener.onUploadRequested(photo, videoFile, urlMusic, musicName, singerName, status, isVideo, targetFriendList);
             Toast.makeText(context, "Vui lòng chờ xử lý", Toast.LENGTH_LONG).show();
-            cancel();
+            resetAfterUpload();
         });
     }
 

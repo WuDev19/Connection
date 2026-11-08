@@ -277,8 +277,15 @@ public class FragmentTakePhoto extends Fragment {
         });
 
         binding.buttonStartVideo.setOnTouchListener((v, event) -> {
-            if (event.getAction() == MotionEvent.ACTION_UP && isRecordingVideo) {
-                stopVideo();
+            int action = event.getActionMasked();
+            if (action == MotionEvent.ACTION_DOWN) {
+                v.getParent().requestDisallowInterceptTouchEvent(true);
+            } else if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
+                v.getParent().requestDisallowInterceptTouchEvent(false);
+                if (isRecordingVideo) {
+                    stopVideo();
+                    return true;
+                }
             }
             gestureDetectorVideo.onTouchEvent(event);
             return true;
@@ -319,7 +326,6 @@ public class FragmentTakePhoto extends Fragment {
         binding.buttonStartVideo.animate()
                 .alpha(0f)
                 .withEndAction(() -> {
-                    binding.buttonStartVideo.setVisibility(View.GONE);
                     binding.buttonRedDot.setVisibility(View.VISIBLE);
                     binding.progressBar9.setVisibility(View.VISIBLE);
                     binding.progressBar9.setMax(100);
@@ -369,6 +375,7 @@ public class FragmentTakePhoto extends Fragment {
         binding.buttonRedDot.setVisibility(View.GONE);
         binding.progressBar9.setVisibility(View.GONE);
         binding.buttonStartVideo.setVisibility(View.VISIBLE);
+        binding.buttonStartVideo.animate().alpha(1f).setDuration(200).start();
     }
 
     private void setupSliderZoom() {
