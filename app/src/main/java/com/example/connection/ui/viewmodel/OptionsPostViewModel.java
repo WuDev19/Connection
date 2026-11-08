@@ -6,7 +6,8 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 import com.example.connection.ui.state.OnStateListener;
 import com.example.connection.model.Image;
-import com.example.connection.repository.PostRepository;
+import com.example.connection.repository.base.PostRepository;
+import com.example.connection.repository.impl.PostRepositoryImpl;
 
 public class OptionsPostViewModel extends ViewModel implements OnStateListener {
     private final PostRepository optionsPostRepository;
@@ -14,7 +15,7 @@ public class OptionsPostViewModel extends ViewModel implements OnStateListener {
     private final MutableLiveData<String> errorLiveData = new MutableLiveData<>();
 
     public OptionsPostViewModel(){
-        optionsPostRepository = new PostRepository(this);
+        optionsPostRepository = new PostRepositoryImpl(this);
     }
 
     public void deletePost(String postId){

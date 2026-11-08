@@ -8,7 +8,8 @@ import androidx.lifecycle.ViewModel;
 
 import com.example.connection.model.ChatRoom;
 import com.example.connection.model.User;
-import com.example.connection.repository.ChatRepository;
+import com.example.connection.repository.base.ChatRepository;
+import com.example.connection.repository.impl.ChatRepositoryImpl;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.Query;
 
@@ -35,7 +36,7 @@ public class ChatViewModel extends ViewModel {
     private final MutableLiveData<ChatRoom> chatRoomListeningLiveData = new MutableLiveData<>();
 
     public ChatViewModel() {
-        chatRepository = new ChatRepository();
+        chatRepository = new ChatRepositoryImpl();
         currentUserId = chatRepository.getCurrentUserId();
     }
 

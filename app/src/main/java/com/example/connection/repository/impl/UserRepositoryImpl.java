@@ -1,4 +1,4 @@
-package com.example.connection.repository;
+package com.example.connection.repository.impl;
 
 import android.app.Activity;
 import android.content.Context;
@@ -16,6 +16,7 @@ import com.example.connection.model.ChatRoom;
 import com.example.connection.model.Image;
 import com.example.connection.model.User;
 import com.example.connection.model.WidgetModel;
+import com.example.connection.repository.base.UserRepository;
 import com.example.connection.ui.state.OnStateListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
@@ -41,7 +42,7 @@ import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class UserRepository {
+public class UserRepositoryImpl implements UserRepository {
 
     private final String TAG = getClass().getName();
     private final FirebaseAuth mAuth;
@@ -59,66 +60,46 @@ public class UserRepository {
     // Thread pool
     private final ExecutorService updateEmoteAndCommentService = Executors.newSingleThreadExecutor();
 
-    // Interfaces
-    public interface OnShowUser {
-        void showUser(User user);
-    }
-
-    public interface OnReauthCallback {
-        void onSuccess();
-    }
-
-    public interface HandleFriendNotification {
-        void onSuccess(String success);
-        void onFailure(String error);
-    }
-
-    public interface OnGetListFriendConfirm {
-        void onGetListFriendConfirm(List<String> list);
-    }
-
-    public interface OnCountMessage {
-        void onCountMessage(HashMap<String, Integer> countMessage);
-    }
-
-    public interface OnUpdateWidget {
-        void onUpdateWidget(WidgetModel widgetModel);
-    }
-
     // Constructors
-    public UserRepository() {
+    public UserRepositoryImpl() {
         this.mAuth = FirebaseAuth.getInstance();
         this.db = FirebaseFirestore.getInstance();
         this.collectionUser = db.collection("users");
         this.currentUserId = mAuth.getUid();
     }
 
-    public UserRepository(OnStateListener onStateListener) {
+    public UserRepositoryImpl(OnStateListener onStateListener) {
         this();
         this.onStateListener = onStateListener;
     }
 
+    @Override
     public String getCurrentUserId() {
         return currentUserId;
     }
 
+    @Override
     public String getUserId() {
         return currentUserId;
     }
 
+    @Override
     public FirebaseUser getUser() {
         return mAuth.getCurrentUser();
     }
 
+    @Override
     public Task<DocumentSnapshot> getCurrentUser() {
         if (currentUserId == null) return null;
         return collectionUser.document(currentUserId).get();
     }
 
+    @Override
     public Task<DocumentSnapshot> getUserFromFirebase() {
         return getCurrentUser();
     }
 
+    @Override
     public Task<DocumentSnapshot> getUser(String id) {
         if (id == null) return null;
         return collectionUser.document(id).get();
@@ -126,10 +107,12 @@ public class UserRepository {
 
     // ==================== Username & Profile info ====================
 
+    @Override
     public Task<DocumentSnapshot> getCurrentUserName() {
         return getCurrentUser();
     }
 
+    @Override
     public void setUsername(User user, OnStateListener listener) {
         if (currentUserId == null) return;
         collectionUser.document(currentUserId).set(user).addOnCompleteListener(task -> {
@@ -144,6 +127,7 @@ public class UserRepository {
         });
     }
 
+    @Override
     public void showUserFromFirebase(OnShowUser onShowUser) {
         if (currentUserId == null || onShowUser == null) return;
 
@@ -159,6 +143,7 @@ public class UserRepository {
         });
     }
 
+    @Override
     public void unregisterUserListening() {
         if (userListening != null) {
             userListening.remove();
@@ -166,10 +151,12 @@ public class UserRepository {
         }
     }
 
+    @Override
     public void signOut() {
         mAuth.signOut();
     }
 
+    @Override
     public void updateNewEmailToFireStore(Context context) {
         FirebaseUser currentUser = mAuth.getCurrentUser();
         if (currentUser == null) return;
@@ -194,10 +181,12 @@ public class UserRepository {
         });
     }
 
+    @Override
     public void deleteUser() {
         deleteUser(this.onStateListener);
     }
 
+    @Override
     public void deleteUser(OnStateListener listener) {
         FirebaseUser user = mAuth.getCurrentUser();
         if (user == null || currentUserId == null) return;
@@ -249,10 +238,12 @@ public class UserRepository {
         });
     }
 
+    @Override
     public void upload_avt(Uri uri, String username, User user) {
         upload_avt(uri, username, user, this.onStateListener);
     }
 
+    @Override
     public void upload_avt(Uri uri, String username, User user, OnStateListener listener) {
         if (uri == null) {
             if (listener != null) listener.onLoading(true);
@@ -420,6 +411,7 @@ public class UserRepository {
                 .addOnFailureListener(e -> Log.e(TAG, "onFailure: " + e.getMessage())));
     }
 
+    @Override
     public void shutdownService() {
         Log.e(TAG, "shutdownService: ");
         updateEmoteAndCommentService.shutdown();
@@ -427,6 +419,7 @@ public class UserRepository {
 
     // ==================== Security: Password & Email change ====================
 
+    @Override
     public void reauthenticate(FirebaseUser user, String password, OnReauthCallback callback) {
         if (user == null || user.getEmail() == null) {
             if (onStateListener != null) onStateListener.onFailure("Không tìm thấy thông tin tài khoản");
@@ -442,10 +435,12 @@ public class UserRepository {
         });
     }
 
+    @Override
     public void verifyChange(FirebaseUser user, String newEmail) {
         verifyChange(user, newEmail, this.onStateListener);
     }
 
+    @Override
     public void verifyChange(FirebaseUser user, String newEmail, OnStateListener listener) {
         if (user == null) return;
         user.verifyBeforeUpdateEmail(newEmail).addOnCompleteListener(task -> {
@@ -460,10 +455,12 @@ public class UserRepository {
         });
     }
 
+    @Override
     public void updatePassword(FirebaseUser user, String oldPassword, String newPasswordConfirm) {
         updatePassword(user, oldPassword, newPasswordConfirm, this.onStateListener);
     }
 
+    @Override
     public void updatePassword(FirebaseUser user, String oldPassword, String newPasswordConfirm, OnStateListener listener) {
         if (user == null || user.getEmail() == null) {
             if (listener != null) listener.onFailure("Không tìm thấy thông tin tài khoản");
@@ -490,10 +487,12 @@ public class UserRepository {
 
     // ==================== Social & Friend management (BottomSheet & Notification) ====================
 
+    @Override
     public void addFriend(String otherUserId, User currentUser) {
         addFriend(otherUserId, currentUser, this.onStateListener);
     }
 
+    @Override
     public void addFriend(String otherUserId, User currentUser, OnStateListener listener) {
         if (currentUserId == null || otherUserId == null) return;
         WriteBatch writeBatch = db.batch();
@@ -518,10 +517,12 @@ public class UserRepository {
         });
     }
 
+    @Override
     public void sendFriendRequest(String otherUserId) {
         sendFriendRequest(otherUserId, this.onStateListener);
     }
 
+    @Override
     public void sendFriendRequest(String otherUserId, OnStateListener listener) {
         if (currentUserId == null || otherUserId == null) return;
         collectionUser.document(otherUserId).get().addOnCompleteListener(task -> {
@@ -564,10 +565,12 @@ public class UserRepository {
         });
     }
 
+    @Override
     public void delete(String friendId, List<String> friendCurrentUser) {
         delete(friendId, friendCurrentUser, this.onStateListener);
     }
 
+    @Override
     public void delete(String friendId, List<String> friendCurrentUser, OnStateListener listener) {
         if (friendId == null || currentUserId == null || friendCurrentUser == null) return;
         friendCurrentUser.remove(friendId);
@@ -596,6 +599,7 @@ public class UserRepository {
         });
     }
 
+    @Override
     public Query getQueryFriend() {
         if (currentUserId != null) {
             return collectionUser
@@ -605,6 +609,7 @@ public class UserRepository {
         return null;
     }
 
+    @Override
     public Query getQuerySearch(String username) {
         if (currentUserId != null) {
             return collectionUser
@@ -615,6 +620,7 @@ public class UserRepository {
         return null;
     }
 
+    @Override
     public void acceptFriend(String otherUserId, String currentUserId, User user, HandleFriendNotification handleFriend) {
         WriteBatch writeBatch = db.batch();
         writeBatch.set(collectionUser.document(currentUserId), user);
@@ -647,6 +653,7 @@ public class UserRepository {
         });
     }
 
+    @Override
     public void declineFriend(String currentUserId, User user, HandleFriendNotification handleFriendNotifacation) {
         collectionUser.document(currentUserId).set(user).addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
@@ -662,16 +669,19 @@ public class UserRepository {
 
     // ==================== Main & Widget logic (MainRepository) ====================
 
+    @Override
     public void setFirstUse(Activity activity) {
         SharePreUtil.getInstance(activity.getApplicationContext()).setFirstUseApp();
     }
 
+    @Override
     public LiveData<Boolean> getFirstUse(Context context) {
         MutableLiveData<Boolean> firstUse = new MutableLiveData<>();
         firstUse.setValue(SharePreUtil.getInstance(context.getApplicationContext()).firstUseApp());
         return firstUse;
     }
 
+    @Override
     public void checkActive() {
         if (currentUserId == null) return;
         collectionUser.document(currentUserId).get().addOnCompleteListener(task -> {
@@ -694,6 +704,7 @@ public class UserRepository {
         });
     }
 
+    @Override
     public void setActive() {
         if (currentUserId == null) return;
         collectionUser.document(currentUserId).update("active", false)
@@ -704,6 +715,7 @@ public class UserRepository {
                 });
     }
 
+    @Override
     public void getNotificationListenerRealtime(OnGetListFriendConfirm onGetListFriendConfirm) {
         if (currentUserId == null || onGetListFriendConfirm == null) return;
         if (notificationListenerRealtime != null) {
@@ -719,6 +731,7 @@ public class UserRepository {
                 });
     }
 
+    @Override
     public void getRealtimeUnseenMessage(OnCountMessage onCountMessage) {
         if (currentUserId == null || onCountMessage == null) return;
 
@@ -747,6 +760,7 @@ public class UserRepository {
                 });
     }
 
+    @Override
     public void unregisterListeningRealtime() {
         if (chatroomListenerRealTime != null) {
             chatroomListenerRealTime.remove();
@@ -763,6 +777,7 @@ public class UserRepository {
         }
     }
 
+    @Override
     public void scheduleJob(Context context, OnUpdateWidget onUpdateWidget) {
         if (!SharePreUtil.getInstance(context.getApplicationContext()).enableWidget()) return;
         Log.e(TAG, "scheduleJob: ");

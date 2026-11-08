@@ -8,7 +8,8 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 import com.example.connection.model.WidgetModel;
-import com.example.connection.repository.UserRepository;
+import com.example.connection.repository.base.UserRepository;
+import com.example.connection.repository.impl.UserRepositoryImpl;
 
 import java.util.HashMap;
 import java.util.List;
@@ -22,7 +23,7 @@ public class MainViewModel extends ViewModel {
     private final MutableLiveData<Boolean> cameraMusicPlaying = new MutableLiveData<>();
 
     public MainViewModel(){
-        mainRepository = new UserRepository();
+        mainRepository = new UserRepositoryImpl();
     }
 
     public void setFirstUse(Activity activity){

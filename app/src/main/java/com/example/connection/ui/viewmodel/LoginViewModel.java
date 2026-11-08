@@ -4,7 +4,8 @@ import android.app.Activity;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
-import com.example.connection.repository.AuthRepository;
+import com.example.connection.repository.base.AuthRepository;
+import com.example.connection.repository.impl.AuthRepositoryImpl;
 
 public class LoginViewModel extends ViewModel {
 
@@ -17,7 +18,7 @@ public class LoginViewModel extends ViewModel {
     private final MutableLiveData<String> sdtLiveData = new MutableLiveData<>();
 
     public LoginViewModel (){
-        loginRepository = new AuthRepository(signInSuccess::setValue);
+        loginRepository = new AuthRepositoryImpl(signInSuccess::setValue);
     }
 
     public void senOtp(String sdt, Activity activity){

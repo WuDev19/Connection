@@ -7,7 +7,8 @@ import androidx.lifecycle.ViewModel;
 import com.example.connection.ui.state.OnStateListener;
 import com.example.connection.model.ChatRoom;
 import com.example.connection.model.User;
-import com.example.connection.repository.ChatRepository;
+import com.example.connection.repository.base.ChatRepository;
+import com.example.connection.repository.impl.ChatRepositoryImpl;
 import java.util.List;
 
 public class CreateGroupChatViewModel extends ViewModel {
@@ -20,7 +21,7 @@ public class CreateGroupChatViewModel extends ViewModel {
     private final MutableLiveData<User> currentUserLiveData = new MutableLiveData<>();
 
     public CreateGroupChatViewModel(){
-        createGroupChatRepository = new ChatRepository();
+        createGroupChatRepository = new ChatRepositoryImpl();
     }
 
     public void getListFriend(){

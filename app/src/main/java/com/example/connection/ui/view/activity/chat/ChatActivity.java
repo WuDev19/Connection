@@ -43,11 +43,10 @@ import com.example.connection.ui.view.fragment.FragmentChangeAlias;
 import com.example.connection.ui.view.fragment.FragmentChangeBackgroundChat;
 import com.example.connection.ui.view.fragment.FragmentChangeInfoChat;
 import com.example.connection.ui.viewmodel.ChatViewModel;
-import com.example.connection.repository.ChatRepository;
+import com.example.connection.repository.base.ChatRepository;
 import com.google.android.material.card.MaterialCardView;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.Query;
 
 import java.util.ArrayList;
 import java.util.Arrays;

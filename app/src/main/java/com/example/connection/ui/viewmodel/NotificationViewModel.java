@@ -6,7 +6,8 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.SavedStateHandle;
 import androidx.lifecycle.ViewModel;
 import com.example.connection.model.User;
-import com.example.connection.repository.UserRepository;
+import com.example.connection.repository.base.UserRepository;
+import com.example.connection.repository.impl.UserRepositoryImpl;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,7 +27,7 @@ public class NotificationViewModel extends ViewModel {
     public NotificationViewModel(SavedStateHandle handle) {
         listFriendConfirm = handle.get("confirm_friend");
         Log.e("CHECKK", "NotificationViewModel: " + listFriendConfirm);
-        notificationRepository = new UserRepository();
+        notificationRepository = new UserRepositoryImpl();
         currentUserId = notificationRepository.getUserId();
     }
 

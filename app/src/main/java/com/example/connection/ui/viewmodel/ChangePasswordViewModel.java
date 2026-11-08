@@ -5,7 +5,8 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 import com.example.connection.ui.state.OnStateListener;
-import com.example.connection.repository.UserRepository;
+import com.example.connection.repository.base.UserRepository;
+import com.example.connection.repository.impl.UserRepositoryImpl;
 import com.google.firebase.auth.FirebaseUser;
 
 public class ChangePasswordViewModel extends ViewModel implements OnStateListener {
@@ -16,7 +17,7 @@ public class ChangePasswordViewModel extends ViewModel implements OnStateListene
     private final MutableLiveData<String> successLiveData = new MutableLiveData<>();
 
     public ChangePasswordViewModel (){
-        changePasswordRepository = new UserRepository(this);
+        changePasswordRepository = new UserRepositoryImpl(this);
     }
 
     public void checkPasswordConfirm(Context context, String oldPassword, String newPassword, String newPasswordConfirm){

@@ -7,7 +7,8 @@ import androidx.lifecycle.ViewModel;
 import com.example.connection.ui.state.OnStateListener;
 import com.example.connection.model.ChatRoom;
 import com.example.connection.model.User;
-import com.example.connection.repository.ChatRepository;
+import com.example.connection.repository.base.ChatRepository;
+import com.example.connection.repository.impl.ChatRepositoryImpl;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import java.util.List;
@@ -22,7 +23,7 @@ public class FragmentChangeInfoChatViewModel extends ViewModel implements OnStat
     private final MutableLiveData<ChatRoom> chatRoomListeningLiveData = new MutableLiveData<>();
 
     public FragmentChangeInfoChatViewModel(){
-        fragmentChangeInfoChatRepository = new ChatRepository();
+        fragmentChangeInfoChatRepository = new ChatRepositoryImpl();
     }
 
     public void setChatRoom(ChatRoom chatRoom){

@@ -10,7 +10,6 @@ import android.view.ViewGroup;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.OvershootInterpolator;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -25,7 +24,8 @@ import com.example.connection.R;
 import com.example.connection.ui.view.activity.MainActivity;
 import com.example.connection.ui.adapter.GeneralPhotoAdapter;
 import com.example.connection.model.Image;
-import com.example.connection.repository.PostRepository;
+import com.example.connection.repository.base.PostRepository;
+import com.example.connection.repository.impl.PostRepositoryImpl;
 import com.example.connection.constants.MediaPlayerUtil;
 import com.google.firebase.auth.FirebaseAuth;
 
@@ -55,7 +55,7 @@ public class FragmentGeneralPhoto extends Fragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        postRepository = new PostRepository();
+        postRepository = new PostRepositoryImpl();
     }
 
     @Override

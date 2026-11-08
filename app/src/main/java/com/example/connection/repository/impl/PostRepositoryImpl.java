@@ -1,4 +1,4 @@
-package com.example.connection.repository;
+package com.example.connection.repository.impl;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -21,6 +21,7 @@ import com.example.connection.model.EmoteModel;
 import com.example.connection.model.Image;
 import com.example.connection.model.SelectionFriendModel;
 import com.example.connection.model.User;
+import com.example.connection.repository.base.PostRepository;
 import com.example.connection.ui.state.OnStateListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
@@ -55,7 +56,7 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class PostRepository {
+public class PostRepositoryImpl implements PostRepository {
 
     private final String TAG = getClass().getName();
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
@@ -83,47 +84,19 @@ public class PostRepository {
     // ShowPhoto helper state
     private ChatRoom chatRoom;
 
-    // Interfaces
-    public interface OnTopPostsCallback {
-        void onNewPosts(List<Image> posts);
-    }
-
-    public interface OnLoadMoreCallback {
-        void onLoaded(List<Image> posts);
-        void onError(Exception e);
-    }
-
-    public interface NewPostCallBack {
-        void updateUI(List<Image> unseenImage);
-    }
-
-    public interface OnGetListFriendCallback {
-        void getListFriend(List<SelectionFriendModel> friends);
-        void getListFriendId(List<String> listFriendId);
-        void error(String err);
-    }
-
-    public interface OnUpdateWidget {
-        void onUpdate(boolean isUpdate);
-    }
-
-    public interface OnSendMessage {
-        void onSuccess(boolean success);
-    }
-
     // Constructors
-    public PostRepository() {
+    public PostRepositoryImpl() {
         this.currentUserId = FirebaseAuth.getInstance().getUid();
         initCurrentUser();
     }
 
-    public PostRepository(OnStateListener onStateListener) {
+    public PostRepositoryImpl(OnStateListener onStateListener) {
         this.currentUserId = FirebaseAuth.getInstance().getUid();
         this.onStateListener = onStateListener;
         initCurrentUser();
     }
 
-    public PostRepository(OnSendMessage onSendMessage) {
+    public PostRepositoryImpl(OnSendMessage onSendMessage) {
         this.currentUserId = FirebaseAuth.getInstance().getUid();
         this.onSendMessage = onSendMessage;
         initCurrentUser();
@@ -144,24 +117,29 @@ public class PostRepository {
         }
     }
 
+    @Override
     public String getCurrentUserId() {
         return currentUserId;
     }
 
+    @Override
     public String getMyId() {
         return currentUserId;
     }
 
+    @Override
     public User getCurrentUser() {
         return currentUser;
     }
 
     // ==================== Post List & Pagination (PostRepository) ====================
 
+    @Override
     public void listenTopPosts(String userId, OnTopPostsCallback callback) {
         listenTopPosts(userId, 10, callback);
     }
 
+    @Override
     public void listenTopPosts(String userId, int limit, OnTopPostsCallback callback) {
         if (topPostsListener != null) {
             topPostsListener.remove();
@@ -189,10 +167,12 @@ public class PostRepository {
                 });
     }
 
+    @Override
     public void loadMorePosts(String userId, OnLoadMoreCallback callback) {
         loadMorePosts(userId, 10, callback);
     }
 
+    @Override
     public void loadMorePosts(String userId, int limit, OnLoadMoreCallback callback) {
         DocumentSnapshot cursor = lastPagingDoc != null ? lastPagingDoc : lastTopDoc;
         if (isLoading || isLastPage || cursor == null) return;
@@ -228,6 +208,7 @@ public class PostRepository {
                 });
     }
 
+    @Override
     public void removeListener() {
         if (topPostsListener != null) {
             topPostsListener.remove();
@@ -237,6 +218,7 @@ public class PostRepository {
 
     // ==================== TakePhoto logic (TakePhotoRepository) ====================
 
+    @Override
     public void getUserInfoFromFirebase(OnGetListFriendCallback callback) {
         if (currentUserId == null || callback == null) return;
 
@@ -293,6 +275,7 @@ public class PostRepository {
                 });
     }
 
+    @Override
     public void unregisterListening() {
         if (listenListFriend != null) {
             listenListFriend.remove();
@@ -304,10 +287,12 @@ public class PostRepository {
         }
     }
 
+    @Override
     public void uploadBitmap(Bitmap bitmap, String urlMusic, String name, String singer, String status, List<String> mList, Context context) {
         uploadBitmap(bitmap, urlMusic, name, singer, status, mList, context, this.onStateListener);
     }
 
+    @Override
     public void uploadBitmap(Bitmap bitmap, String urlMusic, String name, String singer, String status, List<String> mList, Context context, OnStateListener listener) {
         try {
             Log.e("status", "uploadBitmap: " + status);
@@ -370,10 +355,12 @@ public class PostRepository {
         }
     }
 
+    @Override
     public void uploadVideo(File file, String urlMusic, String name, String singer, String status, List<String> mList) {
         uploadVideo(file, urlMusic, name, singer, status, mList, this.onStateListener);
     }
 
+    @Override
     public void uploadVideo(File file, String urlMusic, String name, String singer, String status, List<String> mList, OnStateListener listener) {
         if (file == null) return;
         MediaManager.get().upload(file.getAbsolutePath())
@@ -424,10 +411,12 @@ public class PostRepository {
                 }).dispatch();
     }
 
+    @Override
     public void createFolderConnectionExternalStorage(Bitmap photo, Context context) {
         createFolderConnectionExternalStorage(photo, context, this.onStateListener);
     }
 
+    @Override
     public void createFolderConnectionExternalStorage(Bitmap photo, Context context, OnStateListener listener) {
         downloadExecutor.execute(() -> {
             try {
@@ -464,6 +453,7 @@ public class PostRepository {
         });
     }
 
+    @Override
     public void listenForNewPosts(NewPostCallBack newPostCallBack) {
         if (currentUserId == null || newPostCallBack == null) return;
 
@@ -493,10 +483,12 @@ public class PostRepository {
                 });
     }
 
+    @Override
     public void downloadPhoto(Bitmap photo, Context context) {
         downloadPhoto(photo, context, this.onStateListener);
     }
 
+    @Override
     public void downloadPhoto(Bitmap photo, Context context, OnStateListener listener) {
         downloadExecutor.execute(() -> {
             String fileName = UUID.randomUUID().toString();
@@ -521,10 +513,12 @@ public class PostRepository {
         });
     }
 
+    @Override
     public void downloadVideo(File videoFile, Context context) {
         downloadVideo(videoFile, context, this.onStateListener);
     }
 
+    @Override
     public void downloadVideo(File videoFile, Context context, OnStateListener listener) {
         downloadExecutor.execute(() -> {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -587,12 +581,14 @@ public class PostRepository {
         }
     }
 
+    @Override
     public void shutdownExecutor() {
         downloadExecutor.shutdown();
     }
 
     // ==================== ShowPhoto logic (ShowPhotoRepository) ====================
 
+    @Override
     public void updateSeenPostPhoto(Context context, OnUpdateWidget onUpdateWidget) {
         if (currentUserId == null) return;
         Log.e(TAG, "updateSeenPostPhoto: ");
@@ -622,6 +618,7 @@ public class PostRepository {
                 .addOnFailureListener(e -> Log.e(TAG, "onFailure: " + e.getMessage()));
     }
 
+    @Override
     public Query getQuery() {
         if (currentUserId == null) return null;
         return db.collection("post_photo")
@@ -630,10 +627,12 @@ public class PostRepository {
                 .limit(10);
     }
 
+    @Override
     public void sendMessage(String chatRoomId, String otherId, String otherUserName, String avtPoster, String mess) {
         sendMessage(chatRoomId, otherId, otherUserName, avtPoster, mess, this.onSendMessage);
     }
 
+    @Override
     public void sendMessage(String chatRoomId, String otherId, String otherUserName, String avtPoster, String mess, OnSendMessage callback) {
         db.collection("chatroom").document(chatRoomId)
                 .get().addOnCompleteListener(task -> {
@@ -721,11 +720,13 @@ public class PostRepository {
         return db.collection("chatroom").document(chatRoomId).collection("chats");
     }
 
+    @Override
     public String getIdEmote(String postId) {
         DocumentReference emoteRef = db.collection("post_photo").document(postId).collection("emotes").document();
         return emoteRef.getId();
     }
 
+    @Override
     @SuppressWarnings("unchecked")
     public Task<Void> modifyEmote(String postId, String emote) {
         DocumentReference postRef = db.collection("post_photo").document(postId);
@@ -782,6 +783,7 @@ public class PostRepository {
 
     // ==================== Comment logic (CommentRepository) ====================
 
+    @Override
     public Query getCommentQuery(String postId) {
         return db.collection("post_photo")
                 .document(postId)
@@ -789,6 +791,7 @@ public class PostRepository {
                 .orderBy("timestamp", Query.Direction.DESCENDING);
     }
 
+    @Override
     public Task<Void> setComment(String postId, String comment) {
         DocumentReference commentRef = db.collection("post_photo")
                 .document(postId)
@@ -809,6 +812,7 @@ public class PostRepository {
                 .set(model);
     }
 
+    @Override
     public Task<Void> deleteComment(String postId, String commentId) {
         return db.collection("post_photo")
                 .document(postId)
@@ -817,6 +821,7 @@ public class PostRepository {
                 .delete();
     }
 
+    @Override
     public Task<DocumentSnapshot> getComment(String postId, String commentId) {
         return db.collection("post_photo")
                 .document(postId)
@@ -825,6 +830,7 @@ public class PostRepository {
                 .get();
     }
 
+    @Override
     public Task<Void> decreaseNumberComment(String postId) {
         DocumentReference postRef = db.collection("post_photo").document(postId);
         return db.runTransaction(transaction -> {
@@ -837,6 +843,7 @@ public class PostRepository {
         });
     }
 
+    @Override
     public Task<Void> increaseNumberComment(String postId) {
         DocumentReference postRef = db.collection("post_photo").document(postId);
         return db.runTransaction(transaction -> {
@@ -850,6 +857,7 @@ public class PostRepository {
 
     // ==================== Emote Query logic (EmotePostRepository) ====================
 
+    @Override
     public Query getEmoteQuery(String postId) {
         return db.collection("post_photo")
                 .document(postId)
@@ -859,10 +867,12 @@ public class PostRepository {
 
     // ==================== Options logic (OptionsPostRepository) ====================
 
+    @Override
     public void deletePost(String postId) {
         deletePost(postId, this.onStateListener);
     }
 
+    @Override
     public void deletePost(String postId, OnStateListener listener) {
         WriteBatch writeBatch = db.batch();
         Task<QuerySnapshot> taskEmote = db.collection("post_photo")
@@ -904,12 +914,14 @@ public class PostRepository {
                 });
     }
 
+    @Override
     public Task<DocumentSnapshot> getPreparePostDelete(String postId) {
         return db.collection("post_photo")
                 .document(postId)
                 .get();
     }
 
+    @Override
     public void downloadPost(String url, Context context, OnStateListener listener) {
         downloadExecutor.execute(() -> {
             try {

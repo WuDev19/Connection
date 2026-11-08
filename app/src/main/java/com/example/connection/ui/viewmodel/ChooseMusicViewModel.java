@@ -13,7 +13,8 @@ import androidx.media3.exoplayer.ExoPlayer;
 
 import com.example.connection.constants.MediaPlayerUtil;
 import com.example.connection.data.local.MyMusic;
-import com.example.connection.repository.MusicRepository;
+import com.example.connection.repository.base.MusicRepository;
+import com.example.connection.repository.impl.MusicRepositoryImpl;
 
 import java.util.HashSet;
 import java.util.List;
@@ -35,7 +36,7 @@ public class ChooseMusicViewModel extends AndroidViewModel {
 
     public ChooseMusicViewModel(@NonNull Application application) {
         super(application);
-        chooseMusicRepository = new MusicRepository(application);
+        chooseMusicRepository = new MusicRepositoryImpl(application);
     }
 
     private void ensurePlayer() {

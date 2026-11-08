@@ -5,7 +5,8 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 import com.example.connection.model.Comment;
-import com.example.connection.repository.PostRepository;
+import com.example.connection.repository.base.PostRepository;
+import com.example.connection.repository.impl.PostRepositoryImpl;
 import com.google.firebase.firestore.Query;
 
 public class CommentViewModel extends ViewModel {
@@ -14,7 +15,7 @@ public class CommentViewModel extends ViewModel {
     private final String TAG = getClass().getName();
 
     public CommentViewModel() {
-        commentRepository = new PostRepository();
+        commentRepository = new PostRepositoryImpl();
     }
 
     public Query getQuery(String postId) {

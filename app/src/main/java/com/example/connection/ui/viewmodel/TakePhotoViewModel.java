@@ -9,7 +9,8 @@ import androidx.lifecycle.ViewModel;
 import com.example.connection.ui.state.OnStateListener;
 import com.example.connection.model.Image;
 import com.example.connection.model.SelectionFriendModel;
-import com.example.connection.repository.PostRepository;
+import com.example.connection.repository.base.PostRepository;
+import com.example.connection.repository.impl.PostRepositoryImpl;
 import java.io.File;
 import java.util.List;
 
@@ -23,7 +24,7 @@ public class TakePhotoViewModel extends ViewModel implements OnStateListener {
     private final MutableLiveData<List<SelectionFriendModel>> selectionFriendLiveData = new MutableLiveData<>();
 
     public TakePhotoViewModel (){
-        takePhotoRepository = new PostRepository(this);
+        takePhotoRepository = new PostRepositoryImpl(this);
     }
 
     public void getUserInfoFromFirebase(){

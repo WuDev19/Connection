@@ -4,7 +4,8 @@ import android.app.Activity;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
-import com.example.connection.repository.AuthRepository;
+import com.example.connection.repository.base.AuthRepository;
+import com.example.connection.repository.impl.AuthRepositoryImpl;
 
 public class OTPViewModel extends ViewModel implements AuthRepository.OnLoginWithOtp {
 
@@ -16,7 +17,7 @@ public class OTPViewModel extends ViewModel implements AuthRepository.OnLoginWit
     private final MutableLiveData<Boolean> codeSentLiveData = new MutableLiveData<>();
 
     public OTPViewModel (){
-        otpRepository = new AuthRepository(this);
+        otpRepository = new AuthRepositoryImpl(this);
     }
 
     public void loginWithOTP(String verify, String otp, String sdt){

@@ -5,7 +5,8 @@ import android.util.Log;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
-import com.example.connection.repository.PostRepository;
+import com.example.connection.repository.base.PostRepository;
+import com.example.connection.repository.impl.PostRepositoryImpl;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.Query;
 
@@ -19,7 +20,7 @@ public class ShowPhotoViewModel extends ViewModel implements PostRepository.OnSe
     private final String TAG = getClass().getName();
 
     public ShowPhotoViewModel() {
-        showPhotoRepository = new PostRepository(this);
+        showPhotoRepository = new PostRepositoryImpl(this);
     }
 
     public void updateSeenPost(Context context) {

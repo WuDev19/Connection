@@ -5,7 +5,8 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 import com.example.connection.model.BackGround;
-import com.example.connection.repository.ChatRepository;
+import com.example.connection.repository.base.ChatRepository;
+import com.example.connection.repository.impl.ChatRepositoryImpl;
 import com.google.firebase.firestore.QuerySnapshot;
 import java.util.List;
 import java.util.Objects;
@@ -16,7 +17,7 @@ public class ChangeBackGroundChatViewModel extends ViewModel {
     private final MutableLiveData<Boolean> success = new MutableLiveData<>();
 
     public ChangeBackGroundChatViewModel() {
-        changeBackGroundChatRepository = new ChatRepository();
+        changeBackGroundChatRepository = new ChatRepositoryImpl();
     }
 
     public LiveData<List<BackGround>> getBackGround() {

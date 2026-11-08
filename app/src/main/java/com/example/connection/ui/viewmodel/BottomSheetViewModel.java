@@ -5,7 +5,8 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 import com.example.connection.ui.state.OnStateListener;
 import com.example.connection.model.User;
-import com.example.connection.repository.UserRepository;
+import com.example.connection.repository.base.UserRepository;
+import com.example.connection.repository.impl.UserRepositoryImpl;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.Query;
 import java.util.List;
@@ -21,7 +22,7 @@ public class BottomSheetViewModel extends ViewModel implements OnStateListener {
     private final MutableLiveData<Query> querySearchLiveData = new MutableLiveData<>();
 
     public BottomSheetViewModel(){
-        bottomSheetRepository = new UserRepository(this);
+        bottomSheetRepository = new UserRepositoryImpl(this);
     }
 
     public void getUserFromFirebase(){

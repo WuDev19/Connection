@@ -7,20 +7,19 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 import com.example.connection.model.ChatRoom;
 import com.example.connection.model.User;
-import com.example.connection.repository.ChatRepository;
+import com.example.connection.repository.base.ChatRepository;
+import com.example.connection.repository.impl.ChatRepositoryImpl;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.Query;
-import com.google.firebase.firestore.QuerySnapshot;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Random;
 
 public class RecentChatViewModel extends ViewModel {
 
@@ -36,7 +35,7 @@ public class RecentChatViewModel extends ViewModel {
     }
 
     public RecentChatViewModel(){
-        recentChatRepository = new ChatRepository();
+        recentChatRepository = new ChatRepositoryImpl();
     }
 
     public void getUserInfo(ChatRoom model, OnUserInfoLoadedListener listener) {

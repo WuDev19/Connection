@@ -1,4 +1,4 @@
-package com.example.connection.repository;
+package com.example.connection.repository.impl;
 
 import android.app.Activity;
 import android.app.Application;
@@ -15,6 +15,7 @@ import androidx.work.WorkManager;
 import com.example.connection.constants.SharePreUtil;
 import com.example.connection.data.worker.FetchMusicFireStore;
 import com.example.connection.model.User;
+import com.example.connection.repository.base.AuthRepository;
 import com.example.connection.ui.state.OnStateListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseException;
@@ -36,7 +37,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-public class AuthRepository {
+public class AuthRepositoryImpl implements AuthRepository {
 
     private final FirebaseAuth mAuth;
     private final FirebaseFirestore db;
@@ -49,64 +50,37 @@ public class AuthRepository {
 
     private PhoneAuthProvider.ForceResendingToken mForceResendingToken;
 
-    // Interfaces
-    public interface OnSignUpListener {
-        void onSuccess(boolean success);
-        void onEmailAndPassword(String emailAndPassword);
-    }
-
-    public interface OnSendOtp {
-        void onCheckPhone(boolean checkPhone);
-        void onFailure(String error);
-        void onCodeSent(String codeSent);
-        void onSdt(String mSdt);
-        void onValidate(boolean validate);
-    }
-
-    public interface OnSignIn {
-        void onSuccess(boolean success);
-    }
-
-    public interface OnLoginWithOtp {
-        void onCheckOTP(boolean checkOTP);
-        void onSuccess(boolean success);
-        void onValidate(boolean validate);
-        void onCodeSent(boolean codeSent);
-        void onVerify(String verify);
-    }
-
-    // Constructors
-    public AuthRepository() {
+    public AuthRepositoryImpl() {
         this.mAuth = FirebaseAuth.getInstance();
         this.db = FirebaseFirestore.getInstance();
     }
 
-    public AuthRepository(OnStateListener onStateListener) {
+    public AuthRepositoryImpl(OnStateListener onStateListener) {
         this();
         this.onStateListener = onStateListener;
     }
 
-    public AuthRepository(OnSignIn onSignIn) {
+    public AuthRepositoryImpl(OnSignIn onSignIn) {
         this();
         this.onSignIn = onSignIn;
     }
 
-    public AuthRepository(OnLoginWithOtp onLoginWithOtp) {
+    public AuthRepositoryImpl(OnLoginWithOtp onLoginWithOtp) {
         this();
         this.onLoginWithOtp = onLoginWithOtp;
     }
 
-    public AuthRepository(Application application) {
+    public AuthRepositoryImpl(Application application) {
         this();
         this.application = application;
     }
 
-    // ==================== Sign In logic (SignInRepository) ====================
-
+    @Override
     public void getSignInWithEmailAndPassword(String email, String password, Activity activity) {
         getSignInWithEmailAndPassword(email, password, activity, this.onStateListener);
     }
 
+    @Override
     public void getSignInWithEmailAndPassword(String email, String password, Activity activity, OnStateListener listener) {
         mAuth.signInWithEmailAndPassword(email, password).addOnCompleteListener(activity, task -> {
             if (task.isSuccessful()) {
@@ -126,10 +100,12 @@ public class AuthRepository {
         });
     }
 
+    @Override
     public void sendPasswordReset(String email) {
         sendPasswordReset(email, this.onStateListener);
     }
 
+    @Override
     public void sendPasswordReset(String email, OnStateListener listener) {
         mAuth.sendPasswordResetEmail(email).addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
@@ -153,8 +129,7 @@ public class AuthRepository {
         });
     }
 
-    // ==================== Sign Up logic (SignUpRepository) ====================
-
+    @Override
     public void signUp(String email, String passwordConfirm, String username, OnSignUpListener onSignUpListener) {
         mAuth.createUserWithEmailAndPassword(email, passwordConfirm)
                 .addOnCompleteListener(task -> {
@@ -193,8 +168,7 @@ public class AuthRepository {
                 });
     }
 
-    // ==================== Phone Login & OTP logic (LoginRepository & OTPRepository) ====================
-
+    @Override
     public void sendOTP(String mSdt, Activity activity, OnSendOtp onSendOtp) {
         if (mSdt.isEmpty()) {
             if (onSendOtp != null) onSendOtp.onCheckPhone(false);
@@ -240,10 +214,12 @@ public class AuthRepository {
         PhoneAuthProvider.verifyPhoneNumber(options);
     }
 
+    @Override
     public void loginWithOTP(String idVerify, String otp, String sdt) {
         loginWithOTP(idVerify, otp, sdt, this.onLoginWithOtp);
     }
 
+    @Override
     public void loginWithOTP(String idVerify, String otp, String sdt, OnLoginWithOtp callback) {
         if (otp.isEmpty()) {
             if (callback != null) callback.onCheckOTP(false);
@@ -256,10 +232,12 @@ public class AuthRepository {
         });
     }
 
+    @Override
     public void resendOTP(String mSdt, Activity activity) {
         resendOTP(mSdt, activity, this.onLoginWithOtp);
     }
 
+    @Override
     public void resendOTP(String mSdt, Activity activity, OnLoginWithOtp callback) {
         PhoneAuthOptions options =
                 PhoneAuthOptions.newBuilder(mAuth)
@@ -326,14 +304,14 @@ public class AuthRepository {
                 });
     }
 
-    // ==================== Splash logic (SplashRepository) ====================
-
+    @Override
     public void fetchMusicFireStore() {
         if (application != null) {
             fetchMusicFireStore(application.getApplicationContext());
         }
     }
 
+    @Override
     public void fetchMusicFireStore(Context context) {
         if (SharePreUtil.getInstance(context).firstUseApp()) {
             OneTimeWorkRequest fetchMusicSchedule = new OneTimeWorkRequest.Builder(FetchMusicFireStore.class)
@@ -343,6 +321,7 @@ public class AuthRepository {
         }
     }
 
+    @Override
     public LiveData<FirebaseUser> checkUser() {
         MutableLiveData<FirebaseUser> userMutableLiveData = new MutableLiveData<>();
         FirebaseUser user = mAuth.getCurrentUser();
@@ -350,6 +329,7 @@ public class AuthRepository {
         return userMutableLiveData;
     }
 
+    @Override
     public Task<QuerySnapshot> getNumberCurrentUser() {
         return db.collection("users").get();
     }

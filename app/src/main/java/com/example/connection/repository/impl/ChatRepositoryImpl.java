@@ -1,4 +1,4 @@
-package com.example.connection.repository;
+package com.example.connection.repository.impl;
 
 import android.content.Context;
 import android.net.Uri;
@@ -18,6 +18,7 @@ import com.example.connection.data.worker.DeleteWork;
 import com.example.connection.model.ChatMessage;
 import com.example.connection.model.ChatRoom;
 import com.example.connection.model.User;
+import com.example.connection.repository.base.ChatRepository;
 import com.example.connection.ui.state.OnStateListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.Timestamp;
@@ -41,7 +42,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-public class ChatRepository {
+public class ChatRepositoryImpl implements ChatRepository {
 
     private final FirebaseFirestore db;
     private final String TAG = getClass().getName();
@@ -49,40 +50,7 @@ public class ChatRepository {
     private User currentUser;
     private ListenerRegistration seenMessageListening, chatRoomListening, reactionListening, recentMessagesRegistration;
 
-    public interface OnRecentMessagesListener {
-        void onInitialLoaded(List<ChatMessage> initialMessages);
-        void onMessageAdded(ChatMessage message);
-        void onMessageModified(ChatMessage message);
-        void onMessageRemoved(String idMessage);
-        void onError(Exception e);
-    }
-
-    public interface OnOlderMessagesLoadedListener {
-        void onLoaded(List<ChatMessage> olderMessages);
-        void onError(Exception e);
-    }
-
-    public interface HandleChat {
-        void onCreateChatRoom(ChatRoom chatroom);
-    }
-
-    public interface OnUpdateChatRoom {
-        void onUpdate(ChatRoom chatRoom);
-    }
-
-    public interface OnShowInfo {
-        void onShow(User otherUser);
-    }
-
-    public interface OnSearchChatRoom {
-        void onSearch(List<ChatRoom> roomList);
-    }
-
-    public interface OnSeenChatRoom {
-        void onSeen(boolean seen);
-    }
-
-    public ChatRepository() {
+    public ChatRepositoryImpl() {
         db = FirebaseFirestore.getInstance();
         currentUserId = FirebaseAuth.getInstance().getUid();
         if (currentUserId != null) {
@@ -98,27 +66,33 @@ public class ChatRepository {
         }
     }
 
+    @Override
     public String getCurrentUserId() {
         return currentUserId;
     }
 
+    @Override
     public User getCurrentUser() {
         return currentUser;
     }
 
+    @Override
     public Task<DocumentSnapshot> getUser() {
         if (currentUserId == null) return null;
         return db.collection("users").document(currentUserId).get();
     }
 
+    @Override
     public Task<DocumentSnapshot> getUserFriend(String id) {
         return db.collection("users").document(id).get();
     }
 
+    @Override
     public Task<DocumentSnapshot> getOtherUser(String otherUserId) {
         return db.collection("users").document(otherUserId).get();
     }
 
+    @Override
     public LiveData<List<User>> searchUser(String username) {
         MutableLiveData<List<User>> userSearchLiveData = new MutableLiveData<>();
         db.collection("users")
@@ -140,6 +114,7 @@ public class ChatRepository {
         return userSearchLiveData;
     }
 
+    @Override
     public void setSeenMessage(String chatRoomId) {
         if (currentUserId == null || chatRoomId == null) return;
 
@@ -168,6 +143,7 @@ public class ChatRepository {
                 });
     }
 
+    @Override
     public void unregisterSeenMessageListening() {
         if (seenMessageListening != null) {
             Log.e(TAG, "unregisterSeenMessageListening: ");
@@ -176,6 +152,7 @@ public class ChatRepository {
         }
     }
 
+    @Override
     public void getOrCreateChatRoom(String chatRoomId, HandleChat handleChat) {
         db.collection("chatroom").document(chatRoomId).get().addOnCompleteListener(task -> {
             if (task.isSuccessful() && task.getResult() != null) {
@@ -185,6 +162,7 @@ public class ChatRepository {
         });
     }
 
+    @Override
     public void sendMessage(String message, String chatRoomId, ChatRoom chatRoom) {
         if (chatRoom != null && chatRoomId != null) {
             Map<String, Long> unread = chatRoom.getUnreadCounts();
@@ -212,12 +190,14 @@ public class ChatRepository {
         });
     }
 
+    @Override
     public Task<Void> expressEmote(ChatRoom chatRoom, String idMessage, String idUser, String emote) {
         return getChatroomMessageReference(chatRoom.getChatRoomId())
                 .document(idMessage)
                 .update("emote." + idUser, emote);
     }
 
+    @Override
     public Task<Void> deleteEmote(ChatRoom chatRoom, String idMessage, String idUser) {
         return getChatroomMessageReference(chatRoom.getChatRoomId())
                 .document(idMessage)
@@ -230,6 +210,7 @@ public class ChatRepository {
                 .collection("chats");
     }
 
+    @Override
     public Query getOptions(ChatRoom chatRoom1, String chatRoomId) {
         if (currentUserId == null || chatRoom1 == null || chatRoom1.getDeleteChat() == null) return null;
         Long timestamp = chatRoom1.getDeleteChat().get(currentUserId);
@@ -241,6 +222,7 @@ public class ChatRepository {
                 .orderBy("timestamp", Query.Direction.DESCENDING);
     }
 
+    @Override
     public void listeningChatRoom(ChatRoom chatRoom, OnUpdateChatRoom updateChatRoom) {
         if (chatRoomListening != null) {
             chatRoomListening.remove();
@@ -263,6 +245,7 @@ public class ChatRepository {
                 });
     }
 
+    @Override
     public void unregisterListeningChatRoom() {
         if (chatRoomListening != null) {
             chatRoomListening.remove();
@@ -270,6 +253,7 @@ public class ChatRepository {
         }
     }
 
+    @Override
     public void deleteOneSide(ChatRoom model, List<String> userIds) {
         if (currentUserId == null || model == null || userIds == null) return;
         userIds.remove(currentUserId);
@@ -296,6 +280,7 @@ public class ChatRepository {
                 });
     }
 
+    @Override
     public void deleteTwoSides(ChatRoom model) {
         if (model == null || model.getChatRoomId() == null) return;
         db.collection("chatroom").document(model.getChatRoomId()).collection("chats")
@@ -360,6 +345,7 @@ public class ChatRepository {
         }
     }
 
+    @Override
     public LiveData<Map<String, String>> listeningReaction(ChatRoom chatRoom, String idMess) {
         MutableLiveData<Map<String, String>> mapMutableLiveData = new MutableLiveData<>();
 
@@ -384,6 +370,7 @@ public class ChatRepository {
         return mapMutableLiveData;
     }
 
+    @Override
     public void unregisterListeningReaction() {
         if (reactionListening != null) {
             Log.e(TAG, "unregisterListeningReaction: ");
@@ -392,6 +379,7 @@ public class ChatRepository {
         }
     }
 
+    @Override
     public ListenerRegistration listenRecentMessages(String chatRoomId, Long minTimestamp, int limit, OnRecentMessagesListener listener) {
         if (recentMessagesRegistration != null) {
             recentMessagesRegistration.remove();
@@ -446,6 +434,7 @@ public class ChatRepository {
         return recentMessagesRegistration;
     }
 
+    @Override
     public void unregisterRecentMessages() {
         if (recentMessagesRegistration != null) {
             recentMessagesRegistration.remove();
@@ -453,6 +442,7 @@ public class ChatRepository {
         }
     }
 
+    @Override
     public void loadOlderMessages(String chatRoomId, Long minTimestamp, Long oldestTimestamp, int limit, OnOlderMessagesLoadedListener callback) {
         if (chatRoomId == null || oldestTimestamp == null || callback == null) {
             if (callback != null) callback.onLoaded(new ArrayList<>());
@@ -484,6 +474,7 @@ public class ChatRepository {
 
     // ==================== Recent Chat logic ====================
 
+    @Override
     public LiveData<Query> getQuery() {
         MutableLiveData<Query> queryMutableLiveData = new MutableLiveData<>();
         if (currentUserId == null) {
@@ -497,6 +488,7 @@ public class ChatRepository {
         return queryMutableLiveData;
     }
 
+    @Override
     public void showInfo(String otherUserId, OnShowInfo onShowInfo) {
         if (otherUserId == null || onShowInfo == null) return;
         db.collection("users").document(otherUserId).get().addOnSuccessListener(documentSnapshot -> {
@@ -508,6 +500,7 @@ public class ChatRepository {
         });
     }
 
+    @Override
     public void getIsNotSeen(ChatRoom model, OnSeenChatRoom onSeenChatRoom) {
         if (model == null || onSeenChatRoom == null) return;
         String myId = FirebaseAuth.getInstance().getUid();
@@ -533,6 +526,7 @@ public class ChatRepository {
                 .addOnFailureListener(e -> Log.e(TAG, Objects.requireNonNull(e.getMessage())));
     }
 
+    @Override
     public void searchChatRoom(OnSearchChatRoom onSearchChatRoom) {
         if (currentUserId == null || onSearchChatRoom == null) return;
         db.collection("chatroom")
@@ -554,6 +548,7 @@ public class ChatRepository {
                 });
     }
 
+    @Override
     public Task<QuerySnapshot> getActiveUsers(int limit) {
         return db.collection("users")
                 .whereEqualTo("active", true)
@@ -561,6 +556,7 @@ public class ChatRepository {
                 .get();
     }
 
+    @Override
     public Task<QuerySnapshot> getRandomUsers(String randomKey, int limit) {
         return db.collection("users")
                 .whereGreaterThanOrEqualTo(FieldPath.documentId(), randomKey)
@@ -568,24 +564,28 @@ public class ChatRepository {
                 .get();
     }
 
+    @Override
     public Task<QuerySnapshot> getNumberUser(int number) {
         return db.collection("users")
                 .limit(number)
                 .get();
     }
 
+    @Override
     public String createChatRoomId() {
         return db.collection("chatroom")
                 .document()
                 .getId();
     }
 
+    @Override
     public Task<Void> createChatRoom(ChatRoom chatRoom) {
         return db.collection("chatroom")
                 .document(chatRoom.getChatRoomId())
                 .set(chatRoom);
     }
 
+    @Override
     public void scheduleDeleteRandomChat(Context context, String chatRoomId) {
         Log.e("deleteRandomChat", "scheduleDeleteRandomChat: ");
         Data data = new Data.Builder()
@@ -600,6 +600,7 @@ public class ChatRepository {
 
     // ==================== Group & Info & Alias Chat logic ====================
 
+    @Override
     public void setChatRoomToFireStore(ChatRoom chatRoom, OnStateListener onStateListener) {
         DocumentReference docRef = db.collection("chatroom").document();
         chatRoom.setChatRoomId(docRef.getId());
@@ -615,18 +616,21 @@ public class ChatRepository {
         });
     }
 
+    @Override
     public Task<Void> updateAlias(ChatRoom chatRoom, String idUser, String newAlias) {
         return db.collection("chatroom")
                 .document(chatRoom.getChatRoomId())
                 .update("alias." + idUser, newAlias);
     }
 
+    @Override
     public Task<Void> updateChatGroupName(String chatroomId, String name) {
         return db.collection("chatroom")
                 .document(chatroomId)
                 .update("chatName", name);
     }
 
+    @Override
     public void upload_avt(Uri uri, ChatRoom chatRoom, OnStateListener onStateListener) {
         if (uri == null) {
             if (onStateListener != null) onStateListener.onFailure("Ảnh không tồn tại");
@@ -673,12 +677,14 @@ public class ChatRepository {
                 });
     }
 
+    @Override
     public Task<Void> addMemberToGroup(ChatRoom chatRoom) {
         return db.collection("chatroom")
                 .document(chatRoom.getChatRoomId())
                 .set(chatRoom);
     }
 
+    @Override
     public Task<Void> leaveChat(ChatRoom chatRoom) {
         return db.collection("chatroom")
                 .document(chatRoom.getChatRoomId())
@@ -687,10 +693,12 @@ public class ChatRepository {
 
     // ==================== Background Chat logic ====================
 
+    @Override
     public Task<QuerySnapshot> getListImageBackGround() {
         return db.collection("background_chat").get();
     }
 
+    @Override
     public Task<Void> updateBackGround(String chatId, String background) {
         return db.collection("chatroom")
                 .document(chatId)

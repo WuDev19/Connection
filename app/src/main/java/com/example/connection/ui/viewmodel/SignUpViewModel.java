@@ -3,7 +3,8 @@ package com.example.connection.ui.viewmodel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
-import com.example.connection.repository.AuthRepository;
+import com.example.connection.repository.base.AuthRepository;
+import com.example.connection.repository.impl.AuthRepositoryImpl;
 
 public class SignUpViewModel extends ViewModel {
 
@@ -13,7 +14,7 @@ public class SignUpViewModel extends ViewModel {
     private final MutableLiveData<String> confirmInfoLiveData = new MutableLiveData<>();
 
     public SignUpViewModel(){
-        signUpRepository = new AuthRepository();
+        signUpRepository = new AuthRepositoryImpl();
     }
 
     public void signUp(String email, String password, String passwordConfirm, String username){

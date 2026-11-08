@@ -24,7 +24,7 @@ import androidx.recyclerview.widget.PagerSnapHelper;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.SimpleItemAnimator;
 import androidx.recyclerview.widget.SnapHelper;
-import androidx.viewpager2.widget.ViewPager2;
+
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.LayoutInflater;
@@ -40,7 +40,8 @@ import com.example.connection.R;
 import com.example.connection.ui.view.activity.MainActivity;
 import com.example.connection.ui.adapter.ShowImageAdapter;
 import com.example.connection.model.Image;
-import com.example.connection.repository.PostRepository;
+import com.example.connection.repository.base.PostRepository;
+import com.example.connection.repository.impl.PostRepositoryImpl;
 import com.example.connection.ui.viewmodel.ShowPhotoViewModel;
 import com.example.connection.data.worker.WidgetProvider;
 import com.example.connection.constants.MediaPlayerUtil;
@@ -86,7 +87,7 @@ public class FragmentShowPhoto extends Fragment {
             Log.e(TAG, "onCreate: position=" + position + ", isGeneralClick=" + isGeneralClick);
         }
         showPhotoViewModel = new ViewModelProvider(this).get(ShowPhotoViewModel.class);
-        postRepository = new PostRepository();
+        postRepository = new PostRepositoryImpl();
     }
 
     @Override
