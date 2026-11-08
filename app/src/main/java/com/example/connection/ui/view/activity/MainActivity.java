@@ -34,6 +34,7 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.target.AppWidgetTarget;
 import com.example.connection.R;
 import com.example.connection.ui.view.activity.chat.RecentChatActivity;
+import com.example.connection.ui.view.activity.chat.ChatActivity;
 import com.example.connection.ui.view.fragment.BottomSheetSearch;
 import com.example.connection.ui.view.fragment.FragmentHome;
 import com.example.connection.ui.view.fragment.FragmentNotification;
@@ -233,6 +234,28 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        checkNotificationIntent(getIntent());
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        checkNotificationIntent(intent);
+    }
+
+    private void checkNotificationIntent(Intent intent) {
+        if (intent == null) return;
+        String chatRoomId = intent.getStringExtra("chatRoomId");
+        if (chatRoomId == null) {
+            chatRoomId = intent.getStringExtra("chat_room_id");
+        }
+        if (chatRoomId != null && !chatRoomId.trim().isEmpty()) {
+            Intent chatIntent = new Intent(this, ChatActivity.class);
+            chatIntent.putExtra("chat_room_id", chatRoomId);
+            chatIntent.putExtra("chatRoomId", chatRoomId);
+            startActivity(chatIntent);
+        }
     }
 
     @SuppressLint("ApplySharedPref")

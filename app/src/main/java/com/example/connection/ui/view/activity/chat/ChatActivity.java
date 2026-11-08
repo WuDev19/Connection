@@ -211,6 +211,8 @@ public class ChatActivity extends AppCompatActivity {
             if (chatRoom == null) {
                 chatViewModel.createNewChatRoom();
             } else {
+                this.chatRoom = chatRoom;
+                showChatRoomExist(chatRoom);
                 if (chatRoom.getBackground() != null && !chatRoom.getBackground().isEmpty()) {
                     Glide.with(this)
                             .load(chatRoom.getBackground())
@@ -312,9 +314,13 @@ public class ChatActivity extends AppCompatActivity {
         chatRoom = intent.getParcelableExtra("chat_room");
         if (chatRoom != null) {
             showChatRoomExist(chatRoom);
-        } else if (intent.hasExtra("chat_room_id")) {
+        } else if (intent.hasExtra("chat_room_id") || intent.hasExtra("chatRoomId")) {
             String roomId = intent.getStringExtra("chat_room_id");
+            if (roomId == null) {
+                roomId = intent.getStringExtra("chatRoomId");
+            }
             if (roomId != null && !roomId.isEmpty()) {
+                chatViewModel.setChatRoomId(roomId);
                 com.google.firebase.firestore.FirebaseFirestore.getInstance().collection("chatroom").document(roomId).get()
                         .addOnSuccessListener(snapshot -> {
                             if (snapshot.exists()) {
@@ -322,6 +328,7 @@ public class ChatActivity extends AppCompatActivity {
                                 if (room != null) {
                                     chatRoom = room;
                                     showChatRoomExist(chatRoom);
+                                    chatViewModel.getOrCreateChatRoom();
                                     return;
                                 }
                             }
@@ -612,6 +619,14 @@ public class ChatActivity extends AppCompatActivity {
         chatViewModel.unregisterSeenMessageListening();
         chatViewModel.unregisterListeningChatRoom();
         chatViewModel.unregisterRecentMessages();
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        getDataIntent();
+        chatViewModel.getOrCreateChatRoom();
     }
 
     @Override

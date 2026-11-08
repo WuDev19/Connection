@@ -65,6 +65,9 @@ public class ChatViewModel extends ViewModel {
     }
 
     public void getOrCreateChatRoom() {
+        if (chatRoomId == null || chatRoomId.trim().isEmpty()) {
+            return;
+        }
         chatRepository.getOrCreateChatRoom(chatRoomId, chatroom -> {
             chatRoom = chatroom;
             chatRoomLiveData.setValue(chatRoom);

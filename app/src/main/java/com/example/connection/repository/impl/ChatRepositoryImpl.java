@@ -154,10 +154,20 @@ public class ChatRepositoryImpl implements ChatRepository {
 
     @Override
     public void getOrCreateChatRoom(String chatRoomId, HandleChat handleChat) {
+        if (chatRoomId == null || chatRoomId.trim().isEmpty()) {
+            if (handleChat != null) {
+                handleChat.onCreateChatRoom(null);
+            }
+            return;
+        }
         db.collection("chatroom").document(chatRoomId).get().addOnCompleteListener(task -> {
             if (task.isSuccessful() && task.getResult() != null) {
                 ChatRoom chatRoom = task.getResult().toObject(ChatRoom.class);
-                handleChat.onCreateChatRoom(chatRoom);
+                if (handleChat != null) {
+                    handleChat.onCreateChatRoom(chatRoom);
+                }
+            } else if (handleChat != null) {
+                handleChat.onCreateChatRoom(null);
             }
         });
     }

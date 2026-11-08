@@ -67,11 +67,18 @@ public class ConnectionFirebaseMessagingService extends FirebaseMessagingService
 
     private void sendNotification(String title, String messageBody, Map<String, String> data) {
         Intent intent;
-        String chatRoomId = (data != null) ? data.get("chatRoomId") : null;
+        String chatRoomId = null;
+        if (data != null) {
+            chatRoomId = data.get("chatRoomId");
+            if (chatRoomId == null) {
+                chatRoomId = data.get("chat_room_id");
+            }
+        }
 
         if (chatRoomId != null && !chatRoomId.isEmpty()) {
             intent = new Intent(this, ChatActivity.class);
             intent.putExtra("chat_room_id", chatRoomId);
+            intent.putExtra("chatRoomId", chatRoomId);
         } else {
             intent = new Intent(this, MainActivity.class);
         }
