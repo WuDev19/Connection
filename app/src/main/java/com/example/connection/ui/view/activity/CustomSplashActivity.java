@@ -15,6 +15,7 @@ import com.example.connection.R;
 import com.example.connection.constants.SecurityCheckUtil;
 import com.example.connection.constants.SharePreUtil;
 import com.example.connection.ui.view.activity.authentication.LoginActivity;
+import com.example.connection.ui.view.activity.chat.ChatActivity;
 import com.example.connection.ui.viewmodel.SplashViewModel;
 
 @SuppressLint("CustomSplashScreen")
@@ -46,15 +47,33 @@ public class CustomSplashActivity extends AppCompatActivity {
         }, 1000);
     }
 
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+    }
+
     private void goToNextActivity() {
         splashViewModel.checkUser().observe(this, firebaseUser -> {
-            Intent intent;
             if (firebaseUser != null) {
-                intent = new Intent(CustomSplashActivity.this, MainActivity.class);
+                String chatRoomId = getIntent().getStringExtra("chatRoomId");
+                if (chatRoomId == null) {
+                    chatRoomId = getIntent().getStringExtra("chat_room_id");
+                }
+                if (chatRoomId != null && !chatRoomId.trim().isEmpty()) {
+                    Intent mainIntent = new Intent(CustomSplashActivity.this, MainActivity.class);
+                    Intent chatIntent = new Intent(CustomSplashActivity.this, ChatActivity.class);
+                    chatIntent.putExtra("chat_room_id", chatRoomId);
+                    chatIntent.putExtra("chatRoomId", chatRoomId);
+                    startActivities(new Intent[]{mainIntent, chatIntent});
+                } else {
+                    Intent intent = new Intent(CustomSplashActivity.this, MainActivity.class);
+                    startActivity(intent);
+                }
             } else {
-                intent = new Intent(CustomSplashActivity.this, LoginActivity.class);
+                Intent intent = new Intent(CustomSplashActivity.this, LoginActivity.class);
+                startActivity(intent);
             }
-            startActivity(intent);
             finish();
         });
     }
