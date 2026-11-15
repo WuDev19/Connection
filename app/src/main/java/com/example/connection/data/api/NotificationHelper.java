@@ -35,7 +35,10 @@ public class NotificationHelper {
     }
 
     public static void sendNotificationToUser(String receiverUserId, String title, String body, Map<String, String> data, OnNotificationSentListener listener) {
-        if (receiverUserId == null || receiverUserId.isEmpty()) return;
+        if (receiverUserId == null || receiverUserId.isEmpty()) {
+            if (listener != null) listener.onFailure("Người nhận không hợp lệ");
+            return;
+        }
         sendNotificationToUsers(Collections.singletonList(receiverUserId), title, body, data, listener);
     }
 
@@ -44,20 +47,26 @@ public class NotificationHelper {
     }
 
     public static void sendNotificationToUsers(List<String> receiverUserIds, String title, String body, Map<String, String> data, OnNotificationSentListener listener) {
-        if (receiverUserIds == null || receiverUserIds.isEmpty()) return;
+        if (receiverUserIds == null || receiverUserIds.isEmpty()) {
+            if (listener != null) listener.onFailure("Không có người nhận");
+            return;
+        }
 
         String currentUserId = FirebaseAuth.getInstance().getUid();
         List<String> targetUserIds = new ArrayList<>();
         for (String id : receiverUserIds) {
-            if (id != null) {
-                String cleanId = id.contains("_") ? id.split("_")[0] : id;
+            if (id != null && !id.trim().isEmpty()) {
+                String cleanId = id.endsWith("_delete") ? id.substring(0, id.length() - 7) : id;
                 if (!cleanId.equals(currentUserId) && !targetUserIds.contains(cleanId)) {
                     targetUserIds.add(cleanId);
                 }
             }
         }
 
-        if (targetUserIds.isEmpty()) return;
+        if (targetUserIds.isEmpty()) {
+            if (listener != null) listener.onSuccess(0);
+            return;
+        }
 
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         List<String> tokens = Collections.synchronizedList(new ArrayList<>());
@@ -101,13 +110,13 @@ public class NotificationHelper {
             }
 
             String bearerToken = "Bearer " + idToken;
-            NotificationRequest request = new NotificationRequest(new ArrayList<>(tokens), title, body, data);
+            NotificationRequest request = new NotificationRequest(new ArrayList<>(new java.util.HashSet<>(tokens)), title, body, data);
 
             ApiClient.getNotificationApiService().sendNotification(bearerToken, request)
                     .enqueue(new Callback<NotificationResponse>() {
                         @Override
                         public void onResponse(@NonNull Call<NotificationResponse> call, @NonNull Response<NotificationResponse> response) {
-                            if (response.isSuccessful() && response.body() != null) {
+                            if (response.isSuccessful() && response.body() != null && response.body().getSuccessCount() > 0) {
                                 Log.d(TAG, "Bắn thông báo thành công: " + response.body().getSuccessCount() + " thiết bị");
                                 if (listener != null) listener.onSuccess(response.body().getSuccessCount());
                             } else {

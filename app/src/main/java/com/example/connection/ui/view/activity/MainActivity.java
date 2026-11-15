@@ -65,6 +65,13 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser() == null) {
+            Intent loginIntent = new Intent(this, CustomSplashActivity.class);
+            if (getIntent().getExtras() != null) loginIntent.putExtras(getIntent().getExtras());
+            startActivity(loginIntent);
+            finish();
+            return;
+        }
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
@@ -72,7 +79,7 @@ public class MainActivity extends AppCompatActivity {
 
         dialogPolicy();
 
-        initView();
+        initView(savedInstanceState == null);
 
         checkPermission();
         checkNotificationPermission();
@@ -101,19 +108,7 @@ public class MainActivity extends AppCompatActivity {
             bottomSheetSearch.show(getSupportFragmentManager(), bottomSheetSearch.getTag());
         });
 
-        fab.setOnClickListener(view -> {
-            mainViewModel.setCameraMusicPlaying(false);
-            Bundle bundle = new Bundle();
-            bundle.putStringArrayList("confirm_friend", (ArrayList<String>) friendConfirm);
-            bundle.putInt("number", numberOfNotification);
-            fragmentNotification.setArguments(bundle);
-            getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.frame_layout, fragmentNotification, "FragmentNotification")
-                    .addToBackStack("FragmentNotification")
-                    .commit();
-            fab.hide();
-            tv_notification.setVisibility(View.GONE);
-        });
+        fab.setOnClickListener(view -> openNotifications());
 
         fab.setOnTouchListener(new View.OnTouchListener() {
             float initialTouchX, initialTouchY, initialViewX, initialViewY;
@@ -222,16 +217,14 @@ public class MainActivity extends AppCompatActivity {
         });
 
         mainViewModel.getListFriendConfirmLiveData().observe(this, list -> {
+            friendConfirm = new ArrayList<>();
             if (list != null) {
-                friendConfirm = list;
-                friendConfirm.remove(currentUserId);
-                if (friendConfirm.isEmpty()) {
-                    tv_notification.setText("");
-                } else {
-                    tv_notification.setText(String.valueOf(friendConfirm.size()));
-                    numberOfNotification = friendConfirm.size();
+                for (String id : list) {
+                    if (id != null && !id.equals(currentUserId) && !friendConfirm.contains(id)) friendConfirm.add(id);
                 }
             }
+            numberOfNotification = friendConfirm.size();
+            tv_notification.setText(numberOfNotification == 0 ? "" : String.valueOf(numberOfNotification));
         });
 
         checkNotificationIntent(getIntent());
@@ -244,18 +237,55 @@ public class MainActivity extends AppCompatActivity {
         checkNotificationIntent(intent);
     }
 
+    @Override
+    protected void onPostResume() {
+        super.onPostResume();
+        if (mainViewModel != null) checkNotificationIntent(getIntent());
+    }
+
     private void checkNotificationIntent(Intent intent) {
-        if (intent == null) return;
+        if (intent == null || getSupportFragmentManager().isStateSaved()) return;
         String chatRoomId = intent.getStringExtra("chatRoomId");
-        if (chatRoomId == null) {
-            chatRoomId = intent.getStringExtra("chat_room_id");
-        }
+        if (chatRoomId == null) chatRoomId = intent.getStringExtra("chat_room_id");
+        String type = intent.getStringExtra("type");
         if (chatRoomId != null && !chatRoomId.trim().isEmpty()) {
+            intent.removeExtra("chatRoomId");
+            intent.removeExtra("chat_room_id");
+            intent.removeExtra("type");
+            MediaPlayerUtil.getInstance().pauseMusic();
             Intent chatIntent = new Intent(this, ChatActivity.class);
             chatIntent.putExtra("chat_room_id", chatRoomId);
-            chatIntent.putExtra("chatRoomId", chatRoomId);
             startActivity(chatIntent);
+        } else if ("FRIEND_REQUEST".equals(type)) {
+            intent.removeExtra("type");
+            openNotifications();
+        } else {
+            intent.removeExtra("type");
         }
+    }
+
+    private void openNotifications() {
+        androidx.fragment.app.FragmentManager manager = getSupportFragmentManager();
+        if (!fab.isEnabled() || manager.isStateSaved() || manager.findFragmentByTag("FragmentNotification") != null) return;
+        androidx.fragment.app.Fragment current = manager.findFragmentById(R.id.frame_layout);
+        if (current == null) return;
+        mainViewModel.setCameraMusicPlaying(false);
+        MediaPlayerUtil.getInstance().pauseMusic();
+        fragmentNotification = new FragmentNotification();
+        Bundle arguments = new Bundle();
+        arguments.putStringArrayList("confirm_friend", friendConfirm == null ? new ArrayList<>() : new ArrayList<>(friendConfirm));
+        arguments.putInt("number", numberOfNotification);
+        fragmentNotification.setArguments(arguments);
+        // commitNow is unavailable with a back stack; disable the trigger until this transaction is applied.
+        fab.setEnabled(false);
+        manager.beginTransaction()
+                .hide(current)
+                .setMaxLifecycle(current, androidx.lifecycle.Lifecycle.State.STARTED)
+                .add(R.id.frame_layout, fragmentNotification, "FragmentNotification")
+                .addToBackStack("FragmentNotification")
+                .commit();
+        fab.hide();
+        tv_notification.setVisibility(View.GONE);
     }
 
     @SuppressLint("ApplySharedPref")
@@ -291,7 +321,7 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private void initView() {
+    private void initView(boolean createHome) {
         tv_search = findViewById(R.id.tv_search);
         img_chat = findViewById(R.id.img_chat);
         img_personal = findViewById(R.id.img_personal);
@@ -299,12 +329,11 @@ public class MainActivity extends AppCompatActivity {
         tv_message = findViewById(R.id.tv_number_message);
         fab = findViewById(R.id.floating_action_button);
         frameLayoutNotification = findViewById(R.id.frame_layout_notification);
-        FragmentHome fragmentHome = new FragmentHome();
-        getSupportFragmentManager()
-                .beginTransaction()
-                .replace(R.id.frame_layout, fragmentHome, "FragmentHome")
-                .commit();
-        fragmentNotification = new FragmentNotification();
+        if (createHome) {
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.frame_layout, new FragmentHome(), "FragmentHome")
+                    .commitNow();
+        }
     }
 
     public void checkPermission() {
@@ -366,6 +395,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
         Log.e(TAG, "onStart: ");
+        if (mainViewModel == null) return;
         mainViewModel.getRealtimeUnseenMessage();
         mainViewModel.getNotificationListenerRealtime();
     }
@@ -374,14 +404,14 @@ public class MainActivity extends AppCompatActivity {
     protected void onStop() {
         super.onStop();
         Log.e(TAG, "onStop: ");
-        mainViewModel.unregisterListeningRealtime();
+        if (mainViewModel != null) mainViewModel.unregisterListeningRealtime();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        mainViewModel.setActive();
-        MediaPlayerUtil.getInstance().releaseMediaPlayer();
+        if (mainViewModel != null) mainViewModel.setActive();
+        if (isFinishing()) MediaPlayerUtil.getInstance().releaseMediaPlayer();
         Log.e(TAG, "onDestroy: ");
     }
 

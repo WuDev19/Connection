@@ -16,16 +16,12 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
-import androidx.media3.common.MediaItem;
-import androidx.media3.common.Player;
-import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.ui.PlayerView;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.example.connection.R;
 import com.example.connection.model.Image;
-import com.example.connection.constants.MediaPlayerUtil;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 
@@ -44,10 +40,8 @@ public class ShowImageAdapter extends RecyclerView.Adapter<ShowImageAdapter.Show
     private final Context context;
     private final onItemClick click;
     private final RecyclerView recyclerView;
-    private int positionClick;
     private final String TAG = getClass().getName();
-    private boolean isGeneralClick;
-    private final ExoPlayer exoPlayer;
+
     private final String myId = FirebaseAuth.getInstance().getUid();
     private final List<String> emoteList = Arrays.asList(
             "\uD83D\uDC4D",
@@ -59,21 +53,17 @@ public class ShowImageAdapter extends RecyclerView.Adapter<ShowImageAdapter.Show
 
     public ShowImageAdapter(Context context,
                             onItemClick onItemClick,
-                            RecyclerView recyclerView,
-                            int positionClick,
-                            boolean isGeneralClick,
-                            ExoPlayer exoPlayer) {
+                            RecyclerView recyclerView) {
         this.context = context;
         this.click = onItemClick;
         this.recyclerView = recyclerView;
-        this.positionClick = positionClick;
-        this.isGeneralClick = isGeneralClick;
-        this.exoPlayer = exoPlayer;
-        Log.e("kiemtranhac", "ShowImageAdapter: " + positionClick);
+
     }
 
     public interface onItemClick {
         void generalImageClick();
+        void togglePlayback(String postId);
+        void onMediaBound();
 
         void sendMessage(String message, String postUrl, String otherId, String otherUserName, String avtPoster, EditText editText);
 
@@ -115,7 +105,7 @@ public class ShowImageAdapter extends RecyclerView.Adapter<ShowImageAdapter.Show
         postList.clear();
         postList.addAll(initialPosts);
         notifyDataSetChanged();
-        checkInitialAutoPlay();
+
     }
 
     public void updateExistingPosts(List<Image> updatedPosts) {
@@ -194,6 +184,7 @@ public class ShowImageAdapter extends RecyclerView.Adapter<ShowImageAdapter.Show
     public void onBindViewHolder(@NonNull ShowImageViewHolder holder, int position) {
         Image model = getItem(position);
         if (model == null) return;
+        recyclerView.post(click::onMediaBound);
 
         Log.e("kiemtrakhixoa", "onBindViewHolder: " + position + " " + model.getUrlMusic());
         if (model.getImageUrl() != null) {
@@ -205,11 +196,7 @@ public class ShowImageAdapter extends RecyclerView.Adapter<ShowImageAdapter.Show
             Log.e(TAG, "onBindViewHolder: " + model.getVideoUrl());
             holder.img_post.setVisibility(View.GONE);
             holder.playerViewVideo.setVisibility(View.VISIBLE);
-            if (position == 0 || position == positionClick) {
-                Log.e(TAG, "onBindViewHolder: click position");
-                holder.playerViewVideo.setPlayer(null);
-                holder.playerViewVideo.setPlayer(exoPlayer);
-            }
+
         }
 
         if (model.getStatus().isEmpty()) holder.tv_status.setVisibility(View.GONE);
@@ -271,14 +258,8 @@ public class ShowImageAdapter extends RecyclerView.Adapter<ShowImageAdapter.Show
             return true;
         });
 
-        holder.playerViewVideo.setOnClickListener(view -> {
-            if (exoPlayer.isPlaying()) {
-                exoPlayer.pause();
-            } else exoPlayer.play();
-            checkIsPlayingMusic();
-        });
-
-        holder.img_post.setOnClickListener(view -> checkIsPlayingMusic());
+        holder.playerViewVideo.setOnClickListener(view -> click.togglePlayback(model.getPostId()));
+        holder.img_post.setOnClickListener(view -> click.togglePlayback(model.getPostId()));
 
         holder.frameLayout.setOnClickListener(view -> {
             holder.recyclerEmote.setAdapter(null);
@@ -426,40 +407,6 @@ public class ShowImageAdapter extends RecyclerView.Adapter<ShowImageAdapter.Show
         }
     }
 
-    public void checkInitialAutoPlay() {
-        int itemCount = getItemCount();
-        Log.e(TAG, "checkInitialAutoPlay: count = " + itemCount);
-        if (itemCount == 0) {
-            MediaPlayerUtil.getInstance().setFirstTimeScrollToShow(false);
-            return;
-        }
-        // Khi click vào item ở trong general frag
-        if (positionClick >= 0 && positionClick < getItemCount() && isGeneralClick) {
-            recyclerView.scrollToPosition(positionClick);
-            Image image = getItem(positionClick);
-            if (image != null) {
-                playVideo(image);
-                if (image.getUrlMusic() != null) {
-                    MediaPlayerUtil.getInstance().playMusic(context, image.getUrlMusic());
-                }
-            }
-            isGeneralClick = false;
-        }
-        // Khi lần đầu vuốt sang fragment show và có nhạc
-        else if (positionClick == 0 && MediaPlayerUtil.getInstance().isFirstTimeScrollToShow()) {
-            Image image = getItem(positionClick);
-            if (image != null) {
-                playVideo(image);
-                MediaPlayerUtil.getInstance().setFirstTimeScrollToShow(false);
-                positionClick = -1;
-                if (image.getUrlMusic() != null) {
-                    MediaPlayerUtil.getInstance().setPosition(1);
-                    MediaPlayerUtil.getInstance().playMusic(context, image.getUrlMusic());
-                }
-            }
-        }
-    }
-
     public String getTimeAgo(String time, Timestamp timestamp) {
         @SuppressLint("SimpleDateFormat") SimpleDateFormat format = new SimpleDateFormat("dd-MM HH:mm:ss", new Locale("vi", "VN"));
         String currentTime = format.format(new Date().getTime());
@@ -486,16 +433,6 @@ public class ShowImageAdapter extends RecyclerView.Adapter<ShowImageAdapter.Show
         return full;
     }
 
-    public void playVideo(Image image) {
-        if (image != null && image.getVideoUrl() != null) {
-            MediaItem mediaItem = MediaItem.fromUri(image.getVideoUrl());
-            exoPlayer.setRepeatMode(Player.REPEAT_MODE_ONE);
-            exoPlayer.setMediaItem(mediaItem);
-            exoPlayer.prepare();
-            exoPlayer.play();
-        }
-    }
-
     private String addPaddingForMarquee(String text, TextView textView) {
         Paint paint = textView.getPaint();
         float textWidth = paint.measureText(text);
@@ -514,16 +451,6 @@ public class ShowImageAdapter extends RecyclerView.Adapter<ShowImageAdapter.Show
             return paddedText.toString();
         } else {
             return text;
-        }
-    }
-
-    public void checkIsPlayingMusic() {
-        if (MediaPlayerUtil.getInstance().isPlaying()) {
-            MediaPlayerUtil.getInstance().pauseMusic();
-            MediaPlayerUtil.getInstance().setCLickToPause(true);
-        } else {
-            MediaPlayerUtil.getInstance().resumeMusic();
-            MediaPlayerUtil.getInstance().setCLickToPause(false);
         }
     }
 

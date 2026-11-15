@@ -1,6 +1,5 @@
 package com.example.connection.ui.adapter;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -8,76 +7,83 @@ import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
-import androidx.lifecycle.LifecycleOwner;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.connection.R;
-import com.example.connection.ui.viewmodel.NotificationViewModel;
+import com.example.connection.model.User;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapter.NotificationViewHolder> {
-
     private final Context context;
-    private List<String> mList;
     private final onItemClick click;
-    private final NotificationViewModel notificationViewModel;
-    private final LifecycleOwner lifecycleOwner;
+    private List<String> items = new ArrayList<>();
+    private Map<String, User> users = new HashMap<>();
+    private Set<String> pending = new HashSet<>();
 
-    public interface onItemClick{
-        void onAccept(String otherUserId, int position);
-        void onCancel(String otherUserId, int position);
+    public interface onItemClick {
+        void onAccept(String id, int position);
+        void onCancel(String id, int position);
     }
 
-    public NotificationAdapter(Context context, List<String> mList, onItemClick click,
-                               NotificationViewModel notificationViewModel, LifecycleOwner lifecycleOwner) {
+    public NotificationAdapter(Context context, List<String> ids, onItemClick click) {
         this.context = context;
-        this.mList = mList;
         this.click = click;
-        this.notificationViewModel = notificationViewModel;
-        this.lifecycleOwner = lifecycleOwner;
+        if (ids != null) items = new ArrayList<>(ids);
     }
 
-    @SuppressLint("NotifyDataSetChanged")
-    public void setData(List<String> list){
-        this.mList = list;
+    public void setData(List<String> ids) {
+        items = ids == null ? new ArrayList<>() : new ArrayList<>(ids);
         notifyDataSetChanged();
     }
-    @NonNull
-    @Override
-    public NotificationViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(context).inflate(R.layout.layout_notification, parent, false);
-        return new NotificationViewHolder(view);
+
+    public void setUsers(Map<String, User> data) {
+        users = new HashMap<>(data);
+        notifyDataSetChanged();
     }
 
-    @SuppressLint("SetTextI18n")
-    @Override
-    public void onBindViewHolder(@NonNull NotificationViewHolder holder, int position) {
-        String id = mList.get(position);
-        if(id == null || id.equals(notificationViewModel.getCurrentUserId())) return;
-        notificationViewModel.getUser(id).observe(lifecycleOwner, user -> {
-            if(user != null){
-                holder.tv_add_friend.setText("Bạn có lời mời kết bạn từ " + user.getUserName());
-                holder.btn_accept.setOnClickListener(view -> click.onAccept(id, position));
-                holder.btn_cancel.setOnClickListener(view -> click.onCancel(id, position));
-            }
-        });
+    public void setPending(Set<String> ids) {
+        pending = new HashSet<>(ids);
+        notifyDataSetChanged();
     }
 
-    @Override
-    public int getItemCount() {
-        if(mList != null) return mList.size();
-        return 0;
+    @NonNull @Override
+    public NotificationViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int type) {
+        return new NotificationViewHolder(LayoutInflater.from(context).inflate(R.layout.layout_notification, parent, false));
     }
 
-    public static class NotificationViewHolder extends RecyclerView.ViewHolder {
+    @Override public void onBindViewHolder(@NonNull NotificationViewHolder holder, int position) {
+        String id = items.get(position);
+        User user = users.get(id);
+        holder.text.setText("Bạn có lời mời kết bạn từ " + (user == null ? "người dùng" : user.getUserName()));
+        holder.accept.setEnabled(!pending.contains(id));
+        holder.cancel.setEnabled(!pending.contains(id));
+        holder.accept.setOnClickListener(v -> dispatch(holder, true));
+        holder.cancel.setOnClickListener(v -> dispatch(holder, false));
+    }
 
-        TextView tv_add_friend;
-        ImageButton btn_accept, btn_cancel;
+    private void dispatch(NotificationViewHolder holder, boolean accept) {
+        int position = holder.getBindingAdapterPosition();
+        if (position == RecyclerView.NO_POSITION) return;
+        String id = items.get(position);
+        if (pending.contains(id)) return;
+        if (accept) click.onAccept(id, position);
+        else click.onCancel(id, position);
+    }
 
-        public NotificationViewHolder(@NonNull View itemView) {
-            super(itemView);
-            tv_add_friend = itemView.findViewById(R.id.tv_add_friend);
-            btn_accept = itemView.findViewById(R.id.btn_accept);
-            btn_cancel = itemView.findViewById(R.id.btn_cancel);
+    @Override public int getItemCount() { return items.size(); }
+
+    static class NotificationViewHolder extends RecyclerView.ViewHolder {
+        final TextView text;
+        final ImageButton accept, cancel;
+        NotificationViewHolder(View view) {
+            super(view);
+            text = view.findViewById(R.id.tv_add_friend);
+            accept = view.findViewById(R.id.btn_accept);
+            cancel = view.findViewById(R.id.btn_cancel);
         }
     }
 }

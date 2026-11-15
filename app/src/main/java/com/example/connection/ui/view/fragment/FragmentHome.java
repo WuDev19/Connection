@@ -16,6 +16,8 @@ import com.example.connection.constants.MediaPlayerUtil;
 public class FragmentHome extends Fragment {
 
     private ViewPager2 viewPager2;
+    private int selectedPage;
+    private ViewPager2.OnPageChangeCallback pageCallback;
 
     public FragmentHome(){}
 
@@ -34,16 +36,19 @@ public class FragmentHome extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        if (savedInstanceState != null) selectedPage = savedInstanceState.getInt("home_page", selectedPage);
+        int pageToRestore = selectedPage;
         viewPager2 = view.findViewById(R.id.view_pager);
-        ViewPagerHomeAdapter homeAdapter = new ViewPagerHomeAdapter(requireActivity());
+        ViewPagerHomeAdapter homeAdapter = new ViewPagerHomeAdapter(this);
         viewPager2.setAdapter(homeAdapter);
-        viewPager2.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
+        pageCallback = new ViewPager2.OnPageChangeCallback() {
 
             final MainActivity mainActivity = (MainActivity) requireActivity();
 
             @Override
             public void onPageSelected(int position) {
                 super.onPageSelected(position);
+                selectedPage = position;
                 if(position == 0){
                     mainActivity.setShowFab();
                     MediaPlayerUtil.getInstance().setPosition(0);
@@ -52,11 +57,37 @@ public class FragmentHome extends Fragment {
                 else {
                     mainActivity.setHideFab();
                     MediaPlayerUtil.getInstance().setPosition(1);
-                    MediaPlayerUtil.getInstance().resumeMusic();
+
                 }
             }
-        });
+        };
+        viewPager2.registerOnPageChangeCallback(pageCallback);
+        viewPager2.setCurrentItem(pageToRestore, false);
 
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        ((MainActivity) requireActivity()).setClick(false);
+        MediaPlayerUtil.getInstance().setIsInGeneral(false);
+        MediaPlayerUtil.getInstance().setPosition(selectedPage);
+        MainActivity activity = (MainActivity) requireActivity();
+        if (selectedPage == 0) activity.setShowFab();
+        else activity.setHideFab();
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt("home_page", selectedPage);
+    }
+
+    @Override
+    public void onDestroyView() {
+        if (viewPager2 != null && pageCallback != null) viewPager2.unregisterOnPageChangeCallback(pageCallback);
+        if (viewPager2 != null) viewPager2.setAdapter(null);
+        viewPager2 = null;
+        super.onDestroyView();
+    }
 }

@@ -455,7 +455,7 @@ public class FragmentTakePhoto extends Fragment {
         // Thay thế LocalBroadcastManager bằng MainViewModel LiveData
         mainViewModel.getCameraMusicPlaying().observe(getViewLifecycleOwner(), playing -> {
             if (Boolean.TRUE.equals(playing)) {
-                if (MediaPlayerUtil.getInstance().getPosition() == 0) {
+                if (isResumed() && MediaPlayerUtil.getInstance().getPosition() == 0) {
                     mediaPreviewHandler.onResume();
                 }
             } else if (Boolean.FALSE.equals(playing)) {

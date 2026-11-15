@@ -16,9 +16,6 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.media3.common.MediaItem;
-import androidx.media3.common.Player;
-import androidx.media3.exoplayer.ExoPlayer;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.PagerSnapHelper;
 import androidx.recyclerview.widget.RecyclerView;
@@ -26,9 +23,7 @@ import androidx.recyclerview.widget.SimpleItemAnimator;
 import androidx.recyclerview.widget.SnapHelper;
 
 import android.util.Log;
-import android.view.GestureDetector;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -45,6 +40,9 @@ import com.example.connection.repository.impl.PostRepositoryImpl;
 import com.example.connection.ui.viewmodel.ShowPhotoViewModel;
 import com.example.connection.data.worker.WidgetProvider;
 import com.example.connection.constants.MediaPlayerUtil;
+import com.example.connection.ui.state.PhotoPlaybackController;
+import androidx.lifecycle.Lifecycle;
+import java.util.Objects;
 import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.ArrayList;
@@ -57,14 +55,17 @@ public class FragmentShowPhoto extends Fragment {
     private PostRepository postRepository;
     private final String TAG = getClass().getName();
     private int position;
-    private FragmentGeneralPhoto fragmentGeneralPhoto;
     private int lastPosition = RecyclerView.NO_POSITION;
     private boolean isGeneralClick = false;
     private Image lastImage;
     private ShowPhotoViewModel showPhotoViewModel;
     private EditText edt_send_message;
-    private ExoPlayer exoPlayer;
-    private boolean onceScroll;
+    private PhotoPlaybackController playback;
+    private String pendingPostId;
+    private String pausedPostId;
+    private boolean navigating;
+    private int viewGeneration;
+    private boolean resolvingInitialPost;
     private Button bt_like;
     private SnapHelper snapHelper;
     private View layoutNewPostsChip;
@@ -86,8 +87,13 @@ public class FragmentShowPhoto extends Fragment {
             isGeneralClick = getArguments().getBoolean("isGeneralClick", false);
             Log.e(TAG, "onCreate: position=" + position + ", isGeneralClick=" + isGeneralClick);
         }
+        pendingPostId = getArguments() == null ? null : getArguments().getString("post_id");
+        if (savedInstanceState != null) {
+            pendingPostId = savedInstanceState.getString("visible_post_id", pendingPostId);
+            pausedPostId = savedInstanceState.getString("paused_post_id");
+            position = savedInstanceState.getInt("visible_position", position);
+        }
         showPhotoViewModel = new ViewModelProvider(this).get(ShowPhotoViewModel.class);
-        postRepository = new PostRepositoryImpl();
     }
 
     @Override
@@ -105,13 +111,12 @@ public class FragmentShowPhoto extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         if (getArguments() != null) {
-            position = getArguments().getInt("position_key", position);
             isGeneralClick = getArguments().getBoolean("isGeneralClick", isGeneralClick);
         }
 
+        viewGeneration++;
+        postRepository = new PostRepositoryImpl();
         setUpRecyclerView();
-
-        showPhotoViewModel.updateSeenPost(requireContext());
 
         showPhotoViewModel.getUpdateWidget().observe(getViewLifecycleOwner(), shouldUpdate -> {
             if (shouldUpdate) {
@@ -120,8 +125,8 @@ public class FragmentShowPhoto extends Fragment {
         });
 
         showPhotoViewModel.getSendMessageSuccess().observe(getViewLifecycleOwner(), aBoolean -> {
-            edt_send_message.setText("");
-            Toast.makeText(getContext(), "Gửi tin nhắn thành công", Toast.LENGTH_LONG).show();
+            if (Boolean.TRUE.equals(aBoolean) && edt_send_message != null) edt_send_message.setText("");
+            Toast.makeText(getContext(), Boolean.TRUE.equals(aBoolean) ? "Gửi tin nhắn thành công" : "Gửi tin nhắn thất bại", Toast.LENGTH_LONG).show();
         });
 
         showPhotoViewModel.getExpressDone().observe(getViewLifecycleOwner(), done -> {
@@ -136,36 +141,45 @@ public class FragmentShowPhoto extends Fragment {
     }
 
     private void setUpRecyclerView() {
+        final int generation = viewGeneration;
         recyclerView.post(() -> {
-            if (getArguments() != null) {
-                position = getArguments().getInt("position_key", position);
-                isGeneralClick = getArguments().getBoolean("isGeneralClick", isGeneralClick);
-                Log.e("TAGG", position + "show");
-            }
-
-            exoPlayer = new ExoPlayer.Builder(requireContext()).build();
+            if (!isAdded() || getView() == null || generation != viewGeneration) return;
+            playback = new PhotoPlaybackController(requireContext());
+            playback.restorePausedPost(pausedPostId);
+            playback.setActive(false);
             adapter = new ShowImageAdapter(requireContext(), new ShowImageAdapter.onItemClick() {
                 @Override
                 public void generalImageClick() {
-                    if (recyclerView != null) {
-                        recyclerView.scrollToPosition(0);
+                    if (navigating || !isResumed()) return;
+                    FragmentManager manager = requireActivity().getSupportFragmentManager();
+                    if (manager.isStateSaved()) return;
+                    navigating = true;
+                    playback.setActive(false);
+                    if (isGeneralClick) {
+                        manager.popBackStack();
+                        return;
                     }
-                    MediaPlayerUtil.getInstance().setClickGeneral(true);
-                    MediaPlayerUtil.getInstance().pauseMusic();
-                    MediaPlayerUtil.getInstance().setIsInGeneral(true);
-                    MainActivity activity = (MainActivity) getActivity();
-                    if (activity != null) {
-                        activity.setClick(true);
-                        fragmentGeneralPhoto = (FragmentGeneralPhoto) requireActivity().getSupportFragmentManager().findFragmentByTag("FragmentGeneralPhoto");
-                        if (fragmentGeneralPhoto == null) {
-                            fragmentGeneralPhoto = new FragmentGeneralPhoto();
-                        }
-                        requireActivity().getSupportFragmentManager()
-                                .beginTransaction()
-                                .replace(R.id.frame_layout, fragmentGeneralPhoto, "FragmentGeneralPhoto")
-                                .addToBackStack("FragmentGeneralPhoto")
-                                .commit();
+                    Fragment current = manager.findFragmentById(R.id.frame_layout);
+                    if (current == null) { navigating = false; return; }
+                    ((MainActivity) requireActivity()).setClick(true);
+                    manager.beginTransaction()
+                            .hide(current)
+                            .setMaxLifecycle(current, Lifecycle.State.STARTED)
+                            .add(R.id.frame_layout, new FragmentGeneralPhoto(), "FragmentGeneralPhoto")
+                            .addToBackStack("FragmentGeneralPhoto")
+                            .commit();
+                }
+
+                @Override
+                public void togglePlayback(String postId) {
+                    if (playback != null && lastImage != null && Objects.equals(postId, lastImage.getPostId())) {
+                        playback.toggle();
                     }
+                }
+
+                @Override
+                public void onMediaBound() {
+                    if (generation == viewGeneration) syncCurrentPlayback();
                 }
 
                 @Override
@@ -212,7 +226,7 @@ public class FragmentShowPhoto extends Fragment {
                     bt_like = btn_like;
                     btn_like.setEnabled(false);
                 }
-            }, recyclerView, position, isGeneralClick, exoPlayer);
+            }, recyclerView);
 
             LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
             recyclerView.setLayoutManager(layoutManager);
@@ -244,11 +258,11 @@ public class FragmentShowPhoto extends Fragment {
                             int totalItemCount = manager.getItemCount();
                             int lastVisible = manager.findLastVisibleItemPosition();
                             // Tải thêm bài cũ khi còn 2 bài là chạm đáy (Endless Pagination)
-                            if (totalItemCount > 0 && lastVisible >= totalItemCount - 2) {
+                            if (!resolvingInitialPost && pendingPostId == null && totalItemCount > 0 && lastVisible >= totalItemCount - 2) {
                                 postRepository.loadMorePosts(myId, new PostRepository.OnLoadMoreCallback() {
                                     @Override
                                     public void onLoaded(List<Image> olderPosts) {
-                                        if (getActivity() != null && isAdded() && olderPosts != null && !olderPosts.isEmpty()) {
+                                        if (generation == viewGeneration && getView() != null && olderPosts != null && !olderPosts.isEmpty()) {
                                             adapter.addOlderPosts(olderPosts);
                                         }
                                     }
@@ -283,21 +297,21 @@ public class FragmentShowPhoto extends Fragment {
                         if (bt_like != null) {
                             bt_like.setEnabled(true);
                         }
-                    } else if (newState == RecyclerView.SCROLL_STATE_DRAGGING) {
-                        MediaPlayerUtil.getInstance().pauseMusic();
-                        exoPlayer.pause();
+                    } else {
+                        if (playback != null) playback.setActive(false);
                     }
                 }
             });
 
             // Bắt đầu lắng nghe Top bài đăng mới nhất theo mô hình Hybrid Realtime
             if (myId != null) {
-                int initialLimit = (isGeneralClick && position >= 10) ? (position + 5) : 10;
+                int initialLimit = Math.max(10, Math.min(100, position + 5));
                 postRepository.listenTopPosts(myId, initialLimit, topPosts -> {
-                    if (getActivity() == null || !isAdded() || topPosts == null) return;
+                    if (generation != viewGeneration || getView() == null || topPosts == null) return;
 
                     if (adapter.getItemCount() == 0) {
                         adapter.setInitialPosts(topPosts);
+                        resolveInitialPost(generation);
                         hasNewPostsAbove = false;
                         newPostsCount = 0;
                         if (layoutNewPostsChip != null) {
@@ -308,6 +322,8 @@ public class FragmentShowPhoto extends Fragment {
 
                     // 1. Cập nhật các bài đã hiển thị (likes, comments, emotes)
                     adapter.updateExistingPosts(topPosts);
+                    if (pendingPostId != null) resolveInitialPost(generation);
+                    recyclerView.post(this::syncCurrentPlayback);
 
                     // 2. Lọc các bài mới tinh chưa có trong adapter
                     List<Image> brandNewPosts = new ArrayList<>();
@@ -352,7 +368,6 @@ public class FragmentShowPhoto extends Fragment {
                 });
             }
 
-            scrollWhenClickGeneralFrag();
         });
     }
 
@@ -369,73 +384,63 @@ public class FragmentShowPhoto extends Fragment {
     }
 
     private void handleMusic(LinearLayoutManager manager, View snapView) {
-        int position = manager.getPosition(snapView);
-        if (position != lastPosition) {
-            lastPosition = position;
-            lastImage = adapter.getItem(lastPosition);
-            if (lastImage != null) {
-                MediaPlayerUtil.getInstance().playMusic(requireContext(), lastImage.getUrlMusic());
-                playVideo(lastImage);
-            }
-        } else {
-            Image image1 = adapter.getItem(position);
-            if (image1 != null) {
-                if (image1.equals(lastImage)) {
-                    MediaPlayerUtil.getInstance().resumeMusic();
-                } else {
-                    MediaPlayerUtil.getInstance().playMusic(requireContext(), image1.getUrlMusic());
-                }
-            }
-        }
+        if (!isResumed() || playback == null || pendingPostId != null || resolvingInitialPost) return;
+        int selected = manager.getPosition(snapView);
+        Image image = adapter.getItem(selected);
+        if (image == null || selected == RecyclerView.NO_POSITION) return;
+        RecyclerView.ViewHolder holder = recyclerView.findViewHolderForAdapterPosition(selected);
+        if (!(holder instanceof ShowImageAdapter.ShowImageViewHolder)) return;
+        lastPosition = selected;
+        lastImage = image;
+        Image next = adapter.getItem(selected + 1);
+        playback.select(image, ((ShowImageAdapter.ShowImageViewHolder) holder).playerViewVideo,
+                next == null ? null : next.getVideoUrl());
+        playback.setActive(true);
     }
 
-    @SuppressLint("ClickableViewAccessibility")
-    public void scrollWhenClickGeneralFrag() {
-        GestureDetector gestureDetector = new GestureDetector(requireContext(), new GestureDetector.SimpleOnGestureListener() {
+    private void syncCurrentPlayback() {
+        if (recyclerView == null || adapter == null || snapHelper == null || !isResumed()
+                || recyclerView.getScrollState() != RecyclerView.SCROLL_STATE_IDLE) return;
+        LinearLayoutManager manager = (LinearLayoutManager) recyclerView.getLayoutManager();
+        if (manager == null) return;
+        View snapped = snapHelper.findSnapView(manager);
+        if (snapped != null) handleMusic(manager, snapped);
+    }
 
-            @Override
-            public boolean onScroll(@Nullable MotionEvent e1, @NonNull MotionEvent e2, float distanceX, float distanceY) {
-                if (!onceScroll && e1 != null) {
-                    float dx = e2.getRawX() - e1.getRawX();
-                    float dy = Math.abs(e2.getRawY() - e1.getRawY());
-                    if (dx > 50 && dy < 15) {
-                        onceScroll = true;
-                        Toast.makeText(requireContext(), "Ấn back để quay lại màn hình camera", Toast.LENGTH_SHORT).show();
-                        return true;
+    private void resolveInitialPost(int generation) {
+        if (generation != viewGeneration || recyclerView == null || resolvingInitialPost) return;
+        int target = -1;
+        if (pendingPostId != null) {
+            for (int i = 0; i < adapter.getItemCount(); i++) {
+                if (pendingPostId.equals(adapter.getItem(i).getPostId())) { target = i; break; }
+            }
+            if (target < 0) {
+                resolvingInitialPost = true;
+                postRepository.loadMorePosts(FirebaseAuth.getInstance().getUid(), 30, new PostRepository.OnLoadMoreCallback() {
+                    @Override public void onLoaded(List<Image> posts) {
+                        if (generation != viewGeneration || getView() == null) return;
+                        resolvingInitialPost = false;
+                        if (posts == null || posts.isEmpty()) {
+                            pendingPostId = null;
+                            position = 0;
+                            Toast.makeText(requireContext(), "Bài viết không còn trong danh sách", Toast.LENGTH_SHORT).show();
+                        } else adapter.addOlderPosts(posts);
+                        resolveInitialPost(generation);
                     }
-                }
-                return true;
-            }
-
-            @Override
-            public boolean onDown(@NonNull MotionEvent e) {
-                onceScroll = false;
-                return true;
-            }
-        });
-
-        if (MediaPlayerUtil.getInstance().isClickGeneral()) {
-            recyclerView.setOnTouchListener((v, event) -> {
-                gestureDetector.onTouchEvent(event);
-                return false;
-            });
-        }
-    }
-
-    private void playVideo(Image model) {
-        if (model != null && model.getVideoUrl() != null) {
-            RecyclerView.ViewHolder vh = recyclerView.findViewHolderForAdapterPosition(lastPosition);
-            if (vh instanceof ShowImageAdapter.ShowImageViewHolder) {
-                ShowImageAdapter.ShowImageViewHolder videoHolder = (ShowImageAdapter.ShowImageViewHolder) vh;
-                videoHolder.playerViewVideo.setPlayer(null);
-                videoHolder.playerViewVideo.setPlayer(exoPlayer);
-                MediaItem mediaItem = MediaItem.fromUri(model.getVideoUrl());
-                exoPlayer.setRepeatMode(Player.REPEAT_MODE_ONE);
-                exoPlayer.setMediaItem(mediaItem);
-                exoPlayer.prepare();
-                exoPlayer.play();
+                    @Override public void onError(Exception error) {
+                        if (generation != viewGeneration || getView() == null) return;
+                        resolvingInitialPost = false;
+                        Toast.makeText(requireContext(), "Không tải được bài viết. Hãy mở lại ảnh để thử lại.", Toast.LENGTH_SHORT).show();
+                    }
+                });
+                return;
             }
         }
+        if (target < 0) target = Math.max(0, Math.min(position, adapter.getItemCount() - 1));
+        pendingPostId = null;
+        position = target;
+        ((LinearLayoutManager) recyclerView.getLayoutManager()).scrollToPositionWithOffset(target, 0);
+        recyclerView.post(this::syncCurrentPlayback);
     }
 
     private void initView(View view) {
@@ -574,103 +579,71 @@ public class FragmentShowPhoto extends Fragment {
     }
 
     private void backPress() {
-        if (!isGeneralClick) {
-            return;
-        }
+        if (!isGeneralClick) return;
         requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), new OnBackPressedCallback(true) {
-            @Override
-            public void handleOnBackPressed() {
-                MainActivity mainActivity = (MainActivity) getActivity();
-                if (mainActivity == null) return;
-
-                // Nếu đây là FragmentShowPhoto được mở từ GeneralPhoto (xem chi tiết 1 ảnh)
-                MediaPlayerUtil.getInstance().pauseMusic();
-                MediaPlayerUtil.getInstance().setIsInGeneral(true);
-                mainActivity.setClick(true);
-                FragmentManager manager = mainActivity.getSupportFragmentManager();
-                fragmentGeneralPhoto = (FragmentGeneralPhoto) manager.findFragmentByTag("FragmentGeneralPhoto");
-                if (fragmentGeneralPhoto == null) fragmentGeneralPhoto = new FragmentGeneralPhoto();
-                manager.beginTransaction()
-                        .replace(R.id.frame_layout, fragmentGeneralPhoto, "FragmentGeneralPhoto")
-                        .commit();
+            @Override public void handleOnBackPressed() {
+                FragmentManager manager = requireActivity().getSupportFragmentManager();
+                if (navigating || manager.isStateSaved()) return;
+                navigating = true;
+                if (playback != null) playback.setActive(false);
+                manager.popBackStack();
             }
         });
     }
 
     @Override
-    public void onStart() {
-        super.onStart();
-        Log.e(TAG, "onStart: ");
-        if (!MediaPlayerUtil.getInstance().isCLickToPause()) {
-            MediaPlayerUtil.getInstance().resumeMusic();
-        }
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-        Log.e(TAG, "onStop: ");
-        MediaPlayerUtil.getInstance().pauseMusic();
-    }
-
-    @Override
     public void onResume() {
         super.onResume();
-        if (isGeneralClick) {
-            MainActivity mainActivity = (MainActivity) getActivity();
-            if (mainActivity != null) {
-                mainActivity.setClick(true);
-            }
-        }
-        playMusicWhenBackPress();
-        Log.e("testrealtime", "onResume: ");
+        navigating = false;
+        MediaPlayerUtil.getInstance().setIsInGeneral(false);
+        ((MainActivity) requireActivity()).setHideFab();
+        if (isGeneralClick) ((MainActivity) requireActivity()).setClick(true);
+        if (recyclerView != null) recyclerView.post(this::syncCurrentPlayback);
         showPhotoViewModel.updateSeenPost(requireContext());
-    }
-
-    public void playMusicWhenBackPress() {
-        if (adapter != null) {
-            LinearLayoutManager manager = (LinearLayoutManager) recyclerView.getLayoutManager();
-            if (manager != null && manager.findFirstVisibleItemPosition() != -1) {
-                Image image = adapter.getItem(manager.findFirstVisibleItemPosition());
-                if (image != null && MediaPlayerUtil.getInstance().isBackPress()) {
-                    if (MediaPlayerUtil.getInstance().isClickGeneral()) {
-                        lastPosition = 0;
-                        lastImage = image;
-                        playVideo(image);
-                    }
-                    MediaPlayerUtil.getInstance().setClickGeneral(false);
-                    Log.e(TAG, manager.findFirstVisibleItemPosition() + "");
-                    MediaPlayerUtil.getInstance().resumeMusicWhenBackPress(requireContext(), image.getUrlMusic());
-                    MediaPlayerUtil.getInstance().setWhenBackPressFromGeneral(false);
-                }
-            }
-        }
     }
 
     @Override
     public void onPause() {
-        super.onPause();
+        if (playback != null) playback.setActive(false);
         stopCuteBounceAnimation();
-        if (exoPlayer != null && exoPlayer.isPlaying()) {
-            exoPlayer.pause();
-        }
+        super.onPause();
     }
 
     @Override
-    public void onDestroy() {
-        super.onDestroy();
-        Log.e(TAG, "onDestroy: ");
-        stopCuteBounceAnimation();
-        if (postRepository != null) {
-            postRepository.removeListener();
-        }
-        if (adapter != null) {
-            adapter.stopListening();
-        }
-        if (exoPlayer != null) {
-            exoPlayer.release();
-            exoPlayer = null;
-        }
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString("visible_post_id", lastImage == null ? pendingPostId : lastImage.getPostId());
+        outState.putInt("visible_position", lastPosition < 0 ? position : lastPosition);
+        outState.putString("paused_post_id", playback == null ? pausedPostId : playback.getPausedPostId());
     }
 
+    @Override
+    public void onDestroyView() {
+        viewGeneration++;
+        if (lastImage != null) pendingPostId = lastImage.getPostId();
+        if (lastPosition >= 0) position = lastPosition;
+        if (playback != null) {
+            pausedPostId = playback.getPausedPostId();
+            playback.release();
+            playback = null;
+        }
+        postRepository.removeListener();
+        stopCuteBounceAnimation();
+        if (layoutNewPostsChip != null) layoutNewPostsChip.animate().cancel();
+        if (snapHelper != null) snapHelper.attachToRecyclerView(null);
+        if (recyclerView != null) {
+            recyclerView.clearOnScrollListeners();
+            recyclerView.setAdapter(null);
+        }
+        adapter = null;
+        recyclerView = null;
+        snapHelper = null;
+        layoutNewPostsChip = null;
+        tvNewPostsCount = null;
+        edt_send_message = null;
+        bt_like = null;
+        resolvingInitialPost = false;
+        lastPosition = RecyclerView.NO_POSITION;
+        super.onDestroyView();
+    }
 }

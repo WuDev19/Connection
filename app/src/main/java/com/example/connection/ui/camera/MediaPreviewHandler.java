@@ -342,7 +342,7 @@ public class MediaPreviewHandler {
         if (musicPlayer != null) {
             musicPlayer.pause();
         }
-        if (videoPlayer != null && videoPlayer.isPlaying()) {
+        if (videoPlayer != null) {
             videoPlayer.pause();
         }
     }

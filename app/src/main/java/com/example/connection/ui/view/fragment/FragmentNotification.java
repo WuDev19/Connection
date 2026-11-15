@@ -59,7 +59,6 @@ public class FragmentNotification extends Fragment {
                 .get(NotificationViewModel.class);
         notificationViewModel.getFriendCurrentUser();
 
-        backPress();
 
     }
 
@@ -79,6 +78,9 @@ public class FragmentNotification extends Fragment {
         if (numberOfNotification < 1) tv_no_notification.setText("Hiện không có thông báo");
 
         setUpRecyclerView();
+        backPress();
+        notificationViewModel.getUsers().observe(getViewLifecycleOwner(), adapter::setUsers);
+        notificationViewModel.getPending().observe(getViewLifecycleOwner(), adapter::setPending);
 
         notificationViewModel.getError().observe(getViewLifecycleOwner(), s ->
                 Toast.makeText(requireContext(), s, Toast.LENGTH_SHORT).show());
@@ -102,10 +104,10 @@ public class FragmentNotification extends Fragment {
 
             @Override
             public void onCancel(String otherUserId, int position) {
-                notificationViewModel.onCancel(position);
+                notificationViewModel.onCancel(otherUserId);
                 notificationViewModel.numberOfNotification();
             }
-        }, notificationViewModel, getViewLifecycleOwner());
+        });
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.setAdapter(adapter);
         RecyclerView.ItemDecoration itemDecoration = new DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL);
@@ -118,25 +120,32 @@ public class FragmentNotification extends Fragment {
     }
 
     private void backPress() {
-        FragmentManager manager = requireActivity().getSupportFragmentManager();
-        fragmentHome = (FragmentHome) manager.findFragmentByTag("FragmentHome");
-        if (fragmentHome == null) fragmentHome = new FragmentHome();
-        requireActivity().getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
-            @Override
-            public void handleOnBackPressed() {
-                FloatingActionButton floatingActionButton = requireActivity().findViewById(R.id.floating_action_button);
-                TextView tv_notification = requireActivity().findViewById(R.id.tv_notification);
-                FrameLayout frameLayout = requireActivity().findViewById(R.id.frame_layout_notification);
-                floatingActionButton.show();
-                frameLayout.setVisibility(View.VISIBLE);
-                tv_notification.setVisibility(View.VISIBLE);
-                manager.beginTransaction()
-                        .replace(R.id.frame_layout, fragmentHome)
-                        .commit();
-                MainViewModel mainViewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
-                mainViewModel.setCameraMusicPlaying(true);
+        requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), new OnBackPressedCallback(true) {
+            @Override public void handleOnBackPressed() {
+                FragmentManager manager = requireActivity().getSupportFragmentManager();
+                if (!isResumed() || manager.isStateSaved()) return;
+                manager.popBackStack();
             }
         });
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        requireActivity().findViewById(R.id.floating_action_button).setEnabled(false);
+    }
+
+    @Override
+    public void onDestroyView() {
+        FloatingActionButton button = requireActivity().findViewById(R.id.floating_action_button);
+        button.setEnabled(true);
+        requireActivity().findViewById(R.id.tv_notification).setVisibility(View.VISIBLE);
+        MainViewModel mainViewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
+        mainViewModel.setCameraMusicPlaying(true);
+        recyclerView.setAdapter(null);
+        recyclerView = null;
+        adapter = null;
+        tv_no_notification = null;
+        super.onDestroyView();
+    }
 }

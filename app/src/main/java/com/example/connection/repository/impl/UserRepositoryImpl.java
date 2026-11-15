@@ -525,58 +525,34 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Override
     public void sendFriendRequest(String otherUserId, OnStateListener listener) {
-        if (currentUserId == null || otherUserId == null) return;
-        collectionUser.document(otherUserId).get().addOnCompleteListener(task -> {
-            if (task.isSuccessful() && task.getResult() != null) {
-                User otherUser = task.getResult().toObject(User.class);
-                if (otherUser != null) {
-                    List<String> friendConfirmOtherUser = otherUser.getFriendConfirm();
-                    List<String> friendOtherUser = otherUser.getFriend();
-                    if (friendOtherUser == null || friendConfirmOtherUser == null) {
-                        Log.e(TAG, "sendFriendRequest: ko tim thay danh sach ban be cua otheruser");
-                        return;
-                    }
-                    if (friendConfirmOtherUser.contains(currentUserId)) {
-                        if (listener != null) listener.onSuccess("Bạn đã gửi kết bạn đến người dùng này");
-                        return;
-                    } else if (friendOtherUser.contains(currentUserId)) {
-                        if (listener != null) listener.onSuccess("Hai người đã là bạn bè");
-                        return;
-                    }
-                    friendConfirmOtherUser.add(currentUserId);
-                    otherUser.setFriendConfirm(friendConfirmOtherUser);
-                    collectionUser.document(otherUserId)
-                            .set(otherUser).addOnCompleteListener(task1 -> {
-                                if (task1.isSuccessful()) {
-                                    if (listener != null) listener.onSuccess("Đã gửi lời mời kết bạn thành công");
-                                    Map<String, String> data = new HashMap<>();
-                                    data.put("type", "FRIEND_REQUEST");
-                                    collectionUser.document(currentUserId).get().addOnSuccessListener(currentSnap -> {
-                                        String senderName = "Ai đó";
-                                        if (currentSnap.exists()) {
-                                            User cur = currentSnap.toObject(User.class);
-                                            if (cur != null && cur.getUserName() != null) {
-                                                senderName = cur.getUserName();
-                                            }
-                                        }
-                                        NotificationHelper.sendNotificationToUser(otherUserId, "Lời mời kết bạn", senderName + " đã gửi cho bạn lời mời kết bạn", data);
-                                    }).addOnFailureListener(e -> {
-                                        NotificationHelper.sendNotificationToUser(otherUserId, "Lời mời kết bạn", "Bạn có lời mời kết bạn mới", data);
-                                    });
-                                } else {
-                                    Exception exception = task1.getException();
-                                    if (exception != null && listener != null) {
-                                        listener.onFailure(exception.getMessage());
-                                    }
-                                }
-                            });
-                }
-            } else {
-                Exception exception = task.getException();
-                if (exception != null && listener != null) {
-                    listener.onFailure(exception.getMessage());
-                }
-            }
+        if (currentUserId == null || otherUserId == null || currentUserId.equals(otherUserId)) {
+            if (listener != null) listener.onFailure("Người nhận không hợp lệ");
+            return;
+        }
+        db.runTransaction(transaction -> {
+            com.google.firebase.firestore.DocumentReference target = collectionUser.document(otherUserId);
+            User other = transaction.get(target).toObject(User.class);
+            if (other == null) throw new IllegalStateException("Không tìm thấy người dùng");
+            if (other.getFriend() != null && other.getFriend().contains(currentUserId)) return 2;
+            if (other.getFriendConfirm() != null && other.getFriendConfirm().contains(currentUserId)) return 1;
+            transaction.update(target, "friendConfirm", com.google.firebase.firestore.FieldValue.arrayUnion(currentUserId));
+            return 0;
+        }).addOnSuccessListener(result -> {
+            if (listener != null) listener.onSuccess(result == 2 ? "Hai người đã là bạn bè"
+                    : result == 1 ? "Bạn đã gửi kết bạn đến người dùng này" : "Đã gửi lời mời kết bạn thành công");
+            if (result != 0) return;
+            Map<String, String> data = new HashMap<>();
+            data.put("type", "FRIEND_REQUEST");
+            data.put("senderId", currentUserId);
+            collectionUser.document(currentUserId).get().addOnSuccessListener(snapshot -> {
+                User me = snapshot.toObject(User.class);
+                String name = me == null || me.getUserName() == null ? "Ai đó" : me.getUserName();
+                NotificationHelper.sendNotificationToUser(otherUserId, "Lời mời kết bạn",
+                        name + " đã gửi cho bạn lời mời kết bạn", data);
+            }).addOnFailureListener(e -> NotificationHelper.sendNotificationToUser(otherUserId,
+                    "Lời mời kết bạn", "Bạn có lời mời kết bạn mới", data));
+        }).addOnFailureListener(e -> {
+            if (listener != null) listener.onFailure(e.getMessage());
         });
     }
 
@@ -636,53 +612,52 @@ public class UserRepositoryImpl implements UserRepository {
     }
 
     @Override
-    public void acceptFriend(String otherUserId, String currentUserId, User user, HandleFriendNotification handleFriend) {
-        WriteBatch writeBatch = db.batch();
-        writeBatch.set(collectionUser.document(currentUserId), user);
-        collectionUser.document(otherUserId).get().addOnCompleteListener(task -> {
-            if (task.isSuccessful() && task.getResult() != null) {
-                User otherUser = task.getResult().toObject(User.class);
-                if (otherUser == null) return;
-                List<String> friend = otherUser.getFriend();
-                if (friend == null) friend = new ArrayList<>();
-                friend.add(currentUserId);
-                otherUser.setFriend(friend);
-                writeBatch.set(collectionUser.document(otherUserId), otherUser);
-                writeBatch.commit().addOnCompleteListener(task1 -> {
-                    if (task1.isSuccessful()) {
-                        Log.e(TAG, "onComplete: accept thanh cong");
-                        if (handleFriend != null) handleFriend.onSuccess("Kết bạn thành công");
-                        Map<String, String> data = new HashMap<>();
-                        data.put("type", "FRIEND_ACCEPT");
-                        String senderName = (user != null && user.getUserName() != null) ? user.getUserName() : "Ai đó";
-                        NotificationHelper.sendNotificationToUser(otherUserId, "Kết bạn thành công", senderName + " đã đồng ý lời mời kết bạn của bạn", data);
-                    } else {
-                        Exception exception = task1.getException();
-                        if (exception != null && handleFriend != null) {
-                            handleFriend.onFailure(exception.getMessage());
-                        }
-                    }
-                });
-            } else {
-                Exception exception = task.getException();
-                if (exception != null && handleFriend != null) {
-                    handleFriend.onFailure(exception.getMessage());
-                }
+    public void acceptFriend(String otherUserId, String currentUserId, HandleFriendNotification callback) {
+        if (currentUserId == null || otherUserId == null || currentUserId.equals(otherUserId)) {
+            if (callback != null) callback.onFailure("Lời mời không hợp lệ");
+            return;
+        }
+        db.runTransaction(transaction -> {
+            com.google.firebase.firestore.DocumentReference mine = collectionUser.document(currentUserId);
+            com.google.firebase.firestore.DocumentReference other = collectionUser.document(otherUserId);
+            com.google.firebase.firestore.DocumentSnapshot mySnapshot = transaction.get(mine);
+            com.google.firebase.firestore.DocumentSnapshot otherSnapshot = transaction.get(other);
+            User me = mySnapshot.toObject(User.class);
+            if (me == null || !otherSnapshot.exists() || me.getFriendConfirm() == null
+                    || !me.getFriendConfirm().contains(otherUserId)) {
+                throw new IllegalStateException("Lời mời không còn tồn tại");
             }
+            transaction.update(mine, "friend", com.google.firebase.firestore.FieldValue.arrayUnion(otherUserId),
+                    "friendConfirm", com.google.firebase.firestore.FieldValue.arrayRemove(otherUserId));
+            transaction.update(other, "friend", com.google.firebase.firestore.FieldValue.arrayUnion(currentUserId));
+            return me.getUserName() == null ? "Ai đó" : me.getUserName();
+        }).addOnSuccessListener(senderName -> {
+            if (callback != null) callback.onSuccess("Kết bạn thành công");
+            Map<String, String> data = new HashMap<>();
+            data.put("type", "FRIEND_ACCEPT");
+            data.put("senderId", currentUserId);
+            NotificationHelper.sendNotificationToUser(otherUserId, "Kết bạn thành công",
+                    senderName + " đã đồng ý lời mời kết bạn của bạn", data);
+        }).addOnFailureListener(e -> {
+            if (callback != null) callback.onFailure(e.getMessage());
         });
     }
 
     @Override
-    public void declineFriend(String currentUserId, User user, HandleFriendNotification handleFriendNotifacation) {
-        collectionUser.document(currentUserId).set(user).addOnCompleteListener(task -> {
-            if (task.isSuccessful()) {
-                Log.e(TAG, user.toString());
-            } else {
-                Exception exception = task.getException();
-                if (exception != null && handleFriendNotifacation != null) {
-                    handleFriendNotifacation.onFailure(exception.getMessage());
-                }
-            }
+    public void declineFriend(String currentUserId, String otherUserId, HandleFriendNotification callback) {
+        if (currentUserId == null || otherUserId == null) {
+            if (callback != null) callback.onFailure("Lời mời không hợp lệ");
+            return;
+        }
+        db.runTransaction(transaction -> {
+            com.google.firebase.firestore.DocumentReference mine = collectionUser.document(currentUserId);
+            transaction.get(mine);
+            transaction.update(mine, "friendConfirm", com.google.firebase.firestore.FieldValue.arrayRemove(otherUserId));
+            return null;
+        }).addOnSuccessListener(unused -> {
+            if (callback != null) callback.onSuccess("Đã từ chối lời mời");
+        }).addOnFailureListener(e -> {
+            if (callback != null) callback.onFailure(e.getMessage());
         });
     }
 
@@ -741,8 +716,8 @@ public class UserRepositoryImpl implements UserRepository {
             notificationListenerRealtime.remove();
         }
         notificationListenerRealtime = collectionUser.document(currentUserId)
-                .addSnapshotListener((value, error) -> {
-                    if (error != null || value == null) return;
+                .addSnapshotListener(com.google.firebase.firestore.MetadataChanges.INCLUDE, (value, error) -> {
+                    if (error != null || value == null || value.getMetadata().hasPendingWrites()) return;
                     User user = value.toObject(User.class);
                     if (user != null) {
                         onGetListFriendConfirm.onGetListFriendConfirm(user.getFriendConfirm());

@@ -56,20 +56,9 @@ public class CustomSplashActivity extends AppCompatActivity {
     private void goToNextActivity() {
         splashViewModel.checkUser().observe(this, firebaseUser -> {
             if (firebaseUser != null) {
-                String chatRoomId = getIntent().getStringExtra("chatRoomId");
-                if (chatRoomId == null) {
-                    chatRoomId = getIntent().getStringExtra("chat_room_id");
-                }
-                if (chatRoomId != null && !chatRoomId.trim().isEmpty()) {
-                    Intent mainIntent = new Intent(CustomSplashActivity.this, MainActivity.class);
-                    Intent chatIntent = new Intent(CustomSplashActivity.this, ChatActivity.class);
-                    chatIntent.putExtra("chat_room_id", chatRoomId);
-                    chatIntent.putExtra("chatRoomId", chatRoomId);
-                    startActivities(new Intent[]{mainIntent, chatIntent});
-                } else {
-                    Intent intent = new Intent(CustomSplashActivity.this, MainActivity.class);
-                    startActivity(intent);
-                }
+                Intent intent = new Intent(CustomSplashActivity.this, MainActivity.class);
+                if (getIntent().getExtras() != null) intent.putExtras(getIntent().getExtras());
+                startActivity(intent);
             } else {
                 Intent intent = new Intent(CustomSplashActivity.this, LoginActivity.class);
                 startActivity(intent);

@@ -27,6 +27,7 @@ import com.example.connection.model.Image;
 import com.example.connection.repository.base.PostRepository;
 import com.example.connection.repository.impl.PostRepositoryImpl;
 import com.example.connection.constants.MediaPlayerUtil;
+import androidx.lifecycle.Lifecycle;
 import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.ArrayList;
@@ -46,8 +47,12 @@ public class FragmentGeneralPhoto extends Fragment {
     private final Handler bounceHandler = new Handler(Looper.getMainLooper());
     private Runnable bounceRunnable;
     private final String TAG = "FragmentGeneralPhoto";
-    private FragmentHome fragmentHome;
     private OnBackPressedCallback generalPhotoBackCallback;
+    private boolean navigating;
+    private int viewGeneration;
+    private String anchorPostId;
+    private int anchorOffset;
+    private boolean restoringPosition;
 
     public FragmentGeneralPhoto() {
     }
@@ -55,7 +60,10 @@ public class FragmentGeneralPhoto extends Fragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        postRepository = new PostRepositoryImpl();
+        if (savedInstanceState != null) {
+            anchorPostId = savedInstanceState.getString("grid_anchor");
+            anchorOffset = savedInstanceState.getInt("grid_offset");
+        }
     }
 
     @Override
@@ -69,11 +77,14 @@ public class FragmentGeneralPhoto extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        viewGeneration++;
+        postRepository = new PostRepositoryImpl();
         setUpRecyclerView();
         setupBackPress();
     }
 
     private void setUpRecyclerView() {
+        final int generation = viewGeneration;
         String myId = FirebaseAuth.getInstance().getUid();
         if (myId == null) return;
 
@@ -85,14 +96,22 @@ public class FragmentGeneralPhoto extends Fragment {
         recyclerView.setLayoutManager(layoutManager);
 
         adapter = new GeneralPhotoAdapter(getContext(), position -> {
+            FragmentManager manager = requireActivity().getSupportFragmentManager();
+            if (navigating || !isResumed() || manager.isStateSaved()) return;
+            Image selected = adapter.getItem(position);
+            if (selected == null || selected.getPostId() == null) return;
+            navigating = true;
             FragmentShowPhoto fragmentShowPhoto = new FragmentShowPhoto();
             Bundle bundle = new Bundle();
             bundle.putInt("position_key", position);
+            bundle.putString("post_id", selected.getPostId());
             bundle.putBoolean("isGeneralClick", true);
             Log.e("Position", position + "general");
             fragmentShowPhoto.setArguments(bundle);
-            requireActivity().getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.frame_layout, fragmentShowPhoto, "FragmentShowPhoto")
+            manager.beginTransaction()
+                    .hide(this)
+                    .setMaxLifecycle(this, Lifecycle.State.STARTED)
+                    .add(R.id.frame_layout, fragmentShowPhoto, "FragmentShowPhoto")
                     .addToBackStack("FragmentShowPhoto")
                     .commit();
         });
@@ -116,11 +135,11 @@ public class FragmentGeneralPhoto extends Fragment {
                     int totalItemCount = manager.getItemCount();
                     int lastVisible = manager.findLastVisibleItemPosition();
                     // Phân trang: Khi còn khoảng 2 hàng (6 ảnh) là chạm đáy -> tải thêm 21 ảnh cũ
-                    if (totalItemCount > 0 && lastVisible >= totalItemCount - 6) {
+                    if (anchorPostId == null && !restoringPosition && totalItemCount > 0 && lastVisible >= totalItemCount - 6) {
                         postRepository.loadMorePosts(myId, 21, new PostRepository.OnLoadMoreCallback() {
                             @Override
                             public void onLoaded(List<Image> olderPosts) {
-                                if (getActivity() != null && isAdded() && olderPosts != null && !olderPosts.isEmpty()) {
+                                if (generation == viewGeneration && getView() != null && olderPosts != null && !olderPosts.isEmpty()) {
                                     adapter.addOlderPosts(olderPosts);
                                 }
                             }
@@ -153,7 +172,7 @@ public class FragmentGeneralPhoto extends Fragment {
 
         // Bắt đầu lắng nghe Realtime Top 30 ảnh mới nhất
         postRepository.listenTopPosts(myId, 30, topPosts -> {
-            if (getActivity() == null || !isAdded() || topPosts == null) return;
+            if (generation != viewGeneration || getView() == null || topPosts == null) return;
             if (progressBar != null) {
                 progressBar.setVisibility(View.GONE);
             }
@@ -161,6 +180,7 @@ public class FragmentGeneralPhoto extends Fragment {
             // Lần nạp dữ liệu đầu tiên
             if (adapter.getItemCount() == 0) {
                 adapter.setInitialPosts(topPosts);
+                restoreGridPosition(generation);
                 hasNewPostsAbove = false;
                 newPostsCount = 0;
                 if (layoutEmpty != null) {
@@ -176,6 +196,7 @@ public class FragmentGeneralPhoto extends Fragment {
 
             // 1. Cập nhật các bài đã hiển thị
             adapter.updateExistingPosts(topPosts);
+            if (anchorPostId != null) restoreGridPosition(generation);
 
             // 2. Lọc các bài mới tinh chưa có trong adapter
             List<Image> brandNewPosts = new ArrayList<>();
@@ -215,6 +236,56 @@ public class FragmentGeneralPhoto extends Fragment {
                 }
             }
         });
+    }
+
+    private void restoreGridPosition(int generation) {
+        if (anchorPostId == null || restoringPosition || generation != viewGeneration) return;
+        for (int i = 0; i < adapter.getItemCount(); i++) {
+            if (anchorPostId.equals(adapter.getItem(i).getPostId())) {
+                ((GridLayoutManager) recyclerView.getLayoutManager()).scrollToPositionWithOffset(i, anchorOffset);
+                anchorPostId = null;
+                return;
+            }
+        }
+        restoringPosition = true;
+        postRepository.loadMorePosts(FirebaseAuth.getInstance().getUid(), 30, new PostRepository.OnLoadMoreCallback() {
+            @Override public void onLoaded(List<Image> posts) {
+                if (generation != viewGeneration || getView() == null) return;
+                restoringPosition = false;
+                if (posts == null || posts.isEmpty()) { anchorPostId = null; return; }
+                adapter.addOlderPosts(posts);
+                restoreGridPosition(generation);
+            }
+            @Override public void onError(Exception error) {
+                if (generation != viewGeneration || getView() == null) return;
+                restoringPosition = false;
+                anchorPostId = null;
+                Log.w(TAG, "Unable to restore grid position", error);
+            }
+        });
+    }
+
+    private void rememberGridPosition() {
+        if (anchorPostId != null || recyclerView == null || adapter == null) return;
+        GridLayoutManager manager = (GridLayoutManager) recyclerView.getLayoutManager();
+        if (manager == null) return;
+        int first = manager.findFirstVisibleItemPosition();
+        Image image = adapter.getItem(first);
+        View item = manager.findViewByPosition(first);
+        if (image != null) {
+            anchorPostId = image.getPostId();
+            anchorOffset = item == null ? 0 : item.getTop() - recyclerView.getPaddingTop();
+        }
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        rememberGridPosition();
+        outState.putString("grid_anchor", anchorPostId);
+        outState.putInt("grid_offset", anchorOffset);
+        // Retain a pending anchor only during restoration, not ordinary scrolling.
+        if (!restoringPosition) anchorPostId = null;
     }
 
     private void initView(View view) {
@@ -345,18 +416,12 @@ public class FragmentGeneralPhoto extends Fragment {
         generalPhotoBackCallback = new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
-                MainActivity mainActivity = (MainActivity) getActivity();
-                if (mainActivity == null) return;
-                mainActivity.setClick(false);
+                FragmentManager manager = requireActivity().getSupportFragmentManager();
+                if (navigating || manager.isStateSaved()) return;
+                navigating = true;
+                ((MainActivity) requireActivity()).setClick(false);
                 MediaPlayerUtil.getInstance().setIsInGeneral(false);
-                MediaPlayerUtil.getInstance().setWhenBackPressFromGeneral(true);
-                FragmentManager manager = mainActivity.getSupportFragmentManager();
-                fragmentHome = (FragmentHome) manager.findFragmentByTag("FragmentHome");
-                if (fragmentHome == null) fragmentHome = new FragmentHome();
-                manager.beginTransaction()
-                        .replace(R.id.frame_layout, fragmentHome, "FragmentHome")
-                        .commit();
-                Log.e("backpress", "handleOnBackPressed: returned to FragmentHome");
+                manager.popBackStack();
             }
         };
         requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), generalPhotoBackCallback);
@@ -365,9 +430,13 @@ public class FragmentGeneralPhoto extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        navigating = false;
+        MediaPlayerUtil.getInstance().setIsInGeneral(true);
+        MediaPlayerUtil.getInstance().pauseMusic();
         MainActivity mainActivity = (MainActivity) getActivity();
         if (mainActivity != null) {
             mainActivity.setClick(true);
+            mainActivity.setHideFab();
         }
         if (generalPhotoBackCallback != null) {
             generalPhotoBackCallback.setEnabled(true);
@@ -382,18 +451,23 @@ public class FragmentGeneralPhoto extends Fragment {
 
     @Override
     public void onDestroyView() {
-        super.onDestroyView();
-        Log.e(TAG, "onDestroyView: ");
+        rememberGridPosition();
+        restoringPosition = false;
+        viewGeneration++;
+        postRepository.removeListener();
         stopCuteBounceAnimation();
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        Log.e(TAG, "onDestroy: ");
-        stopCuteBounceAnimation();
-        if (postRepository != null) {
-            postRepository.removeListener();
+        if (layoutNewPostsChip != null) layoutNewPostsChip.animate().cancel();
+        if (recyclerView != null) {
+            recyclerView.clearOnScrollListeners();
+            recyclerView.setAdapter(null);
         }
+        recyclerView = null;
+        adapter = null;
+        progressBar = null;
+        layoutEmpty = null;
+        layoutNewPostsChip = null;
+        tvNewPostsCount = null;
+        generalPhotoBackCallback = null;
+        super.onDestroyView();
     }
 }

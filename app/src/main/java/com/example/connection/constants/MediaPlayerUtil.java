@@ -19,6 +19,7 @@ public class MediaPlayerUtil {
     private boolean isFirstTimeScrollToShow = true;
     private String urlMusicCurrent;
     private boolean isCLickToPause;
+    private Object playbackOwner;
 
     private MediaPlayerUtil() {
     }
@@ -42,6 +43,27 @@ public class MediaPlayerUtil {
     }
 
     public void playMusic(Context context, String urlMusic) {
+        playbackOwner = null;
+        playMusicInternal(context, urlMusic);
+    }
+
+    public void playMusicForOwner(Object owner, Context context, String urlMusic) {
+        playbackOwner = owner;
+        playMusicInternal(context, urlMusic);
+    }
+
+    public void pauseMusicForOwner(Object owner) {
+        if (playbackOwner == owner) pauseMusic();
+    }
+
+    public void releaseOwner(Object owner) {
+        if (playbackOwner == owner) {
+            pauseMusic();
+            playbackOwner = null;
+        }
+    }
+
+    private void playMusicInternal(Context context, String urlMusic) {
         if (urlMusic == null || urlMusic.isEmpty()) {
             urlMusicCurrent = null;
             if (exoPlayer != null) {
@@ -53,6 +75,10 @@ public class MediaPlayerUtil {
         try {
             ensurePlayer(context);
             if ((position == 1) || isInChooseFrag) {
+                if (urlMusic.equals(urlMusicCurrent) && exoPlayer.getMediaItemCount() > 0) {
+                    exoPlayer.play();
+                    return;
+                }
                 urlMusicCurrent = urlMusic;
                 MediaItem mediaItem = MediaItem.fromUri(urlMusic);
                 exoPlayer.setMediaItem(mediaItem);
@@ -66,7 +92,7 @@ public class MediaPlayerUtil {
     }
 
     public void pauseMusic() {
-        if (exoPlayer != null && exoPlayer.isPlaying()) {
+        if (exoPlayer != null) {
             exoPlayer.pause();
             Log.e(TAG, "pauseMusic: pause");
         }
@@ -82,9 +108,11 @@ public class MediaPlayerUtil {
     }
 
     public void releaseMediaPlayer() {
+        playbackOwner = null;
         if (exoPlayer != null) {
             exoPlayer.release();
             exoPlayer = null;
+            urlMusicCurrent = null;
         }
     }
 

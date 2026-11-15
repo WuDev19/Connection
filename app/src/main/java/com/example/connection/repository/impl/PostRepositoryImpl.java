@@ -146,6 +146,7 @@ public class PostRepositoryImpl implements PostRepository {
         }
         isLastPage = false;
         lastPagingDoc = null;
+        lastTopDoc = null;
         topPostsListener = db.collection("post_photo")
                 .whereArrayContains("friendId", userId)
                 .orderBy("timestamp", Query.Direction.DESCENDING)
@@ -175,7 +176,11 @@ public class PostRepositoryImpl implements PostRepository {
     @Override
     public void loadMorePosts(String userId, int limit, OnLoadMoreCallback callback) {
         DocumentSnapshot cursor = lastPagingDoc != null ? lastPagingDoc : lastTopDoc;
-        if (isLoading || isLastPage || cursor == null) return;
+        if (isLoading) return;
+        if (isLastPage || cursor == null || userId == null) {
+            callback.onLoaded(Collections.emptyList());
+            return;
+        }
         isLoading = true;
 
         db.collection("post_photo")

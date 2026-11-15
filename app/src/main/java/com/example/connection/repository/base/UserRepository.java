@@ -81,8 +81,8 @@ public interface UserRepository {
     void delete(String friendId, List<String> friendCurrentUser, OnStateListener listener);
     Query getQueryFriend();
     Query getQuerySearch(String username);
-    void acceptFriend(String otherUserId, String currentUserId, User user, HandleFriendNotification handleFriend);
-    void declineFriend(String currentUserId, User user, HandleFriendNotification handleFriendNotifacation);
+    void acceptFriend(String otherUserId, String currentUserId, HandleFriendNotification handleFriend);
+    void declineFriend(String currentUserId, String otherUserId, HandleFriendNotification handleFriendNotifacation);
 
     // ==================== Main & Widget logic ====================
     void setFirstUse(Activity activity);

@@ -32,7 +32,7 @@ public class ConnectionFirebaseMessagingService extends FirebaseMessagingService
     @Override
     public void onNewToken(@NonNull String token) {
         super.onNewToken(token);
-        Log.d(TAG, "Refreshed FCM token: " + token);
+        Log.d(TAG, "FCM token refreshed");
         updateTokenToFirestore(token);
     }
 
@@ -66,31 +66,22 @@ public class ConnectionFirebaseMessagingService extends FirebaseMessagingService
     }
 
     private void sendNotification(String title, String messageBody, Map<String, String> data) {
-        Intent intent;
-        String chatRoomId = null;
-        if (data != null) {
-            chatRoomId = data.get("chatRoomId");
-            if (chatRoomId == null) {
-                chatRoomId = data.get("chat_room_id");
-            }
-        }
-
-        if (chatRoomId != null && !chatRoomId.isEmpty()) {
-            intent = new Intent(this, ChatActivity.class);
-            intent.putExtra("chat_room_id", chatRoomId);
-            intent.putExtra("chatRoomId", chatRoomId);
-        } else {
-            intent = new Intent(this, MainActivity.class);
-        }
+        if (Build.VERSION.SDK_INT >= 33 && androidx.core.content.ContextCompat.checkSelfPermission(this,
+                android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) return;
+        if (!androidx.core.app.NotificationManagerCompat.from(this).areNotificationsEnabled()) return;
+        Intent intent = new Intent(this, MainActivity.class);
+        String chatRoomId = data == null ? null : data.get("chatRoomId");
+        if (chatRoomId == null && data != null) chatRoomId = data.get("chat_room_id");
+        String type = data == null ? null : data.get("type");
+        if (chatRoomId != null && !chatRoomId.isEmpty()) intent.putExtra("chat_room_id", chatRoomId);
+        if (type != null) intent.putExtra("type", type);
+        String notificationKey = chatRoomId != null ? "chat:" + chatRoomId
+                : (type == null ? "notification" : type) + ":" + (data == null ? "" : data.get("senderId"));
+        intent.setData(new Uri.Builder().scheme("connection").authority("notification")
+                .appendPath(notificationKey).build());
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-
-        int requestCode = (int) System.currentTimeMillis();
-        PendingIntent pendingIntent = PendingIntent.getActivity(
-                this,
-                requestCode,
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-        );
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         Uri defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
 
@@ -120,7 +111,7 @@ public class ConnectionFirebaseMessagingService extends FirebaseMessagingService
                 notificationManager.createNotificationChannel(channel);
             }
 
-            notificationManager.notify((int) System.currentTimeMillis(), notificationBuilder.build());
+            notificationManager.notify(notificationKey, 0, notificationBuilder.build());
         }
     }
 
