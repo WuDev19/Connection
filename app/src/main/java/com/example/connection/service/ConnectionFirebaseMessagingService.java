@@ -41,6 +41,14 @@ public class ConnectionFirebaseMessagingService extends FirebaseMessagingService
         super.onMessageReceived(remoteMessage);
         Log.d(TAG, "From: " + remoteMessage.getFrom());
 
+        Map<String, String> event = remoteMessage.getData();
+        if ("WIDGET_REFRESH".equals(event.get("type"))) {
+            if (com.example.connection.data.worker.WidgetContent.isRefreshFor(event, FirebaseAuth.getInstance().getUid())) {
+                com.example.connection.data.worker.WidgetUpdater.requestRefresh(getApplicationContext());
+            }
+            return;
+        }
+
         String title = null;
         String body = null;
 

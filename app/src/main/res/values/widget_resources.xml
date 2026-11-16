@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="widget_corner_radius">24dp</dimen>
+    <dimen name="widget_content_spacing">12dp</dimen>
+    <color name="widget_placeholder_surface">#F0F5ED</color>
+    <color name="widget_placeholder_text">#304D37</color>
+    <color name="widget_placeholder_secondary">#6A7D6B</color>
+    <color name="widget_badge_surface">#DFF2DB</color>
+    <color name="widget_badge_text">#254C2F</color>
+    <string name="widget_loading">Đang tải bài viết…</string>
+    <string name="widget_sign_in">Mở Connection để đăng nhập</string>
+    <string name="widget_empty">Chưa có bài viết</string>
+    <string name="widget_video">Video mới</string>
+    <string name="widget_refresh">Làm mới widget</string>
+    <string name="widget_loading_hint">Ảnh mới sẽ tự cập nhật</string>
+    <string name="widget_sign_in_hint">Chạm vào widget để tiếp tục</string>
+    <string name="widget_empty_hint">Chờ khoảnh khắc từ bạn bè</string>
+    <string name="widget_video_hint">Chạm để mở Connection</string>
+    <string name="widget_author_fallback">Người dùng Connection</string>
+    <string name="widget_new_posts">%1$s bài mới</string>
+</resources>

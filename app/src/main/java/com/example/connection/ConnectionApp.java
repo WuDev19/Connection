@@ -13,5 +13,6 @@ public class ConnectionApp extends Application {
         Map<String, String> config = new HashMap<>();
         config.put("cloud_name", BuildConfig.CLOUDINARY_NAME);
         MediaManager.init(this, config);
+        com.example.connection.data.worker.WidgetSyncCoordinator.get(this);
     }
 }

@@ -22,6 +22,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.example.connection.R;
 import com.example.connection.model.Image;
+import com.example.connection.ui.view.widget.ZoomableMediaLayout;
+import java.util.Objects;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 
@@ -40,6 +42,7 @@ public class ShowImageAdapter extends RecyclerView.Adapter<ShowImageAdapter.Show
     private final Context context;
     private final onItemClick click;
     private final RecyclerView recyclerView;
+    private String activeMediaPostId;
     private final String TAG = getClass().getName();
 
     private final String myId = FirebaseAuth.getInstance().getUid();
@@ -184,6 +187,12 @@ public class ShowImageAdapter extends RecyclerView.Adapter<ShowImageAdapter.Show
     public void onBindViewHolder(@NonNull ShowImageViewHolder holder, int position) {
         Image model = getItem(position);
         if (model == null) return;
+        String mediaUrl = model.getImageUrl() != null ? model.getImageUrl() : model.getVideoUrl();
+        if (!Objects.equals(holder.boundPostId, model.getPostId()) || !Objects.equals(holder.boundMediaUrl, mediaUrl)) {
+            holder.zoomableMedia.resetZoom();
+        }
+        holder.boundPostId = model.getPostId();
+        holder.boundMediaUrl = mediaUrl;
         recyclerView.post(click::onMediaBound);
 
         Log.e("kiemtrakhixoa", "onBindViewHolder: " + position + " " + model.getUrlMusic());
@@ -248,18 +257,11 @@ public class ShowImageAdapter extends RecyclerView.Adapter<ShowImageAdapter.Show
             }
         });
 
-        holder.img_post.setOnLongClickListener(view -> {
-            click.showOptions(model.getPostId(), model.getImageUrl());
+        holder.zoomableMedia.setOnLongClickListener(view -> {
+            click.showOptions(model.getPostId(), mediaUrl);
             return true;
         });
-
-        holder.playerViewVideo.setOnLongClickListener(view -> {
-            click.showOptions(model.getPostId(), model.getVideoUrl());
-            return true;
-        });
-
-        holder.playerViewVideo.setOnClickListener(view -> click.togglePlayback(model.getPostId()));
-        holder.img_post.setOnClickListener(view -> click.togglePlayback(model.getPostId()));
+        holder.zoomableMedia.setOnClickListener(view -> click.togglePlayback(model.getPostId()));
 
         holder.frameLayout.setOnClickListener(view -> {
             holder.recyclerEmote.setAdapter(null);
@@ -370,13 +372,38 @@ public class ShowImageAdapter extends RecyclerView.Adapter<ShowImageAdapter.Show
     @Override
     public void onViewRecycled(@NonNull ShowImageViewHolder holder) {
         super.onViewRecycled(holder);
+        holder.zoomableMedia.resetZoom();
         holder.playerViewVideo.setPlayer(null);
+        holder.boundPostId = null;
+        holder.boundMediaUrl = null;
+    }
+
+    @Override
+    public void onViewDetachedFromWindow(@NonNull ShowImageViewHolder holder) {
+        holder.zoomableMedia.resetZoom();
+        super.onViewDetachedFromWindow(holder);
+    }
+
+    public void setActiveMediaPost(String postId) {
+        if (Objects.equals(activeMediaPostId, postId)) return;
+        activeMediaPostId = postId;
+        resetMediaZoom();
+    }
+
+    public void resetMediaZoom() {
+        for (int i = 0; i < recyclerView.getChildCount(); i++) {
+            RecyclerView.ViewHolder holder = recyclerView.getChildViewHolder(recyclerView.getChildAt(i));
+            if (holder instanceof ShowImageViewHolder) ((ShowImageViewHolder) holder).zoomableMedia.resetZoom();
+        }
     }
 
     public static class ShowImageViewHolder extends RecyclerView.ViewHolder {
 
         private final ImageView img_post, img_general_image;
         public PlayerView playerViewVideo;
+        private final ZoomableMediaLayout zoomableMedia;
+        private String boundPostId;
+        private String boundMediaUrl;
         private final TextView tv_status, tv_username_post, tv_time_post, tv_music_post, tv_singer_post, tv_like, tv_comment;
         private final CircleImageView img_user_post;
         private final EditText edt_send_message;
@@ -387,6 +414,7 @@ public class ShowImageAdapter extends RecyclerView.Adapter<ShowImageAdapter.Show
 
         public ShowImageViewHolder(@NonNull View itemView) {
             super(itemView);
+            zoomableMedia = itemView.findViewById(R.id.zoomable_media);
             img_post = itemView.findViewById(R.id.img_post);
             tv_status = itemView.findViewById(R.id.tv_status);
             tv_username_post = itemView.findViewById(R.id.tv_username_post);

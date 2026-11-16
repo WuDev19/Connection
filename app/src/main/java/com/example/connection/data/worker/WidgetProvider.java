@@ -1,42 +1,59 @@
 package com.example.connection.data.worker;
 
-import android.annotation.SuppressLint;
+import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
 import android.content.Context;
-import android.util.Log;
-import androidx.work.ExistingPeriodicWorkPolicy;
-import androidx.work.PeriodicWorkRequest;
-import androidx.work.WorkManager;
-
+import android.content.Intent;
+import android.os.Bundle;
 import com.example.connection.constants.SharePreUtil;
 
-import java.util.concurrent.TimeUnit;
-
 public class WidgetProvider extends AppWidgetProvider {
+    public static final String ACTION_REFRESH = "com.example.connection.WIDGET_REFRESH";
 
-    private final String TAG = getClass().getName();
-
-    @SuppressLint("ApplySharedPref")
-    @Override
-    public void onEnabled(Context context) {
+    @Override public void onEnabled(Context context) {
         super.onEnabled(context);
-        SharePreUtil.getInstance(context.getApplicationContext()).setWidget(true);
-        Log.e(TAG, "onEnabled: ");
-        scheduleJob(context);
+        SharePreUtil.getInstance(context).setWidget(true);
+        WidgetUpdater.schedulePeriodic(context);
+        WidgetSyncCoordinator.get(context).reconcile();
     }
 
-    @SuppressLint("ApplySharedPref")
-    @Override
-    public void onDisabled(Context context) {
+    @Override public void onUpdate(Context context, AppWidgetManager manager, int[] ids) {
+        for (int id : ids) WidgetUpdater.initializeIfNeeded(context, id);
+        WidgetUpdater.schedulePeriodic(context);
+        WidgetUpdater.requestRefresh(context);
+        WidgetSyncCoordinator.get(context).reconcile();
+    }
+
+    @Override public void onAppWidgetOptionsChanged(Context context, AppWidgetManager manager, int id, Bundle options) {
+        super.onAppWidgetOptionsChanged(context, manager, id, options);
+        WidgetUpdater.requestRefresh(context);
+    }
+
+    @Override public void onReceive(Context context, Intent intent) {
+        super.onReceive(context, intent);
+        if (intent != null && ACTION_REFRESH.equals(intent.getAction())) {
+            int requested = intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID);
+            for (int id : WidgetUpdater.widgetIds(context)) {
+                if (id == requested) { WidgetUpdater.requestRefresh(context); break; }
+            }
+        }
+    }
+
+    @Override public void onDisabled(Context context) {
         super.onDisabled(context);
-        SharePreUtil.getInstance(context.getApplicationContext()).setWidget(false);
-        Log.e(TAG, "onDisabled: ");
-        WorkManager.getInstance(context).cancelUniqueWork("getPost");
+        SharePreUtil.getInstance(context).setWidget(false);
+        WidgetUpdater.cancel(context);
+        WidgetSyncCoordinator.get(context).reconcile();
     }
 
-    private void scheduleJob(Context context) {
-        PeriodicWorkRequest workRequest = new PeriodicWorkRequest.Builder(MyWork.class, 15, TimeUnit.MINUTES)
-                .build();
-        WorkManager.getInstance(context).enqueueUniquePeriodicWork("getPost", ExistingPeriodicWorkPolicy.KEEP, workRequest);
+    @Override public void onDeleted(Context context, int[] ids) {
+        for (int id : ids) WidgetUpdater.forget(context, id);
+        super.onDeleted(context, ids);
+    }
+
+    @Override public void onRestored(Context context, int[] oldIds, int[] newIds) {
+        for (int id : oldIds) WidgetUpdater.forget(context, id);
+        for (int id : newIds) WidgetUpdater.initialize(context, id);
+        WidgetUpdater.requestRefresh(context);
     }
 }

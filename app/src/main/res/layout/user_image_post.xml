@@ -25,23 +25,35 @@
             android:elevation="24dp"
             android:translationZ="5dp">
 
-            <ImageView
-                android:id="@+id/img_post"
+            <com.example.connection.ui.view.widget.ZoomableMediaLayout
+                android:id="@+id/zoomable_media"
                 android:layout_width="match_parent"
-                android:layout_height="380dp"
-                android:scaleType="centerCrop"
-                android:visibility="gone"
-                android:contentDescription="@string/user_post" />
+                android:layout_height="match_parent"
+                android:contentDescription="@string/user_post">
 
-            <androidx.media3.ui.PlayerView
-                android:id="@+id/player_view_video_post"
-                android:layout_width="match_parent"
-                android:layout_height="380dp"
-                app:resize_mode="zoom"
-                app:use_controller="false"
-                app:surface_type="texture_view"
-                android:visibility="gone"
-                app:shutter_background_color="@android:color/transparent" />
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+                    <ImageView
+                        android:id="@+id/img_post"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scaleType="centerCrop"
+                        android:visibility="gone"
+                        android:contentDescription="@string/user_post" />
+
+                    <androidx.media3.ui.PlayerView
+                        android:id="@+id/player_view_video_post"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        app:resize_mode="zoom"
+                        app:use_controller="false"
+                        app:surface_type="texture_view"
+                        android:visibility="gone"
+                        app:shutter_background_color="@android:color/transparent" />
+
+                </FrameLayout>
+            </com.example.connection.ui.view.widget.ZoomableMediaLayout>
 
             <LinearLayout
                 android:layout_width="wrap_content"

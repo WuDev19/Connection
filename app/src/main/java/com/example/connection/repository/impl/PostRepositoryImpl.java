@@ -554,31 +554,25 @@ public class PostRepositoryImpl implements PostRepository {
     @Override
     public void updateSeenPostPhoto(Context context, OnUpdateWidget onUpdateWidget) {
         if (currentUserId == null) return;
-        Log.e(TAG, "updateSeenPostPhoto: ");
+        Context appContext = context.getApplicationContext();
         db.collection("post_photo")
                 .whereArrayContains("friendId", currentUserId)
                 .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    for (DocumentSnapshot documentSnapshot : queryDocumentSnapshots) {
-                        Image image = documentSnapshot.toObject(Image.class);
-                        if (image == null) continue;
-                        List<String> list = image.getSeen();
-                        if (list == null || !list.contains(currentUserId)) {
-                            documentSnapshot.getReference().update("seen", FieldValue.arrayUnion(currentUserId))
-                                    .addOnCompleteListener(task1 -> {
-                                        if (task1.isSuccessful()) {
-                                            Log.e(TAG, "Cập nhật seen thành công");
-                                        } else if (task1.getException() != null) {
-                                            Log.e(TAG, task1.getException().getMessage());
-                                        }
-                                    });
+                .addOnSuccessListener(snapshot -> {
+                    List<Task<Void>> writes = new ArrayList<>();
+                    for (DocumentSnapshot doc : snapshot) {
+                        Image image = doc.toObject(Image.class);
+                        if (image != null && (image.getSeen() == null || !image.getSeen().contains(currentUserId))) {
+                            writes.add(doc.getReference().update("seen", FieldValue.arrayUnion(currentUserId)));
                         }
                     }
-                    if (SharePreUtil.getInstance(context.getApplicationContext()).enableWidget()) {
+                    // Refresh only after acknowledgements; scheduling survives the screen being closed.
+                    Tasks.whenAllComplete(writes).addOnSuccessListener(results -> {
+                        com.example.connection.data.worker.WidgetUpdater.requestRefresh(appContext);
                         if (onUpdateWidget != null) onUpdateWidget.onUpdate(true);
-                    }
+                    });
                 })
-                .addOnFailureListener(e -> Log.e(TAG, "onFailure: " + e.getMessage()));
+                .addOnFailureListener(error -> Log.w(TAG, "Unable to mark posts seen", error));
     }
 
     @Override

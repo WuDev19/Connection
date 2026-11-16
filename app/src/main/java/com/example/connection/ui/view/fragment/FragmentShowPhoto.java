@@ -1,9 +1,6 @@
 package com.example.connection.ui.view.fragment;
 
 import android.annotation.SuppressLint;
-import android.appwidget.AppWidgetManager;
-import android.content.ComponentName;
-import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -29,7 +26,6 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.RemoteViews;
 import android.widget.Toast;
 import com.example.connection.R;
 import com.example.connection.ui.view.activity.MainActivity;
@@ -38,7 +34,6 @@ import com.example.connection.model.Image;
 import com.example.connection.repository.base.PostRepository;
 import com.example.connection.repository.impl.PostRepositoryImpl;
 import com.example.connection.ui.viewmodel.ShowPhotoViewModel;
-import com.example.connection.data.worker.WidgetProvider;
 import com.example.connection.constants.MediaPlayerUtil;
 import com.example.connection.ui.state.PhotoPlaybackController;
 import androidx.lifecycle.Lifecycle;
@@ -117,12 +112,6 @@ public class FragmentShowPhoto extends Fragment {
         viewGeneration++;
         postRepository = new PostRepositoryImpl();
         setUpRecyclerView();
-
-        showPhotoViewModel.getUpdateWidget().observe(getViewLifecycleOwner(), shouldUpdate -> {
-            if (shouldUpdate) {
-                updateUiWidget();
-            }
-        });
 
         showPhotoViewModel.getSendMessageSuccess().observe(getViewLifecycleOwner(), aBoolean -> {
             if (Boolean.TRUE.equals(aBoolean) && edt_send_message != null) edt_send_message.setText("");
@@ -371,18 +360,6 @@ public class FragmentShowPhoto extends Fragment {
         });
     }
 
-    private void updateUiWidget() {
-        Context context = requireContext().getApplicationContext();
-        AppWidgetManager manager = AppWidgetManager.getInstance(context);
-        ComponentName widgetComponent = new ComponentName(context, WidgetProvider.class);
-        int[] widgetIds = manager.getAppWidgetIds(widgetComponent);
-        for (int widgetId : widgetIds) {
-            RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.layout_widget);
-            views.setTextViewText(R.id.tv_widget, "");
-            manager.partiallyUpdateAppWidget(widgetId, views);
-        }
-    }
-
     private void handleMusic(LinearLayoutManager manager, View snapView) {
         if (!isResumed() || playback == null || pendingPostId != null || resolvingInitialPost) return;
         int selected = manager.getPosition(snapView);
@@ -390,6 +367,7 @@ public class FragmentShowPhoto extends Fragment {
         if (image == null || selected == RecyclerView.NO_POSITION) return;
         RecyclerView.ViewHolder holder = recyclerView.findViewHolderForAdapterPosition(selected);
         if (!(holder instanceof ShowImageAdapter.ShowImageViewHolder)) return;
+        adapter.setActiveMediaPost(image.getPostId());
         lastPosition = selected;
         lastImage = image;
         Image next = adapter.getItem(selected + 1);
@@ -604,6 +582,7 @@ public class FragmentShowPhoto extends Fragment {
 
     @Override
     public void onPause() {
+        if (adapter != null) adapter.resetMediaZoom();
         if (playback != null) playback.setActive(false);
         stopCuteBounceAnimation();
         super.onPause();

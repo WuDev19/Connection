@@ -14,6 +14,7 @@ import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.ImageProxy;
 import androidx.camera.core.MirrorMode;
 import androidx.camera.core.Preview;
+import androidx.camera.core.ZoomState;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.video.FallbackStrategy;
 import androidx.camera.video.FileOutputOptions;
@@ -26,6 +27,10 @@ import androidx.camera.video.VideoRecordEvent;
 import androidx.camera.view.PreviewView;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.LifecycleOwner;
+import androidx.lifecycle.Lifecycle;
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.Observer;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -41,6 +46,10 @@ public class CameraManager {
     private final ExecutorService cameraExecutor = Executors.newSingleThreadExecutor();
     private ProcessCameraProvider cameraProvider;
     private CameraControl cameraControl;
+    private LiveData<ZoomState> zoomSource;
+    private Observer<ZoomState> zoomObserver;
+    private final MutableLiveData<ZoomState> zoomState = new MutableLiveData<>();
+    private int cameraGeneration;
     private ImageCapture imageCapture;
     private VideoCapture<Recorder> videoCapture;
     private Recording recording;
@@ -61,8 +70,10 @@ public class CameraManager {
                             @NonNull PreviewView previewView,
                             int displayRotation,
                             Runnable onReady) {
+        final int generation = ++cameraGeneration;
         ListenableFuture<ProcessCameraProvider> future = ProcessCameraProvider.getInstance(context);
         future.addListener(() -> {
+            if (generation != cameraGeneration || lifecycleOwner.getLifecycle().getCurrentState() == Lifecycle.State.DESTROYED) return;
             try {
                 cameraProvider = future.get();
                 bindCameraUseCases(lifecycleOwner, previewView, displayRotation);
@@ -79,6 +90,7 @@ public class CameraManager {
                            @NonNull LifecycleOwner lifecycleOwner,
                            @NonNull PreviewView previewView,
                            int displayRotation) {
+        if (recording != null) return;
         isBackFacing = !isBackFacing;
         if (cameraProvider != null) {
             bindCameraUseCases(lifecycleOwner, previewView, displayRotation);
@@ -91,6 +103,7 @@ public class CameraManager {
                                    @NonNull PreviewView previewView,
                                    int displayRotation) {
         if (cameraProvider == null) return;
+        clearZoomObserver();
 
         Preview preview = new Preview.Builder().build();
         preview.setSurfaceProvider(previewView.getSurfaceProvider());
@@ -125,6 +138,16 @@ public class CameraManager {
                 videoCapture
         );
         cameraControl = camera.getCameraControl();
+        final LiveData<ZoomState> source = camera.getCameraInfo().getZoomState();
+        zoomSource = source;
+        zoomObserver = state -> {
+            if (source == zoomSource) zoomState.setValue(state);
+        };
+        source.observe(lifecycleOwner, zoomObserver);
+        ZoomState initial = source.getValue();
+        if (initial != null) {
+            setZoomRatio(CameraZoomMath.clampRatio(1f, initial.getMinZoomRatio(), initial.getMaxZoomRatio()));
+        }
     }
 
     public void takePhoto(@NonNull OnPhotoCapturedListener listener) {
@@ -185,8 +208,42 @@ public class CameraManager {
 
     public void setLinearZoom(float zoom) {
         if (cameraControl != null) {
-            cameraControl.setLinearZoom(zoom);
+            cameraControl.setLinearZoom(CameraZoomMath.clampLinear(zoom));
         }
+    }
+
+    public LiveData<ZoomState> getZoomState() { return zoomState; }
+
+    public boolean isReady() { return cameraControl != null && videoCapture != null && imageCapture != null; }
+
+    public void scaleZoom(float factor) {
+        ZoomState state = zoomSource == null ? null : zoomSource.getValue();
+        if (state == null) return;
+        setZoomRatio(CameraZoomMath.scaleRatio(state.getZoomRatio(), factor,
+                state.getMinZoomRatio(), state.getMaxZoomRatio()));
+    }
+
+    public void setZoomRatio(float ratio) {
+        ZoomState state = zoomSource == null ? null : zoomSource.getValue();
+        if (cameraControl == null || state == null) return;
+        cameraControl.setZoomRatio(CameraZoomMath.clampRatio(ratio, state.getMinZoomRatio(), state.getMaxZoomRatio()));
+    }
+
+    private void clearZoomObserver() {
+        if (zoomSource != null && zoomObserver != null) zoomSource.removeObserver(zoomObserver);
+        zoomSource = null;
+        zoomObserver = null;
+        zoomState.setValue(null);
+    }
+
+    public void releaseCamera() {
+        cameraGeneration++;
+        stopVideoRecording();
+        clearZoomObserver();
+        cameraControl = null;
+        imageCapture = null;
+        videoCapture = null;
+        if (cameraProvider != null) cameraProvider.unbindAll();
     }
 
     public boolean isBackFacing() {
@@ -194,13 +251,7 @@ public class CameraManager {
     }
 
     public void shutdown() {
-        if (recording != null) {
-            recording.stop();
-            recording = null;
-        }
-        if (cameraProvider != null) {
-            cameraProvider.unbindAll();
-        }
+        releaseCamera();
         cameraExecutor.shutdown();
     }
 

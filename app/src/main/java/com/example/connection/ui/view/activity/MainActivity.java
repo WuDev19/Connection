@@ -3,8 +3,6 @@ package com.example.connection.ui.view.activity;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.PendingIntent;
-import android.appwidget.AppWidgetManager;
-import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
@@ -21,7 +19,6 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
-import android.widget.RemoteViews;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
@@ -31,14 +28,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.lifecycle.ViewModelProvider;
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.request.target.AppWidgetTarget;
 import com.example.connection.R;
 import com.example.connection.ui.view.activity.chat.RecentChatActivity;
 import com.example.connection.ui.view.activity.chat.ChatActivity;
 import com.example.connection.ui.view.fragment.BottomSheetSearch;
 import com.example.connection.ui.view.fragment.FragmentHome;
 import com.example.connection.ui.view.fragment.FragmentNotification;
-import com.example.connection.data.worker.WidgetProvider;
 import com.example.connection.constants.MediaPlayerUtil;
 import com.example.connection.ui.viewmodel.MainViewModel;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -160,46 +155,6 @@ public class MainActivity extends AppCompatActivity {
                         return true;
                 }
                 return false;
-            }
-        });
-
-        mainViewModel.scheduleJob(this);
-
-        mainViewModel.getWidgetLiveData().observe(this, widgetModel -> {
-            if(widgetModel != null){
-                Log.e(TAG, "onCreate: " + widgetModel.getImage() + " " + widgetModel.getUser() + " " + widgetModel.getList());
-                ComponentName componentName = new ComponentName(getApplicationContext(), WidgetProvider.class);
-                AppWidgetManager manager = AppWidgetManager.getInstance(getApplicationContext());
-                int[] widgetIds = manager.getAppWidgetIds(componentName);
-                for (int widgetId : widgetIds) {
-                    Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-                    PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), 1, intent, PendingIntent.FLAG_IMMUTABLE);
-                    RemoteViews views = new RemoteViews(getApplicationContext().getPackageName(), R.layout.layout_widget);
-                    views.setOnClickPendingIntent(R.id.img_widget, pendingIntent);
-                    if (widgetModel.getList().isEmpty()) {
-                        views.setViewVisibility(R.id.tv_widget, View.GONE);
-                    } else if (widgetModel.getList().size() > 9) {
-                        views.setTextViewText(R.id.tv_widget, "9+");
-                    } else
-                        views.setTextViewText(R.id.tv_widget, String.valueOf(widgetModel.getList().size()));
-                    if (widgetModel.getImage().getStatus().isEmpty())
-                        views.setViewVisibility(R.id.tv_username_widget, View.GONE);
-                    else
-                        views.setTextViewText(R.id.tv_username_widget, widgetModel.getImage().getStatus());
-                    AppWidgetTarget post = new AppWidgetTarget(getApplicationContext(), R.id.img_widget, views, widgetId);
-                    AppWidgetTarget avt = new AppWidgetTarget(getApplicationContext(), R.id.img_avatar_widget, views, widgetId);
-                    Glide.with(getApplicationContext())
-                            .asBitmap()
-                            .load(widgetModel.getImage().getImageUrl())
-                            .override(300, 300)
-                            .into(post);
-                    Glide.with(getApplicationContext())
-                            .asBitmap()
-                            .load(widgetModel.getUser().getAvatarUser())
-                            .override(300, 300)
-                            .into(avt);
-                    manager.partiallyUpdateAppWidget(widgetId, views);
-                }
             }
         });
 
