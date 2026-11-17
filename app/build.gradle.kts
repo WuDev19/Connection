@@ -66,6 +66,7 @@ dependencies {
     implementation(libs.androidx.camera.view)
     implementation(libs.androidx.camera.camera2)
     implementation(libs.androidx.camera.video)
+    implementation("com.google.mediapipe:tasks-vision:0.10.32")
     implementation(libs.androidx.concurrent.futures)
     implementation(libs.constraintlayout)
     implementation(libs.glide)

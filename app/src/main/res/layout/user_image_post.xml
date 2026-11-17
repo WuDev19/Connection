@@ -19,10 +19,11 @@
             android:layout_alignParentTop="true"
             android:layout_alignParentEnd="true"
             android:layout_alignParentStart="true"
-            android:layout_marginTop="40dp"
+            android:layout_marginTop="20dp"
             android:backgroundTint="@color/secondary"
-            app:cardCornerRadius="50dp"
-            android:elevation="24dp"
+            app:cardCornerRadius="44dp"
+            app:cardPreventCornerOverlap="false"
+            android:elevation="20dp"
             android:translationZ="5dp">
 
             <com.example.connection.ui.view.widget.ZoomableMediaLayout
@@ -60,7 +61,7 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:layout_gravity="bottom|center_horizontal"
-                android:layout_marginBottom="10dp">
+                android:layout_marginBottom="12dp">
 
                 <TextView
                     android:id="@+id/tv_status"
@@ -106,7 +107,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_below="@+id/btn_like"
-            android:layout_marginStart="20dp"
+            android:layout_marginStart="16dp"
             android:textColor="@color/black"
             android:visibility="invisible"/>
 
@@ -116,12 +117,12 @@
             android:layout_height="wrap_content"
             android:text="@string/like"
             android:layout_below="@+id/cardview_image"
-            android:layout_marginStart="20dp"
+            android:layout_marginStart="16dp"
             android:layout_alignParentStart="true"
             style="?android:attr/buttonBarButtonStyle"
             android:backgroundTint="@android:color/transparent"
             android:textColor="@color/black"
-            android:layout_marginTop="10dp"/>
+            android:layout_marginTop="8dp"/>
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recycler_view_emote_in_post"
@@ -138,7 +139,7 @@
             android:layout_below="@+id/btn_comment"
             android:visibility="invisible"
             android:layout_alignStart="@+id/btn_comment"
-            android:layout_marginEnd="20dp"
+            android:layout_marginEnd="16dp"
             android:textColor="@color/black"/>
 
         <Button
@@ -148,50 +149,57 @@
             android:text="@string/comment"
             android:layout_below="@+id/cardview_image"
             android:layout_alignParentEnd="true"
-            android:layout_marginEnd="20dp"
+            android:layout_marginEnd="16dp"
             style="?android:attr/buttonBarButtonStyle"
             android:backgroundTint="@color/white"
             android:textColor="@color/black"
-            android:layout_marginTop="10dp"/>
+            android:layout_marginTop="8dp"/>
 
         <LinearLayout
             android:id="@+id/relative_user"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_below="@+id/cardview_image"
             android:layout_toStartOf="@+id/btn_comment"
             android:layout_toEndOf="@+id/btn_like"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="8dp"
             android:gravity="center"
-            android:layout_marginStart="5dp"
-            android:layout_marginEnd="5dp"
-            android:layout_marginBottom="5dp">
+            android:layout_marginStart="6dp"
+            android:layout_marginEnd="6dp"
+            android:layout_marginBottom="4dp">
 
             <de.hdodenhof.circleimageview.CircleImageView
                 android:id="@+id/img_user_post"
-                android:layout_width="35dp"
-                android:layout_height="35dp"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
                 android:scaleType="centerCrop"/>
 
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:layout_marginStart="6dp">
 
                 <TextView
                     android:id="@+id/tv_username_post"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="6dp"
                     android:textStyle="bold"
-                    android:textColor="@color/black"/>
+                    android:textColor="@color/black"
+                    android:textSize="13sp"
+                    android:maxLines="1"
+                    android:singleLine="true"
+                    android:ellipsize="end"/>
 
                 <TextView
                     android:id="@+id/tv_time_post"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="6dp"
-                    android:textColor="@color/black"/>
+                    android:textColor="#555555"
+                    android:textSize="11sp"
+                    android:maxLines="1"
+                    android:singleLine="true"
+                    android:ellipsize="end"/>
 
             </LinearLayout>
 
@@ -199,34 +207,38 @@
 
         <FrameLayout
             android:id="@+id/frame_layout1"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
             android:layout_below="@+id/tv_like"
-            android:layout_marginTop="20dp">
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="12dp">
 
             <EditText
                 android:id="@+id/edt_send_message"
-                android:layout_width="350dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="@string/send_message"
                 android:background="@drawable/border_view"
                 android:inputType="textMultiLine"
-                android:padding="10dp"
+                android:paddingStart="14dp"
+                android:paddingEnd="46dp"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"
                 android:backgroundTint="#EFEFEF"
                 tools:ignore="Autofill"
                 android:textColorHint="@color/black"
-                android:layout_gravity="center"
                 android:maxLength="30"
                 android:textColor="@color/black"/>
 
             <ImageButton
                 android:id="@+id/btn_send"
-                android:layout_width="30dp"
-                android:layout_height="30dp"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
                 android:src="@drawable/icon_send"
                 android:layout_gravity="end|center_vertical"
-                android:layout_marginEnd="10dp"
+                android:layout_marginEnd="8dp"
                 android:scaleType="centerCrop"
                 android:background="@null"
                 android:contentDescription="@string/app_name"/>
@@ -235,13 +247,14 @@
 
         <ImageView
             android:id="@+id/img_general_image"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
             android:src="@drawable/icon_general"
             android:layout_below="@+id/frame_layout1"
-            android:layout_alignStart="@+id/frame_layout1"
-            android:layout_marginTop="10dp"
+            android:layout_alignParentStart="true"
             android:layout_marginStart="20dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="16dp"
             android:contentDescription="@string/general"/>
 
     </RelativeLayout>

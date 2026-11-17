@@ -10,7 +10,7 @@ public class ApiClient {
 
     // Mặc định: 10.0.2.2 cho Android Emulator trỏ về localhost máy tính.
     // Khi test trên máy thật qua cùng mạng Wi-Fi, gọi ApiClient.setBaseUrl("http://<IP_LAN_MAY_TINH>:8080/")
-    private static String BASE_URL = "https://nonliberal-blossom-unkilned.ngrok-free.dev/";
+    private static String BASE_URL = "https://connection-6325.onrender.com/";
     private static Retrofit retrofit = null;
 
     public static synchronized void setBaseUrl(String newBaseUrl) {

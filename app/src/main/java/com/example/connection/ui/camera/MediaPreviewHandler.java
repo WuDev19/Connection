@@ -159,6 +159,8 @@ public class MediaPreviewHandler {
     }
 
     private void showActionControls() {
+        binding.cameraEffectControls.getRoot().setVisibility(View.GONE);
+        binding.btnEffects.setVisibility(View.GONE);
         binding.buttonSuccess.setVisibility(View.VISIBLE);
         binding.buttonSuccess.playAnimation();
         binding.buttonCancel.setVisibility(View.VISIBLE);
@@ -220,6 +222,8 @@ public class MediaPreviewHandler {
         binding.tvSingerTakePhoto.setVisibility(View.GONE);
 
         binding.imgTakePhoto.setVisibility(View.VISIBLE);
+        binding.cameraEffectControls.getRoot().setVisibility(View.GONE);
+        binding.btnEffects.setVisibility(View.VISIBLE);
         binding.framePhotoVideo.setVisibility(View.VISIBLE);
         binding.btnGallery.setVisibility(View.VISIBLE);
         binding.buttonRotate.setVisibility(View.VISIBLE);

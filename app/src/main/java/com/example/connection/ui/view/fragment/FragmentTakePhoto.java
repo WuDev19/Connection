@@ -37,6 +37,7 @@ import com.example.connection.constants.MediaPlayerUtil;
 import com.example.connection.databinding.FragmentTakePhotoBinding;
 import com.example.connection.model.Image;
 import com.example.connection.ui.camera.CameraManager;
+import com.example.connection.ui.camera.effects.CameraEffectsController;
 import com.example.connection.ui.camera.CameraPinchZoomHandler;
 import com.example.connection.ui.camera.CameraZoomMath;
 import com.example.connection.ui.camera.MediaPreviewHandler;
@@ -56,6 +57,7 @@ public class FragmentTakePhoto extends Fragment {
 
     private FragmentTakePhotoBinding binding;
     private CameraManager cameraManager;
+    private CameraEffectsController cameraEffectsController;
     private CameraPinchZoomHandler pinchZoomHandler;
     private GestureDetector gestureDetectorPhoto;
     private GestureDetector gestureDetectorVideo;
@@ -94,6 +96,7 @@ public class FragmentTakePhoto extends Fragment {
         takePhotoViewModel = new ViewModelProvider(this).get(TakePhotoViewModel.class);
         mainViewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
         cameraManager = new CameraManager();
+        CameraEffectsController.restore(cameraManager, savedInstanceState);
 
         registerLaunchers();
     }
@@ -117,6 +120,12 @@ public class FragmentTakePhoto extends Fragment {
         setupRotateCamera();
         setupGalleryButton();
         setupObservers();
+        cameraEffectsController = new CameraEffectsController(
+                binding.cameraEffectControls.getRoot(), cameraManager);
+        setupEffectButton();
+        cameraManager.getEffectError().observe(getViewLifecycleOwner(), error -> {
+            if (error != null) Toast.makeText(requireContext(), error, Toast.LENGTH_LONG).show();
+        });
 
         cameraManager.startCamera(
                 requireContext(),
@@ -125,6 +134,12 @@ public class FragmentTakePhoto extends Fragment {
                 requireActivity().getWindowManager().getDefaultDisplay().getRotation(),
                 null
         );
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        CameraEffectsController.save(cameraManager, outState);
     }
 
     private void registerLaunchers() {
@@ -216,6 +231,11 @@ public class FragmentTakePhoto extends Fragment {
 
                 if (mediaPreviewHandler != null && mediaPreviewHandler.isEditingOrPreviewing()) {
                     mediaPreviewHandler.cancel();
+                    return;
+                }
+
+                if (cameraEffectsController != null && cameraEffectsController.isVisible()) {
+                    cameraEffectsController.hide();
                     return;
                 }
 
@@ -330,6 +350,9 @@ public class FragmentTakePhoto extends Fragment {
 
     private void takePhoto() {
         if (binding == null || isRecordingVideo || !isResumed()) return;
+        if (cameraEffectsController != null && cameraEffectsController.isVisible()) {
+            cameraEffectsController.hide();
+        }
         final FragmentTakePhotoBinding captureBinding = binding;
         binding.buttonTakePhoto.animate()
                 .rotation(180f)
@@ -361,6 +384,9 @@ public class FragmentTakePhoto extends Fragment {
     private void startVideo() {
         if (binding == null || !isResumed() || isRecordingVideo || !videoButtonHeld || videoMultiTouch
                 || !cameraManager.isReady()) return;
+        if (cameraEffectsController != null && cameraEffectsController.isVisible()) {
+            cameraEffectsController.hide();
+        }
         final FragmentTakePhotoBinding captureBinding = binding;
         isRecordingVideo = true;
         binding.buttonRotate.setEnabled(false);
@@ -532,6 +558,19 @@ public class FragmentTakePhoto extends Fragment {
             intent.setType("image/*");
             galleryLauncher.launch(Intent.createChooser(intent, "Select Image"));
         });
+    }
+
+    private void setupEffectButton() {
+        if (binding.btnEffects != null) {
+            binding.btnEffects.setOnClickListener(v -> {
+                v.animate().scaleX(0.88f).scaleY(0.88f).setDuration(80).withEndAction(() -> {
+                    v.animate().scaleX(1f).scaleY(1f).setDuration(80).start();
+                }).start();
+                if (cameraEffectsController != null) {
+                    cameraEffectsController.toggleVisibility();
+                }
+            });
+        }
     }
 
     private void setupObservers() {

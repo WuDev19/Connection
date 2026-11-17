@@ -1,5 +1,12 @@
 package com.example.connection.ui.camera;
 
+import com.example.connection.ui.camera.effects.CameraEffectState;
+import com.example.connection.ui.camera.effects.CameraEffectsProcessor;
+import com.example.connection.ui.camera.effects.CameraGpuEffect;
+import com.example.connection.ui.camera.effects.FaceEffectException;
+import com.example.connection.R;
+import androidx.camera.core.UseCaseGroup;
+
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
@@ -40,6 +47,18 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class CameraManager {
+
+    private CameraEffectState effectState = new CameraEffectState();
+    private CameraEffectsProcessor effects;
+    private CameraGpuEffect gpuEffect;
+    private final MutableLiveData<String> effectError = new MutableLiveData<>();
+
+    public CameraEffectState getEffectState() { return effectState; }
+    public void setEffectState(CameraEffectState value) {
+        effectState = value;
+        if (effects != null) effects.setState(value);
+    }
+    public LiveData<String> getEffectError() { return effectError; }
 
     private static final String TAG = "CameraManager";
 
@@ -104,6 +123,13 @@ public class CameraManager {
                                    int displayRotation) {
         if (cameraProvider == null) return;
         clearZoomObserver();
+        if (effects == null) {
+            Context appContext = previewView.getContext().getApplicationContext();
+            effects = new CameraEffectsProcessor(appContext,
+                    error -> reportFaceEffectError(appContext, error));
+            effects.setState(effectState);
+        }
+        effects.resetTracking();
 
         Preview preview = new Preview.Builder().build();
         preview.setSurfaceProvider(previewView.getSurfaceProvider());
@@ -130,12 +156,19 @@ public class CameraManager {
                 .build();
 
         cameraProvider.unbindAll();
+        if (gpuEffect != null) gpuEffect.close();
+        gpuEffect = new CameraGpuEffect(effects,
+                error -> {
+                    Log.e(TAG, "Camera effect failed", error);
+                    effectError.postValue("Không xử lý được filter camera. Hãy mở lại camera để thử lại.");
+                });
+        UseCaseGroup group = new UseCaseGroup.Builder()
+                .addUseCase(preview).addUseCase(imageCapture).addUseCase(videoCapture)
+                .addEffect(gpuEffect.asCameraEffect()).build();
         Camera camera = cameraProvider.bindToLifecycle(
                 lifecycleOwner,
                 cameraSelector,
-                preview,
-                imageCapture,
-                videoCapture
+                group
         );
         cameraControl = camera.getCameraControl();
         final LiveData<ZoomState> source = camera.getCameraInfo().getZoomState();
@@ -150,22 +183,58 @@ public class CameraManager {
         }
     }
 
+    private void reportFaceEffectError(Context context, Throwable error) {
+        Log.e(TAG, "Face effect failed", error);
+        int message = R.string.camera_face_error_inference;
+        if (error instanceof FaceEffectException) {
+            switch (((FaceEffectException) error).stage) {
+                case MODEL_LOAD: message = R.string.camera_face_error_model; break;
+                case DETECTOR_INIT: message = R.string.camera_face_error_init; break;
+                case FRAME_PREPARATION: message = R.string.camera_face_error_frame; break;
+                case INFERENCE: break;
+            }
+        }
+        effectError.postValue(context.getString(message));
+    }
+
     public void takePhoto(@NonNull OnPhotoCapturedListener listener) {
         if (imageCapture == null) {
             listener.onError(new IllegalStateException("ImageCapture not initialized"));
             return;
         }
 
+        final CameraEffectState snapshot = effectState;
+        final CameraEffectsProcessor processor = effects;
+        final boolean mirror = !isBackFacing;
         imageCapture.takePicture(cameraExecutor, new ImageCapture.OnImageCapturedCallback() {
             @Override
             public void onCaptureSuccess(@NonNull ImageProxy image) {
                 super.onCaptureSuccess(image);
-                Bitmap bitmap = image.toBitmap();
-                if (!isBackFacing) {
-                    bitmap = flipBitmapHorizontally(bitmap);
+                Bitmap source = null;
+                Bitmap upright = null;
+                Bitmap processed = null;
+                try {
+                    source = image.toBitmap();
+                    int rotation = image.getImageInfo().getRotationDegrees();
+                    Matrix matrix = new Matrix(); matrix.postRotate(rotation);
+                    upright = rotation == 0 ? source : Bitmap.createBitmap(source, 0, 0,
+                            source.getWidth(), source.getHeight(), matrix, true);
+                    if (upright != source) { source.recycle(); source = null; }
+                    processed = processor == null ? upright.copy(Bitmap.Config.ARGB_8888, true)
+                            : processor.processPhoto(upright, snapshot);
+                    if (upright == source) source = null;
+                    upright.recycle(); upright = null;
+                    Bitmap result = mirror ? flipBitmapHorizontally(processed) : processed;
+                    if (result != processed) processed.recycle();
+                    listener.onSuccess(result);
+                } catch (Exception e) {
+                    if (processed != null && !processed.isRecycled()) processed.recycle();
+                    listener.onError(e);
+                } finally {
+                    if (upright != null && upright != source) upright.recycle();
+                    if (source != null) source.recycle();
+                    image.close();
                 }
-                image.close();
-                listener.onSuccess(bitmap);
             }
 
             @Override
@@ -244,6 +313,8 @@ public class CameraManager {
         imageCapture = null;
         videoCapture = null;
         if (cameraProvider != null) cameraProvider.unbindAll();
+        if (gpuEffect != null) { gpuEffect.close(); gpuEffect = null; }
+        if (effects != null) { effects.close(); effects = null; }
     }
 
     public boolean isBackFacing() {
