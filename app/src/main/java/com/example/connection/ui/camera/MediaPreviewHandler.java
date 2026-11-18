@@ -106,6 +106,7 @@ public class MediaPreviewHandler {
     public void showPhotoPreview(@NonNull Bitmap photo) {
         this.photo = photo;
         this.isVideo = false;
+        binding.photoPreviewZoom.resetZoom();
 
         binding.imgTakePhoto.setVisibility(View.GONE);
         binding.framePhotoVideo.setVisibility(View.GONE);
@@ -114,6 +115,7 @@ public class MediaPreviewHandler {
 
         binding.imgPictureFromGallery.setVisibility(View.VISIBLE);
         binding.imgPictureFromGallery.setImageBitmap(photo);
+        binding.photoPreviewZoom.setVisibility(View.VISIBLE);
 
         showActionControls();
     }
@@ -121,6 +123,7 @@ public class MediaPreviewHandler {
     public void showGalleryPhotoPreview(@NonNull Uri uri, @NonNull Bitmap photo) {
         this.photo = photo;
         this.isVideo = false;
+        binding.photoPreviewZoom.resetZoom();
 
         binding.imgTakePhoto.setVisibility(View.GONE);
         binding.framePhotoVideo.setVisibility(View.GONE);
@@ -129,6 +132,7 @@ public class MediaPreviewHandler {
 
         binding.imgPictureFromGallery.setVisibility(View.VISIBLE);
         binding.imgPictureFromGallery.setImageURI(uri);
+        binding.photoPreviewZoom.setVisibility(View.VISIBLE);
 
         showActionControls();
     }
@@ -136,6 +140,8 @@ public class MediaPreviewHandler {
     public void showVideoPreview(@NonNull File videoFile) {
         this.videoFile = videoFile;
         this.isVideo = true;
+        binding.photoPreviewZoom.resetZoom();
+        binding.photoPreviewZoom.setVisibility(View.GONE);
 
         binding.imgTakePhoto.setVisibility(View.GONE);
         binding.framePhotoVideo.setVisibility(View.GONE);
@@ -196,6 +202,9 @@ public class MediaPreviewHandler {
     }
 
     private void resetMediaPreview(boolean shouldDeleteVideo) {
+        binding.photoPreviewZoom.resetZoom();
+        binding.photoPreviewZoom.setVisibility(View.GONE);
+        binding.imgPictureFromGallery.setImageDrawable(null);
         if (isVideo) {
             if (shouldDeleteVideo && videoFile != null && videoFile.delete()) {
                 Log.e(TAG, "cancel: deleted video cache file");
@@ -352,6 +361,8 @@ public class MediaPreviewHandler {
     }
 
     public void onDestroy() {
+        binding.photoPreviewZoom.resetZoom();
+        binding.imgPictureFromGallery.setImageDrawable(null);
         if (musicPlayer != null) {
             musicPlayer.release();
             musicPlayer = null;

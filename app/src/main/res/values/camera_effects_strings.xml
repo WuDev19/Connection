@@ -1,7 +1,6 @@
 <resources>
     <string name="camera_colors">Màu</string>
     <string name="camera_face_effects">Hiệu ứng mặt</string>
-    <string name="camera_effect_hint">Chọn màu và hiệu ứng mặt độc lập · Dùng cho ảnh và video</string>
     <string name="camera_effect_intensity">Cường độ màu</string>
     <string name="camera_face_error_model">Không đọc được dữ liệu hiệu ứng khuôn mặt. Hãy mở lại camera để thử lại.</string>
     <string name="camera_face_error_init">Không khởi tạo được nhận diện khuôn mặt trên thiết bị này. Hãy mở lại camera để thử lại.</string>

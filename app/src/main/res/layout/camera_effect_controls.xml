@@ -93,14 +93,4 @@
         app:trackColorInactive="#D0D0D0"
         app:labelBehavior="gone" />
 
-    <TextView
-        android:id="@+id/effect_hint"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
-        android:text="@string/camera_effect_hint"
-        android:textSize="10sp"
-        android:textColor="#777777" />
-
 </LinearLayout>

@@ -32,13 +32,21 @@
                 app:scaleType="fillCenter"
                 android:background="@color/white"/>
 
-            <ImageView
-                android:id="@+id/img_picture_from_gallery"
+            <com.example.connection.ui.view.widget.ZoomableMediaLayout
+                android:id="@+id/photo_preview_zoom"
                 android:layout_width="match_parent"
                 android:layout_height="380dp"
-                android:scaleType="centerCrop"
-                android:visibility="gone"
-                tools:ignore="contentDescription" />
+                android:visibility="gone">
+
+                <ImageView
+                    android:id="@+id/img_picture_from_gallery"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="centerCrop"
+                    android:visibility="gone"
+                    tools:ignore="contentDescription" />
+
+            </com.example.connection.ui.view.widget.ZoomableMediaLayout>
 
             <androidx.media3.ui.PlayerView
                 android:id="@+id/player_view_video"

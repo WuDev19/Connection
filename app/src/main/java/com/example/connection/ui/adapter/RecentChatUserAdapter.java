@@ -92,11 +92,11 @@ public class RecentChatUserAdapter extends FirestoreRecyclerAdapter<ChatRoom, Re
                         alias = model.getAlias().get(otherUser.getId());
                     }
                     if (alias != null && !alias.isEmpty()) {
-                        if (alias.contains("_")) {
-                            holder.tv_username.setText(alias.split("_")[1]);
-                        } else {
-                            holder.tv_username.setText(alias);
-                        }
+                        String[] aliasParts = alias.split("_", 2);
+                        String displayName = aliasParts.length > 1 ? aliasParts[1] : alias;
+                        holder.tv_username.setText(!displayName.isEmpty()
+                                ? displayName
+                                : (otherUser.getUserName() != null ? otherUser.getUserName() : ""));
                     } else {
                         holder.tv_username.setText(otherUser.getUserName() != null ? otherUser.getUserName() : "");
                     }
@@ -144,8 +144,9 @@ public class RecentChatUserAdapter extends FirestoreRecyclerAdapter<ChatRoom, Re
                                 senderName = model.getAlias().get(senderId);
                             }
                             if (senderName != null && !senderName.isEmpty()) {
-                                if (senderName.contains("_")) {
-                                    senderName = senderName.split("_")[1];
+                                String[] aliasParts = senderName.split("_", 2);
+                                if (aliasParts.length > 1 && !aliasParts[1].isEmpty()) {
+                                    senderName = aliasParts[1];
                                 }
                                 holder.tv_message.setText(senderName + ": " + msg);
                             } else {
